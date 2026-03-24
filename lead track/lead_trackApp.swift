@@ -5,14 +5,14 @@
 //  Created by Rogge, Benni on 3/23/26.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct lead_trackApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Item.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

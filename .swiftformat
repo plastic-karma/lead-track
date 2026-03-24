@@ -1,0 +1,29 @@
+# SwiftFormat configuration for lead-track
+
+--swiftversion 5.0
+
+# Formatting rules
+--indent 4
+--indentcase false
+--trimwhitespace always
+--stripunusedargs closure-only
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapconditions after-first
+--closingparen balanced
+--funcattributes prev-line
+--typeattributes prev-line
+--varattributes same-line
+--self remove
+--importgrouping testable-bottom
+--commas always
+--semicolons inline
+--header ignore
+--commas inline
+--ifdef no-indent
+
+# Disabled rules
+--disable blankLinesAroundMark
+--disable redundantRawValues
