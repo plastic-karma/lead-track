@@ -1,0 +1,31 @@
+import Foundation
+import SwiftData
+
+@Model
+final class Metric {
+    var name: String
+    var measurementType: MeasurementType
+    var unit: String?
+    var icon: String?
+    var createdAt: Date
+
+    @Relationship(deleteRule: .cascade, inverse: \Project.metric)
+    var projects: [Project] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Session.metric)
+    var sessions: [Session] = []
+
+    init(
+        name: String,
+        measurementType: MeasurementType = .duration,
+        unit: String? = nil,
+        icon: String? = nil,
+        createdAt: Date = .now
+    ) {
+        self.name = name
+        self.measurementType = measurementType
+        self.unit = unit
+        self.icon = icon
+        self.createdAt = createdAt
+    }
+}

@@ -1,17 +1,20 @@
-//
-//  lead_trackApp.swift
-//  lead-track Watch App
-//
-//  Created by Rogge, Benni on 3/23/26.
-//
-
+import SwiftData
 import SwiftUI
 
 @main
 struct lead_track_Watch_AppApp: App {
+    var sharedModelContainer: ModelContainer = {
+        do {
+            return try SharedModelContainer.create()
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(sharedModelContainer)
     }
 }

@@ -1,0 +1,100 @@
+import SwiftData
+import SwiftUI
+
+struct ProjectDetailView: View {
+    @Environment(\.modelContext) private var modelContext
+    let project: Project
+
+    private var activeSession: Session? {
+        project.sessions.first { $0.isRunning }
+    }
+
+    private var completedSessions: [Session] {
+        project.sessions
+            .filter { !$0.isRunning }
+            .sorted { $0.startedAt > $1.startedAt }
+    }
+
+    var body: some View {
+        List {
+            timerSection
+            statusSection
+            if !completedSessions.isEmpty {
+                sessionsSection
+            }
+        }
+        .navigationTitle(project.name)
+    }
+}
+
+// MARK: - Sections
+
+extension ProjectDetailView {
+    private var timerSection: some View {
+        Section {
+            if let session = activeSession {
+                ActiveSessionBanner(session: session)
+                Button("Stop Timer", role: .destructive) {
+                    stopTimer()
+                }
+            } else if project.status == .active {
+                Button { startTimer() } label: {
+                    Label("Start Timer", systemImage: "play.fill")
+                }
+            }
+        }
+    }
+
+    private var statusSection: some View {
+        Section {
+            if project.status == .active {
+                Button("Mark as Finished") {
+                    finishProject()
+                }
+            } else {
+                Button("Reopen Project") {
+                    reopenProject()
+                }
+            }
+        }
+    }
+
+    private var sessionsSection: some View {
+        Section("Sessions") {
+            ForEach(completedSessions) { session in
+                SessionRowView(session: session)
+            }
+        }
+    }
+}
+
+// MARK: - Actions
+
+extension ProjectDetailView {
+    private func startTimer() {
+        guard let metric = project.metric else { return }
+        try? SessionService.startSession(
+            for: metric,
+            project: project,
+            in: modelContext
+        )
+    }
+
+    private func stopTimer() {
+        guard let metric = project.metric else { return }
+        try? SessionService.stopSession(
+            for: metric,
+            in: modelContext
+        )
+    }
+
+    private func finishProject() {
+        project.status = .finished
+        project.finishedAt = .now
+    }
+
+    private func reopenProject() {
+        project.status = .active
+        project.finishedAt = nil
+    }
+}
