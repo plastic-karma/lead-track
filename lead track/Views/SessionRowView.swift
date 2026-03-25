@@ -16,20 +16,10 @@ struct SessionRowView: View {
             if session.isRunning {
                 TimerDisplay(startedAt: session.startedAt)
             } else {
-                Text(formattedDuration(session.duration))
+                Text(DurationFormatter.format(session.duration))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
         }
     }
-}
-
-private func formattedDuration(_ interval: TimeInterval) -> String {
-    let hours = Int(interval) / 3600
-    let minutes = (Int(interval) % 3600) / 60
-    let seconds = Int(interval) % 60
-    if hours > 0 {
-        return String(format: "%dh %02dm", hours, minutes)
-    }
-    return String(format: "%dm %02ds", minutes, seconds)
 }

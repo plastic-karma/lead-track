@@ -18,6 +18,7 @@ struct ProjectDetailView: View {
     var body: some View {
         List {
             timerSection
+            StatisticsView(sessions: project.sessions)
             statusSection
             if !completedSessions.isEmpty {
                 sessionsSection

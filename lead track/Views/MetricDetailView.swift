@@ -31,6 +31,7 @@ struct MetricDetailView: View {
     var body: some View {
         List {
             timerSection
+            StatisticsView(sessions: metric.sessions)
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
