@@ -96,6 +96,9 @@ extension MetricDetailView {
                     projectRow(project)
                 }
             }
+            .onDelete { offsets in
+                deleteProjects(offsets, from: projects)
+            }
         }
     }
 
@@ -104,6 +107,7 @@ extension MetricDetailView {
             ForEach(directSessions) { session in
                 SessionRowView(session: session)
             }
+            .onDelete(perform: deleteDirectSessions)
         }
     }
 }
@@ -138,6 +142,25 @@ extension MetricDetailView {
     private func stopTimer() {
         withAnimation {
             SessionService.stopSession(for: metric)
+        }
+    }
+
+    private func deleteProjects(
+        _ offsets: IndexSet,
+        from projects: [Project]
+    ) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(projects[index])
+            }
+        }
+    }
+
+    private func deleteDirectSessions(_ offsets: IndexSet) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(directSessions[index])
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ import SwiftData
 import SwiftUI
 
 struct ProjectDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     let project: Project
     @Query private var sessions: [Session]
@@ -37,6 +38,13 @@ struct ProjectDetailView: View {
             }
         }
         .navigationTitle(project.name)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button("Delete", role: .destructive) {
+                    deleteProject()
+                }
+            }
+        }
     }
 }
 
@@ -77,6 +85,7 @@ extension ProjectDetailView {
             ForEach(completedSessions) { session in
                 SessionRowView(session: session)
             }
+            .onDelete(perform: deleteSessions)
         }
     }
 }
@@ -110,5 +119,18 @@ extension ProjectDetailView {
     private func reopenProject() {
         project.status = .active
         project.finishedAt = nil
+    }
+
+    private func deleteProject() {
+        modelContext.delete(project)
+        dismiss()
+    }
+
+    private func deleteSessions(_ offsets: IndexSet) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(completedSessions[index])
+            }
+        }
     }
 }
