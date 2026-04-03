@@ -2,26 +2,17 @@ import Foundation
 import SwiftData
 
 enum SessionService {
-    static func activeSession(
-        for metric: Metric,
-        in context: ModelContext
-    ) throws -> Session? {
-        let metricID = metric.persistentModelID
-        let descriptor = FetchDescriptor<Session>(
-            predicate: #Predicate { session in
-                session.metric?.persistentModelID == metricID
-                    && session.endedAt == nil
-            }
-        )
-        return try context.fetch(descriptor).first
+    static func activeSession(for metric: Metric) -> Session? {
+        metric.sessions.first { $0.isRunning }
     }
 
+    @discardableResult
     static func startSession(
         for metric: Metric,
         project: Project? = nil,
         in context: ModelContext
-    ) throws -> Session {
-        if let running = try activeSession(for: metric, in: context) {
+    ) -> Session {
+        if let running = activeSession(for: metric) {
             return running
         }
         let session = Session(
@@ -33,14 +24,8 @@ enum SessionService {
         return session
     }
 
-    static func stopSession(
-        for metric: Metric,
-        in context: ModelContext
-    ) throws {
-        guard let running = try activeSession(
-            for: metric,
-            in: context
-        ) else { return }
+    static func stopSession(for metric: Metric) {
+        guard let running = activeSession(for: metric) else { return }
         running.endedAt = .now
     }
 }

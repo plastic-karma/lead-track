@@ -4,6 +4,8 @@ import SwiftUI
 struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Query(filter: #Predicate<Session> { $0.endedAt == nil })
+    private var runningSessions: [Session]
     @State private var showingAddSheet = false
 
     var body: some View {
@@ -56,7 +58,10 @@ struct MetricListView: View {
     }
 
     private func hasActiveSession(_ metric: Metric) -> Bool {
-        metric.sessions.contains { $0.isRunning }
+        let id = metric.persistentModelID
+        return runningSessions.contains {
+            $0.metric?.persistentModelID == id
+        }
     }
 
     private func deleteMetrics(offsets: IndexSet) {

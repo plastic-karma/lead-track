@@ -4,9 +4,22 @@ import SwiftUI
 struct WatchActiveSessionView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
+    @Query private var sessions: [Session]
+
+    init(metric: Metric) {
+        self.metric = metric
+        let id = metric.persistentModelID
+        _sessions = Query(
+            filter: #Predicate<Session> {
+                $0.metric?.persistentModelID == id
+                    && $0.endedAt == nil
+            },
+            sort: \.startedAt
+        )
+    }
 
     private var activeSession: Session? {
-        metric.sessions.first { $0.isRunning }
+        sessions.first
     }
 
     var body: some View {
@@ -44,16 +57,17 @@ struct WatchActiveSessionView: View {
     }
 
     private func startTimer() {
-        try? SessionService.startSession(
-            for: metric,
-            in: modelContext
-        )
+        withAnimation {
+            SessionService.startSession(
+                for: metric,
+                in: modelContext
+            )
+        }
     }
 
     private func stopTimer() {
-        try? SessionService.stopSession(
-            for: metric,
-            in: modelContext
-        )
+        withAnimation {
+            SessionService.stopSession(for: metric)
+        }
     }
 }

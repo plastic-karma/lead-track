@@ -4,10 +4,22 @@ import SwiftUI
 struct MetricDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
+    @Query private var sessions: [Session]
     @State private var showingProjectForm = false
 
+    init(metric: Metric) {
+        self.metric = metric
+        let id = metric.persistentModelID
+        _sessions = Query(
+            filter: #Predicate<Session> {
+                $0.metric?.persistentModelID == id
+            },
+            sort: \.startedAt
+        )
+    }
+
     private var activeSession: Session? {
-        metric.sessions.first { $0.isRunning }
+        sessions.first { $0.isRunning }
     }
 
     private var activeProjects: [Project] {
@@ -23,7 +35,7 @@ struct MetricDetailView: View {
     }
 
     private var directSessions: [Session] {
-        metric.sessions
+        sessions
             .filter { $0.project == nil && !$0.isRunning }
             .sorted { $0.startedAt > $1.startedAt }
     }
@@ -31,7 +43,7 @@ struct MetricDetailView: View {
     var body: some View {
         List {
             timerSection
-            StatisticsView(sessions: metric.sessions)
+            StatisticsView(sessions: sessions)
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
@@ -115,16 +127,17 @@ extension MetricDetailView {
     }
 
     private func startTimer() {
-        try? SessionService.startSession(
-            for: metric,
-            in: modelContext
-        )
+        withAnimation {
+            SessionService.startSession(
+                for: metric,
+                in: modelContext
+            )
+        }
     }
 
     private func stopTimer() {
-        try? SessionService.stopSession(
-            for: metric,
-            in: modelContext
-        )
+        withAnimation {
+            SessionService.stopSession(for: metric)
+        }
     }
 }

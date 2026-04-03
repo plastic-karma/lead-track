@@ -4,6 +4,8 @@ import SwiftUI
 struct WatchMetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Query(filter: #Predicate<Session> { $0.endedAt == nil })
+    private var runningSessions: [Session]
 
     var body: some View {
         List {
@@ -32,11 +34,18 @@ struct WatchMetricListView: View {
             Text(metric.name)
                 .lineLimit(1)
             Spacer()
-            if metric.sessions.contains(where: \.isRunning) {
+            if hasActiveSession(metric) {
                 Circle()
                     .fill(.red)
                     .frame(width: 8, height: 8)
             }
+        }
+    }
+
+    private func hasActiveSession(_ metric: Metric) -> Bool {
+        let id = metric.persistentModelID
+        return runningSessions.contains {
+            $0.metric?.persistentModelID == id
         }
     }
 }
