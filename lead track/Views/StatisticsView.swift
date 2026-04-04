@@ -18,23 +18,38 @@ struct StatisticsView: View {
     }
 
     private var statsGrid: some View {
-        HStack {
-            statItem(
-                "5-Day Avg",
-                SessionStatistics.recentAverage(days: 5, from: dailyTotals)
-            )
+        Grid(horizontalSpacing: 16, verticalSpacing: 12) {
+            GridRow {
+                statItem(
+                    "Today",
+                    SessionStatistics.todayTotal(from: dailyTotals)
+                )
+                statItem(
+                    "Total",
+                    SessionStatistics.overallTotal(from: dailyTotals)
+                )
+            }
             Divider()
-            statItem(
-                "Overall Avg",
-                SessionStatistics.overallAverage(from: dailyTotals)
-            )
-            Divider()
-            statItem(
-                "Best Day",
-                SessionStatistics.maxDaily(from: dailyTotals)
-            )
+            GridRow {
+                statItem(
+                    "5-Day Avg",
+                    SessionStatistics.recentAverage(
+                        days: 5,
+                        from: dailyTotals
+                    )
+                )
+                statItem(
+                    "Overall Avg",
+                    SessionStatistics.overallAverage(from: dailyTotals)
+                )
+            }
+            GridRow {
+                statItem(
+                    "Best Day",
+                    SessionStatistics.maxDaily(from: dailyTotals)
+                )
+            }
         }
-        .frame(minHeight: 50)
     }
 
     private var chart: some View {

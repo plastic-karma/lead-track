@@ -51,4 +51,13 @@ enum SessionStatistics {
     static func maxDaily(from totals: [DailyTotal]) -> TimeInterval {
         totals.map(\.duration).max() ?? 0
     }
+
+    static func todayTotal(from totals: [DailyTotal]) -> TimeInterval {
+        let today = Calendar.current.startOfDay(for: .now)
+        return totals.first { $0.date == today }?.duration ?? 0
+    }
+
+    static func overallTotal(from totals: [DailyTotal]) -> TimeInterval {
+        totals.reduce(0) { $0 + $1.duration }
+    }
 }
