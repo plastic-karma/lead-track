@@ -76,7 +76,7 @@ extension MetricDetailView {
             if let session = activeSession {
                 ActiveSessionBanner(session: session)
                 Button("Stop Timer", role: .destructive) {
-                    stopTimer()
+                    SessionService.stopSession(session)
                 }
             } else {
                 Button { startTimer() } label: {
@@ -140,9 +140,7 @@ extension MetricDetailView {
     }
 
     private func stopTimer() {
-        withAnimation {
-            SessionService.stopSession(for: metric)
-        }
+        SessionService.stopSession(for: metric)
     }
 
     private func deleteProjects(

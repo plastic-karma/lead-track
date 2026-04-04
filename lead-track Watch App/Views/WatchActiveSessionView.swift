@@ -42,7 +42,7 @@ struct WatchActiveSessionView: View {
                 .font(.title)
                 .foregroundStyle(.orange)
             Button("Stop", role: .destructive) {
-                stopTimer()
+                SessionService.stopSession(session)
             }
         }
     }

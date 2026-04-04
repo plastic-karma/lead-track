@@ -24,6 +24,10 @@ enum SessionService {
         return session
     }
 
+    static func stopSession(_ session: Session) {
+        session.endedAt = .now
+    }
+
     static func stopSession(for metric: Metric) {
         guard let running = activeSession(for: metric) else { return }
         running.endedAt = .now

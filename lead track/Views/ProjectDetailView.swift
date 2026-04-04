@@ -56,7 +56,7 @@ extension ProjectDetailView {
             if let session = activeSession {
                 ActiveSessionBanner(session: session)
                 Button("Stop Timer", role: .destructive) {
-                    stopTimer()
+                    SessionService.stopSession(session)
                 }
             } else if project.status == .active {
                 Button { startTimer() } label: {
@@ -106,9 +106,7 @@ extension ProjectDetailView {
 
     private func stopTimer() {
         guard let metric = project.metric else { return }
-        withAnimation {
-            SessionService.stopSession(for: metric)
-        }
+        SessionService.stopSession(for: metric)
     }
 
     private func finishProject() {
