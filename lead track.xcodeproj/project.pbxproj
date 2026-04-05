@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		89AF8B7A2F7235E6005F7ED1 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 89AF8B702F7235E5005F7ED1 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -17,6 +18,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 89AF8B6F2F7235E5005F7ED1;
 			remoteInfo = "lead-track Watch App";
+		};
+		89AF8CAB2F800000005F7ED1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 89AF8B542F723550005F7ED1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 89AF8CA02F800000005F7ED1;
+			remoteInfo = "lead-track Widget";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -32,12 +40,34 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		89AF8CAA2F800000005F7ED1 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8B702F7235E5005F7ED1 /* lead-track Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead-track Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		89AF8CAD2F800000005F7ED1 /* Exceptions for "lead-track Widget" folder in "lead-track Widget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 89AF8CA02F800000005F7ED1 /* lead-track Widget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		89AF8B5E2F723550005F7ED1 /* lead track */ = {
@@ -53,6 +83,14 @@
 		89AF8BA02F723700005F7ED1 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		89AF8CA22F800000005F7ED1 /* lead-track Widget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				89AF8CAD2F800000005F7ED1 /* Exceptions for "lead-track Widget" folder in "lead-track Widget" target */,
+			);
+			path = "lead-track Widget";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +110,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		89AF8CA42F800000005F7ED1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +126,7 @@
 				89AF8BA02F723700005F7ED1 /* Shared */,
 				89AF8B5E2F723550005F7ED1 /* lead track */,
 				89AF8B712F7235E5005F7ED1 /* lead-track Watch App */,
+				89AF8CA22F800000005F7ED1 /* lead-track Widget */,
 				89AF8B5D2F723550005F7ED1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +136,7 @@
 			children = (
 				89AF8B5C2F723550005F7ED1 /* lead track.app */,
 				89AF8B702F7235E5005F7ED1 /* lead-track Watch App.app */,
+				89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,11 +154,13 @@
 				89AF8B592F723550005F7ED1 /* Frameworks */,
 				89AF8B5A2F723550005F7ED1 /* Resources */,
 				89AF8B7E2F7235E6005F7ED1 /* Embed Watch Content */,
+				89AF8CAA2F800000005F7ED1 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				89AF8B792F7235E6005F7ED1 /* PBXTargetDependency */,
+				89AF8CAC2F800000005F7ED1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				89AF8B5E2F723550005F7ED1 /* lead track */,
@@ -149,6 +198,29 @@
 			productReference = 89AF8B702F7235E5005F7ED1 /* lead-track Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
+		89AF8CA02F800000005F7ED1 /* lead-track Widget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 89AF8CA82F800000005F7ED1 /* Build configuration list for PBXNativeTarget "lead-track Widget" */;
+			buildPhases = (
+				89AF8CA32F800000005F7ED1 /* Sources */,
+				89AF8CA42F800000005F7ED1 /* Frameworks */,
+				89AF8CA52F800000005F7ED1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				89AF8BA02F723700005F7ED1 /* Shared */,
+				89AF8CA22F800000005F7ED1 /* lead-track Widget */,
+			);
+			name = "lead-track Widget";
+			packageProductDependencies = (
+			);
+			productName = "lead-track Widget";
+			productReference = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -163,6 +235,9 @@
 						CreatedOnToolsVersion = 26.3;
 					};
 					89AF8B6F2F7235E5005F7ED1 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					89AF8CA02F800000005F7ED1 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -183,6 +258,7 @@
 			targets = (
 				89AF8B5B2F723550005F7ED1 /* lead track */,
 				89AF8B6F2F7235E5005F7ED1 /* lead-track Watch App */,
+				89AF8CA02F800000005F7ED1 /* lead-track Widget */,
 			);
 		};
 /* End PBXProject section */
@@ -196,6 +272,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		89AF8B6E2F7235E5005F7ED1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		89AF8CA52F800000005F7ED1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -298,6 +381,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		89AF8CA32F800000005F7ED1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -305,6 +395,11 @@
 			isa = PBXTargetDependency;
 			target = 89AF8B6F2F7235E5005F7ED1 /* lead-track Watch App */;
 			targetProxy = 89AF8B782F7235E6005F7ED1 /* PBXContainerItemProxy */;
+		};
+		89AF8CAC2F800000005F7ED1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 89AF8CA02F800000005F7ED1 /* lead-track Widget */;
+			targetProxy = 89AF8CAB2F800000005F7ED1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -441,6 +536,7 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -474,6 +570,7 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -564,6 +661,60 @@
 			};
 			name = Release;
 		};
+		89AF8CA62F800000005F7ED1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Widget/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		89AF8CA72F800000005F7ED1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Widget/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -590,6 +741,15 @@
 			buildConfigurations = (
 				89AF8B7C2F7235E6005F7ED1 /* Debug */,
 				89AF8B7D2F7235E6005F7ED1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		89AF8CA82F800000005F7ED1 /* Build configuration list for PBXNativeTarget "lead-track Widget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89AF8CA62F800000005F7ED1 /* Debug */,
+				89AF8CA72F800000005F7ED1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
