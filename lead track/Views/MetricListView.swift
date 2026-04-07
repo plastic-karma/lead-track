@@ -8,6 +8,7 @@ struct MetricListView: View {
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
     @State private var showingWeeklyReview = false
+    @State private var showingExport = false
 
     var body: some View {
         List {
@@ -21,11 +22,21 @@ struct MetricListView: View {
         .navigationTitle("Metrics")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button { showingWeeklyReview = true } label: {
-                    Label(
-                        "Weekly Review",
-                        systemImage: "calendar.badge.clock"
-                    )
+                Menu {
+                    Button { showingWeeklyReview = true } label: {
+                        Label(
+                            "Weekly Review",
+                            systemImage: "calendar.badge.clock"
+                        )
+                    }
+                    Button { showingExport = true } label: {
+                        Label(
+                            "Export Data",
+                            systemImage: "square.and.arrow.up"
+                        )
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -42,6 +53,9 @@ struct MetricListView: View {
         }
         .sheet(isPresented: $showingWeeklyReview) {
             WeeklyReviewView()
+        }
+        .sheet(isPresented: $showingExport) {
+            DataExportView()
         }
         .overlay {
             if metrics.isEmpty {
