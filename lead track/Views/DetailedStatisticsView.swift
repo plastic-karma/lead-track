@@ -12,7 +12,10 @@ struct DetailedStatisticsView: View {
                     chart
                 }
                 Section("Metrics") {
-                    statsGrid
+                    durationGrid
+                }
+                Section("Streaks") {
+                    streakGrid
                 }
             }
             .navigationTitle("Statistics")
@@ -37,7 +40,7 @@ struct DetailedStatisticsView: View {
         .frame(height: 200)
     }
 
-    private var statsGrid: some View {
+    private var durationGrid: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 statItem(
@@ -71,6 +74,21 @@ struct DetailedStatisticsView: View {
             }
         }
     }
+
+    private var streakGrid: some View {
+        Grid(horizontalSpacing: 16, verticalSpacing: 12) {
+            GridRow {
+                streakItem(
+                    "Current Streak",
+                    SessionStatistics.currentStreak(from: dailyTotals)
+                )
+                streakItem(
+                    "Longest Streak",
+                    SessionStatistics.longestStreak(from: dailyTotals)
+                )
+            }
+        }
+    }
 }
 
 // MARK: - Helpers
@@ -94,6 +112,21 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(DurationFormatter.format(value))
+                .font(.headline)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func streakItem(
+        _ title: String,
+        _ days: Int
+    ) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(days)d")
                 .font(.headline)
                 .monospacedDigit()
         }

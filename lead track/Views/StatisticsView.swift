@@ -23,6 +23,12 @@ struct StatisticsView: View {
                                 from: dailyTotals
                             )
                         )
+                        streakItem(
+                            "Streak",
+                            SessionStatistics.currentStreak(
+                                from: dailyTotals
+                            )
+                        )
                     }
                 }
                 Button {
@@ -53,6 +59,21 @@ extension StatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(DurationFormatter.format(value))
+                .font(.headline)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func streakItem(
+        _ title: String,
+        _ days: Int
+    ) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(days)d")
                 .font(.headline)
                 .monospacedDigit()
         }

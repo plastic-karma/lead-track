@@ -60,4 +60,57 @@ enum SessionStatistics {
     static func overallTotal(from totals: [DailyTotal]) -> TimeInterval {
         totals.reduce(0) { $0 + $1.duration }
     }
+
+    static func currentStreak(from totals: [DailyTotal]) -> Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let dates = Set(
+            totals.map { calendar.startOfDay(for: $0.date) }
+        )
+        let start = if dates.contains(today) {
+            today
+        } else if let yesterday = calendar.date(
+            byAdding: .day, value: -1, to: today
+        ) {
+            yesterday
+        } else {
+            today
+        }
+        return streakEndingAt(start, from: totals)
+    }
+
+    static func longestStreak(from totals: [DailyTotal]) -> Int {
+        let dates = Set(
+            totals.map {
+                Calendar.current.startOfDay(for: $0.date)
+            }
+        )
+        guard !dates.isEmpty else { return 0 }
+        var best = 0
+        for date in dates {
+            let streak = streakEndingAt(date, from: totals)
+            best = max(best, streak)
+        }
+        return best
+    }
+
+    private static func streakEndingAt(
+        _ date: Date,
+        from totals: [DailyTotal]
+    ) -> Int {
+        let calendar = Calendar.current
+        let dates = Set(
+            totals.map { calendar.startOfDay(for: $0.date) }
+        )
+        var day = calendar.startOfDay(for: date)
+        var count = 0
+        while dates.contains(day) {
+            count += 1
+            guard let prev = calendar.date(
+                byAdding: .day, value: -1, to: day
+            ) else { break }
+            day = prev
+        }
+        return count
+    }
 }
