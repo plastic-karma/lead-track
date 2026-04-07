@@ -10,6 +10,8 @@ final class Metric {
     var createdAt: Date
     var dailyGoal: TimeInterval?
     var weeklyGoal: TimeInterval?
+    var reminderTime: Date?
+    var streakAlertTime: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
     var projects: [Project] = []

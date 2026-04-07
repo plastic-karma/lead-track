@@ -35,12 +35,24 @@ enum SessionService {
     static func stopSession(_ session: Session) {
         session.endedAt = .now
         stopLiveActivity()
+        if let metric = session.metric {
+            rescheduleNotifications(for: metric)
+        }
     }
 
     static func stopSession(for metric: Metric) {
         guard let running = activeSession(for: metric) else { return }
         running.endedAt = .now
         stopLiveActivity()
+        rescheduleNotifications(for: metric)
+    }
+
+    private static func rescheduleNotifications(
+        for metric: Metric
+    ) {
+        #if canImport(UserNotifications)
+        NotificationService.rescheduleMetric(metric)
+        #endif
     }
 
     // MARK: - Live Activity

@@ -8,6 +8,10 @@ struct GoalSettingsView: View {
     @State private var dailyMinutes: Double
     @State private var hasWeeklyGoal: Bool
     @State private var weeklyHours: Double
+    @State private var hasReminder: Bool
+    @State private var reminderTime: Date
+    @State private var hasStreakAlert: Bool
+    @State private var streakAlertTime: Date
 
     init(metric: Metric) {
         self.metric = metric
@@ -23,6 +27,18 @@ struct GoalSettingsView: View {
         _weeklyHours = State(
             initialValue: (metric.weeklyGoal ?? 18000) / 3600
         )
+        _hasReminder = State(
+            initialValue: metric.reminderTime != nil
+        )
+        _reminderTime = State(
+            initialValue: metric.reminderTime ?? Self.defaultTime(hour: 9)
+        )
+        _hasStreakAlert = State(
+            initialValue: metric.streakAlertTime != nil
+        )
+        _streakAlertTime = State(
+            initialValue: metric.streakAlertTime ?? Self.defaultTime(hour: 20)
+        )
     }
 
     var body: some View {
@@ -30,8 +46,10 @@ struct GoalSettingsView: View {
             Form {
                 dailyGoalSection
                 weeklyGoalSection
+                reminderSection
+                streakAlertSection
             }
-            .navigationTitle("Goals")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -45,7 +63,7 @@ struct GoalSettingsView: View {
     }
 }
 
-// MARK: - Sections
+// MARK: - Goal Sections
 
 extension GoalSettingsView {
     private var dailyGoalSection: some View {
@@ -83,7 +101,45 @@ extension GoalSettingsView {
             step: 0.5
         )
     }
+}
 
+// MARK: - Reminder Sections
+
+extension GoalSettingsView {
+    private var reminderSection: some View {
+        Section(footer: Text(
+            "Only notifies if you haven't logged yet."
+        )) {
+            Toggle("Daily Reminder", isOn: $hasReminder)
+            if hasReminder {
+                DatePicker(
+                    "Time",
+                    selection: $reminderTime,
+                    displayedComponents: .hourAndMinute
+                )
+            }
+        }
+    }
+
+    private var streakAlertSection: some View {
+        Section(footer: Text(
+            "Warns you before your streak breaks."
+        )) {
+            Toggle("Streak at Risk Alert", isOn: $hasStreakAlert)
+            if hasStreakAlert {
+                DatePicker(
+                    "Time",
+                    selection: $streakAlertTime,
+                    displayedComponents: .hourAndMinute
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Helpers
+
+extension GoalSettingsView {
     private func formatWeeklyLabel() -> String {
         if weeklyHours.truncatingRemainder(dividingBy: 1) == 0 {
             return "\(Int(weeklyHours))h / week"
@@ -97,6 +153,17 @@ extension GoalSettingsView {
             ? dailyMinutes * 60 : nil
         metric.weeklyGoal = hasWeeklyGoal
             ? weeklyHours * 3600 : nil
+        metric.reminderTime = hasReminder
+            ? reminderTime : nil
+        metric.streakAlertTime = hasStreakAlert
+            ? streakAlertTime : nil
+        NotificationService.rescheduleMetric(metric)
         dismiss()
+    }
+
+    private static func defaultTime(hour: Int) -> Date {
+        Calendar.current.date(
+            from: DateComponents(hour: hour, minute: 0)
+        ) ?? .now
     }
 }
