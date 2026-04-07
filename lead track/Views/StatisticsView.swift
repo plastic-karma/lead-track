@@ -2,7 +2,7 @@ import SwiftUI
 
 struct StatisticsView: View {
     let sessions: [Session]
-    @State private var showingDetailedStats = false
+    @Binding var showingDetailedStats: Bool
 
     private var dailyTotals: [DailyTotal] {
         SessionStatistics.dailyTotals(from: sessions)
@@ -39,9 +39,6 @@ struct StatisticsView: View {
                         systemImage: "chart.bar.xaxis"
                     )
                 }
-            }
-            .sheet(isPresented: $showingDetailedStats) {
-                DetailedStatisticsView(dailyTotals: dailyTotals)
             }
         }
     }

@@ -6,6 +6,7 @@ struct MetricDetailView: View {
     let metric: Metric
     @Query private var sessions: [Session]
     @State private var showingProjectForm = false
+    @State private var showingDetailedStats = false
 
     init(metric: Metric) {
         self.metric = metric
@@ -43,7 +44,10 @@ struct MetricDetailView: View {
     var body: some View {
         List {
             timerSection
-            StatisticsView(sessions: sessions)
+            StatisticsView(
+                sessions: sessions,
+                showingDetailedStats: $showingDetailedStats
+            )
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
@@ -64,6 +68,13 @@ struct MetricDetailView: View {
         }
         .sheet(isPresented: $showingProjectForm) {
             ProjectFormView(metric: metric)
+        }
+        .sheet(isPresented: $showingDetailedStats) {
+            DetailedStatisticsView(
+                dailyTotals: SessionStatistics.dailyTotals(
+                    from: sessions
+                )
+            )
         }
     }
 }

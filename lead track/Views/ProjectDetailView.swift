@@ -6,6 +6,7 @@ struct ProjectDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project
     @Query private var sessions: [Session]
+    @State private var showingDetailedStats = false
 
     init(project: Project) {
         self.project = project
@@ -31,11 +32,21 @@ struct ProjectDetailView: View {
     var body: some View {
         List {
             timerSection
-            StatisticsView(sessions: sessions)
+            StatisticsView(
+                sessions: sessions,
+                showingDetailedStats: $showingDetailedStats
+            )
             statusSection
             if !completedSessions.isEmpty {
                 sessionsSection
             }
+        }
+        .sheet(isPresented: $showingDetailedStats) {
+            DetailedStatisticsView(
+                dailyTotals: SessionStatistics.dailyTotals(
+                    from: sessions
+                )
+            )
         }
         .navigationTitle(project.name)
         .toolbar {
