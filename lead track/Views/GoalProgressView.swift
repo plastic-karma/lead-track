@@ -4,6 +4,8 @@ struct GoalProgressView: View {
     let label: String
     let current: TimeInterval
     let goal: TimeInterval
+    var measurementType: MeasurementType = .duration
+    var unit: String?
 
     private var fraction: Double {
         goal > 0 ? min(current / goal, 1.0) : 0
@@ -19,10 +21,14 @@ struct GoalProgressView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             progressRing
-            Text(DurationFormatter.format(current))
-                .font(.caption2)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+            Text(
+                ValueFormatter.formatShort(
+                    current, type: measurementType
+                )
+            )
+            .font(.caption2)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }

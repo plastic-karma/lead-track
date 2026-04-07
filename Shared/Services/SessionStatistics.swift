@@ -14,7 +14,7 @@ enum SessionStatistics {
         var grouped: [Date: TimeInterval] = [:]
         for session in sessions where !session.isRunning {
             let day = calendar.startOfDay(for: session.startedAt)
-            grouped[day, default: 0] += session.duration
+            grouped[day, default: 0] += session.trackingValue
         }
         return grouped
             .map { DailyTotal(date: $0.key, duration: $0.value) }

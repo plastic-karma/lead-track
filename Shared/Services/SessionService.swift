@@ -40,6 +40,25 @@ enum SessionService {
         }
     }
 
+    @discardableResult
+    static func logCount(
+        _ value: Double,
+        for metric: Metric,
+        project: Project? = nil,
+        in context: ModelContext
+    ) -> Session {
+        let session = Session(
+            metric: metric,
+            project: project,
+            startedAt: .now,
+            endedAt: .now,
+            value: value
+        )
+        context.insert(session)
+        rescheduleNotifications(for: metric)
+        return session
+    }
+
     static func stopSession(for metric: Metric) {
         guard let running = activeSession(for: metric) else { return }
         running.endedAt = .now

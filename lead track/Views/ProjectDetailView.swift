@@ -7,6 +7,7 @@ struct ProjectDetailView: View {
     let project: Project
     @Query private var sessions: [Session]
     @State private var showingDetailedStats = false
+    @State private var showingCountEntry = false
 
     init(project: Project) {
         self.project = project
@@ -34,6 +35,8 @@ struct ProjectDetailView: View {
             timerSection
             StatisticsView(
                 sessions: sessions,
+                measurementType: project.metric?.measurementType ?? .duration,
+                unit: project.metric?.unit,
                 dailyGoal: nil,
                 weeklyGoal: nil,
                 showingDetailedStats: $showingDetailedStats
@@ -48,9 +51,19 @@ struct ProjectDetailView: View {
                 dailyTotals: SessionStatistics.dailyTotals(
                     from: sessions
                 ),
+                measurementType: project.metric?.measurementType ?? .duration,
+                unit: project.metric?.unit,
                 dailyGoal: nil,
                 weeklyGoal: nil
             )
+        }
+        .sheet(isPresented: $showingCountEntry) {
+            if let metric = project.metric {
+                CountEntryView(
+                    metric: metric,
+                    project: project
+                )
+            }
         }
         .navigationTitle(project.name)
         .toolbar {
@@ -66,7 +79,16 @@ struct ProjectDetailView: View {
 // MARK: - Sections
 
 extension ProjectDetailView {
+    @ViewBuilder
     private var timerSection: some View {
+        if project.metric?.measurementType == .count {
+            countSection
+        } else {
+            durationSection
+        }
+    }
+
+    private var durationSection: some View {
         Section {
             if let session = activeSession {
                 ActiveSessionBanner(session: session)
@@ -76,6 +98,19 @@ extension ProjectDetailView {
             } else if project.status == .active {
                 Button { startTimer() } label: {
                     Label("Start Timer", systemImage: "play.fill")
+                }
+            }
+        }
+    }
+
+    private var countSection: some View {
+        Section {
+            if project.status == .active {
+                Button { showingCountEntry = true } label: {
+                    Label(
+                        "Log Entry",
+                        systemImage: "plus.circle"
+                    )
                 }
             }
         }

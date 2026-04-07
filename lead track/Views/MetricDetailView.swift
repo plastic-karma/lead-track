@@ -8,6 +8,7 @@ struct MetricDetailView: View {
     @State private var showingProjectForm = false
     @State private var showingDetailedStats = false
     @State private var showingGoalSettings = false
+    @State private var showingCountEntry = false
 
     init(metric: Metric) {
         self.metric = metric
@@ -47,6 +48,8 @@ struct MetricDetailView: View {
             timerSection
             StatisticsView(
                 sessions: sessions,
+                measurementType: metric.measurementType,
+                unit: metric.unit,
                 dailyGoal: metric.dailyGoal,
                 weeklyGoal: metric.weeklyGoal,
                 showingDetailedStats: $showingDetailedStats
@@ -82,6 +85,8 @@ struct MetricDetailView: View {
                 dailyTotals: SessionStatistics.dailyTotals(
                     from: sessions
                 ),
+                measurementType: metric.measurementType,
+                unit: metric.unit,
                 dailyGoal: metric.dailyGoal,
                 weeklyGoal: metric.weeklyGoal
             )
@@ -89,13 +94,25 @@ struct MetricDetailView: View {
         .sheet(isPresented: $showingGoalSettings) {
             GoalSettingsView(metric: metric)
         }
+        .sheet(isPresented: $showingCountEntry) {
+            CountEntryView(metric: metric, project: nil)
+        }
     }
 }
 
 // MARK: - Sections
 
 extension MetricDetailView {
+    @ViewBuilder
     private var timerSection: some View {
+        if metric.measurementType == .duration {
+            durationSection
+        } else {
+            countSection
+        }
+    }
+
+    private var durationSection: some View {
         Section {
             if let session = activeSession {
                 ActiveSessionBanner(session: session)
@@ -106,6 +123,17 @@ extension MetricDetailView {
                 Button { startTimer() } label: {
                     Label("Start Timer", systemImage: "play.fill")
                 }
+            }
+        }
+    }
+
+    private var countSection: some View {
+        Section {
+            Button { showingCountEntry = true } label: {
+                Label(
+                    "Log Entry",
+                    systemImage: "plus.circle"
+                )
             }
         }
     }

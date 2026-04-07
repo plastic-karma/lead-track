@@ -13,13 +13,29 @@ struct SessionRowView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if session.isRunning {
-                TimerDisplay(startedAt: session.startedAt)
-            } else {
-                Text(DurationFormatter.format(session.duration))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
+            valueLabel
         }
+    }
+
+    @ViewBuilder
+    private var valueLabel: some View {
+        if session.isRunning {
+            TimerDisplay(startedAt: session.startedAt)
+        } else if let count = session.value {
+            Text(countText(count))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        } else {
+            Text(DurationFormatter.format(session.duration))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func countText(_ count: Double) -> String {
+        let unit = session.metric?.unit
+        return ValueFormatter.format(
+            count, type: .count, unit: unit
+        )
     }
 }

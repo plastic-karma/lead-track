@@ -7,6 +7,8 @@ struct MetricFormView: View {
 
     @State private var name = ""
     @State private var icon = "clock"
+    @State private var measurementType: MeasurementType = .duration
+    @State private var unit = ""
 
     private let iconOptions = [
         "clock", "book", "laptopcomputer",
@@ -18,6 +20,7 @@ struct MetricFormView: View {
         NavigationStack {
             Form {
                 TextField("Name", text: $name)
+                typePicker
                 iconPicker
             }
             .navigationTitle("New Metric")
@@ -30,6 +33,22 @@ struct MetricFormView: View {
                     Button("Save", action: save)
                         .disabled(name.isEmpty)
                 }
+            }
+        }
+    }
+
+    private var typePicker: some View {
+        Section("Type") {
+            Picker("Measurement", selection: $measurementType) {
+                Text("Duration").tag(MeasurementType.duration)
+                Text("Count").tag(MeasurementType.count)
+            }
+            .pickerStyle(.segmented)
+            if measurementType == .count {
+                TextField(
+                    "Unit (e.g. pages, calls)",
+                    text: $unit
+                )
             }
         }
     }
@@ -69,7 +88,12 @@ struct MetricFormView: View {
     }
 
     private func save() {
-        let metric = Metric(name: name, icon: icon)
+        let metric = Metric(
+            name: name,
+            measurementType: measurementType,
+            unit: measurementType == .count ? unit : nil,
+            icon: icon
+        )
         modelContext.insert(metric)
         dismiss()
     }

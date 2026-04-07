@@ -5,9 +5,9 @@ struct GoalSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var hasDailyGoal: Bool
-    @State private var dailyMinutes: Double
+    @State private var dailyGoalValue: Double
     @State private var hasWeeklyGoal: Bool
-    @State private var weeklyHours: Double
+    @State private var weeklyGoalValue: Double
     @State private var hasReminder: Bool
     @State private var reminderTime: Date
     @State private var hasStreakAlert: Bool
@@ -15,17 +15,22 @@ struct GoalSettingsView: View {
 
     init(metric: Metric) {
         self.metric = metric
+        let isCount = metric.measurementType == .count
         _hasDailyGoal = State(
             initialValue: metric.dailyGoal != nil
         )
-        _dailyMinutes = State(
-            initialValue: (metric.dailyGoal ?? 1800) / 60
+        _dailyGoalValue = State(
+            initialValue: isCount
+                ? (metric.dailyGoal ?? 10)
+                : (metric.dailyGoal ?? 1800) / 60
         )
         _hasWeeklyGoal = State(
             initialValue: metric.weeklyGoal != nil
         )
-        _weeklyHours = State(
-            initialValue: (metric.weeklyGoal ?? 18000) / 3600
+        _weeklyGoalValue = State(
+            initialValue: isCount
+                ? (metric.weeklyGoal ?? 50)
+                : (metric.weeklyGoal ?? 18000) / 3600
         )
         _hasReminder = State(
             initialValue: metric.reminderTime != nil
@@ -76,11 +81,14 @@ extension GoalSettingsView {
     }
 
     private var dailyGoalPicker: some View {
-        Stepper(
-            "\(Int(dailyMinutes)) min / day",
-            value: $dailyMinutes,
-            in: 5 ... 480,
-            step: 5
+        let unit = metric.measurementType == .count
+            ? (metric.unit ?? "count") : "min"
+        let step: Double = metric.measurementType == .count ? 1 : 5
+        return goalField(
+            value: $dailyGoalValue,
+            unit: unit,
+            suffix: "/ day",
+            step: step
         )
     }
 
@@ -94,11 +102,14 @@ extension GoalSettingsView {
     }
 
     private var weeklyGoalPicker: some View {
-        Stepper(
-            formatWeeklyLabel(),
-            value: $weeklyHours,
-            in: 0.5 ... 80,
-            step: 0.5
+        let isCount = metric.measurementType == .count
+        let unit = isCount ? (metric.unit ?? "count") : "h"
+        let step: Double = isCount ? 5 : 0.5
+        return goalField(
+            value: $weeklyGoalValue,
+            unit: unit,
+            suffix: "/ week",
+            step: step
         )
     }
 }
@@ -140,19 +151,42 @@ extension GoalSettingsView {
 // MARK: - Helpers
 
 extension GoalSettingsView {
-    private func formatWeeklyLabel() -> String {
-        if weeklyHours.truncatingRemainder(dividingBy: 1) == 0 {
-            return "\(Int(weeklyHours))h / week"
+    private func goalField(
+        value: Binding<Double>,
+        unit: String,
+        suffix: String,
+        step: Double
+    ) -> some View {
+        HStack {
+            TextField(
+                unit,
+                value: value,
+                format: .number
+            )
+            .keyboardType(.decimalPad)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 80)
+            Text("\(unit) \(suffix)")
+                .foregroundStyle(.secondary)
+            Spacer()
+            Stepper(
+                "",
+                value: value,
+                in: step ... .infinity,
+                step: step
+            )
+            .labelsHidden()
         }
-        let mins = Int(weeklyHours * 60) % 60
-        return "\(Int(weeklyHours))h \(mins)m / week"
     }
 
     private func save() {
+        let isCount = metric.measurementType == .count
         metric.dailyGoal = hasDailyGoal
-            ? dailyMinutes * 60 : nil
+            ? (isCount ? dailyGoalValue : dailyGoalValue * 60)
+            : nil
         metric.weeklyGoal = hasWeeklyGoal
-            ? weeklyHours * 3600 : nil
+            ? (isCount ? weeklyGoalValue : weeklyGoalValue * 3600)
+            : nil
         metric.reminderTime = hasReminder
             ? reminderTime : nil
         metric.streakAlertTime = hasStreakAlert

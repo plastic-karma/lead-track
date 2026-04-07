@@ -139,7 +139,11 @@ extension WeeklyReviewView {
         _ summary: MetricSummary
     ) -> some View {
         HStack(spacing: 8) {
-            Text(DurationFormatter.format(summary.duration))
+            Text(ValueFormatter.format(
+                summary.duration,
+                type: summary.measurementType,
+                unit: summary.unit
+            ))
             Text("·")
             Text("\(summary.sessionCount) sessions")
             if let hits = summary.goalDaysHit {
@@ -203,6 +207,8 @@ extension WeeklyReviewView {
         }
         return MetricSummary(
             name: metric.name,
+            measurementType: metric.measurementType,
+            unit: metric.unit,
             icon: metric.icon ?? "clock",
             duration: totals.reduce(0) { $0 + $1.duration },
             sessionCount: sessions.count,
@@ -217,6 +223,8 @@ extension WeeklyReviewView {
 extension WeeklyReviewView {
     struct MetricSummary {
         let name: String
+        let measurementType: MeasurementType
+        let unit: String?
         let icon: String
         let duration: TimeInterval
         let sessionCount: Int

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct DetailedStatisticsView: View {
     let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+    let unit: String?
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
     @Environment(\.dismiss) private var dismiss
@@ -30,7 +32,12 @@ struct DetailedStatisticsView: View {
             ForEach(recentTotals) { daily in
                 BarMark(
                     x: .value("Date", daily.date, unit: .day),
-                    y: .value("Minutes", daily.duration / 60)
+                    y: .value(
+                        chartLabel,
+                        ValueFormatter.chartValue(
+                            daily.duration, type: measurementType
+                        )
+                    )
                 )
                 .foregroundStyle(.orange.gradient)
             }
@@ -38,16 +45,29 @@ struct DetailedStatisticsView: View {
                 goalRule(goal)
             }
         }
-        .chartYAxisLabel("min")
+        .chartYAxisLabel(chartLabel)
         .frame(height: 200)
+    }
+
+    private var chartLabel: String {
+        ValueFormatter.chartLabel(
+            type: measurementType, unit: unit
+        )
     }
 
     private func goalRule(
         _ goal: TimeInterval
     ) -> some ChartContent {
-        RuleMark(y: .value("Goal", goal / 60))
-            .foregroundStyle(.green)
-            .lineStyle(StrokeStyle(dash: [5, 5]))
+        RuleMark(
+            y: .value(
+                "Goal",
+                ValueFormatter.chartValue(
+                    goal, type: measurementType
+                )
+            )
+        )
+        .foregroundStyle(.green)
+        .lineStyle(StrokeStyle(dash: [5, 5]))
     }
 }
 
@@ -72,7 +92,9 @@ extension DetailedStatisticsView {
                         current: SessionStatistics.todayTotal(
                             from: dailyTotals
                         ),
-                        goal: goal
+                        goal: goal,
+                        measurementType: measurementType,
+                        unit: unit
                     )
                 }
                 if let goal = weeklyGoal {
@@ -81,7 +103,9 @@ extension DetailedStatisticsView {
                         current: SessionStatistics.currentWeekTotal(
                             from: dailyTotals
                         ),
-                        goal: goal
+                        goal: goal,
+                        measurementType: measurementType,
+                        unit: unit
                     )
                 }
             }
@@ -169,9 +193,13 @@ extension DetailedStatisticsView {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(DurationFormatter.format(value))
-                .font(.headline)
-                .monospacedDigit()
+            Text(
+                ValueFormatter.formatShort(
+                    value, type: measurementType
+                )
+            )
+            .font(.headline)
+            .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
     }

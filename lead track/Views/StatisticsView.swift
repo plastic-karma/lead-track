@@ -2,6 +2,8 @@ import SwiftUI
 
 struct StatisticsView: View {
     let sessions: [Session]
+    let measurementType: MeasurementType
+    let unit: String?
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
     @Binding var showingDetailedStats: Bool
@@ -52,7 +54,9 @@ extension StatisticsView {
             GoalProgressView(
                 label: "Today",
                 current: today,
-                goal: goal
+                goal: goal,
+                measurementType: measurementType,
+                unit: unit
             )
         } else {
             statItem("Today", today)
@@ -67,7 +71,9 @@ extension StatisticsView {
                 current: SessionStatistics.currentWeekTotal(
                     from: dailyTotals
                 ),
-                goal: goal
+                goal: goal,
+                measurementType: measurementType,
+                unit: unit
             )
         } else {
             statItem(
@@ -89,9 +95,13 @@ extension StatisticsView {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(DurationFormatter.format(value))
-                .font(.headline)
-                .monospacedDigit()
+            Text(
+                ValueFormatter.formatShort(
+                    value, type: measurementType
+                )
+            )
+            .font(.headline)
+            .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
     }
