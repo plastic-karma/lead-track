@@ -8,6 +8,8 @@ final class Metric {
     var unit: String?
     var icon: String?
     var createdAt: Date
+    var dailyGoal: TimeInterval?
+    var weeklyGoal: TimeInterval?
 
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
     var projects: [Project] = []

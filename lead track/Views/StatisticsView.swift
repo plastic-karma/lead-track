@@ -2,6 +2,8 @@ import SwiftUI
 
 struct StatisticsView: View {
     let sessions: [Session]
+    let dailyGoal: TimeInterval?
+    let weeklyGoal: TimeInterval?
     @Binding var showingDetailedStats: Bool
 
     private var dailyTotals: [DailyTotal] {
@@ -11,26 +13,7 @@ struct StatisticsView: View {
     var body: some View {
         if !dailyTotals.isEmpty {
             Section("Statistics") {
-                Grid(horizontalSpacing: 16, verticalSpacing: 12) {
-                    GridRow {
-                        statItem(
-                            "Today",
-                            SessionStatistics.todayTotal(from: dailyTotals)
-                        )
-                        statItem(
-                            "Total",
-                            SessionStatistics.overallTotal(
-                                from: dailyTotals
-                            )
-                        )
-                        streakItem(
-                            "Streak",
-                            SessionStatistics.currentStreak(
-                                from: dailyTotals
-                            )
-                        )
-                    }
-                }
+                statsContent
                 Button {
                     showingDetailedStats = true
                 } label: {
@@ -40,6 +23,57 @@ struct StatisticsView: View {
                     )
                 }
             }
+        }
+    }
+
+    private var statsContent: some View {
+        Grid(horizontalSpacing: 16, verticalSpacing: 12) {
+            GridRow {
+                todayItem
+                weeklyOrTotalItem
+                streakItem(
+                    "Streak",
+                    SessionStatistics.currentStreak(
+                        from: dailyTotals
+                    )
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Items
+
+extension StatisticsView {
+    @ViewBuilder
+    private var todayItem: some View {
+        let today = SessionStatistics.todayTotal(from: dailyTotals)
+        if let goal = dailyGoal {
+            GoalProgressView(
+                label: "Today",
+                current: today,
+                goal: goal
+            )
+        } else {
+            statItem("Today", today)
+        }
+    }
+
+    @ViewBuilder
+    private var weeklyOrTotalItem: some View {
+        if let goal = weeklyGoal {
+            GoalProgressView(
+                label: "Week",
+                current: SessionStatistics.currentWeekTotal(
+                    from: dailyTotals
+                ),
+                goal: goal
+            )
+        } else {
+            statItem(
+                "Total",
+                SessionStatistics.overallTotal(from: dailyTotals)
+            )
         }
     }
 }

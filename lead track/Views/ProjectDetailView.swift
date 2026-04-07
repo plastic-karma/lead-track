@@ -34,6 +34,8 @@ struct ProjectDetailView: View {
             timerSection
             StatisticsView(
                 sessions: sessions,
+                dailyGoal: nil,
+                weeklyGoal: nil,
                 showingDetailedStats: $showingDetailedStats
             )
             statusSection
@@ -45,7 +47,9 @@ struct ProjectDetailView: View {
             DetailedStatisticsView(
                 dailyTotals: SessionStatistics.dailyTotals(
                     from: sessions
-                )
+                ),
+                dailyGoal: nil,
+                weeklyGoal: nil
             )
         }
         .navigationTitle(project.name)

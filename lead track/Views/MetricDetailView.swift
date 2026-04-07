@@ -7,6 +7,7 @@ struct MetricDetailView: View {
     @Query private var sessions: [Session]
     @State private var showingProjectForm = false
     @State private var showingDetailedStats = false
+    @State private var showingGoalSettings = false
 
     init(metric: Metric) {
         self.metric = metric
@@ -46,6 +47,8 @@ struct MetricDetailView: View {
             timerSection
             StatisticsView(
                 sessions: sessions,
+                dailyGoal: metric.dailyGoal,
+                weeklyGoal: metric.weeklyGoal,
                 showingDetailedStats: $showingDetailedStats
             )
             if !activeProjects.isEmpty {
@@ -65,6 +68,11 @@ struct MetricDetailView: View {
                     Label("Add Project", systemImage: "folder.badge.plus")
                 }
             }
+            ToolbarItem {
+                Button { showingGoalSettings = true } label: {
+                    Label("Goals", systemImage: "target")
+                }
+            }
         }
         .sheet(isPresented: $showingProjectForm) {
             ProjectFormView(metric: metric)
@@ -73,8 +81,13 @@ struct MetricDetailView: View {
             DetailedStatisticsView(
                 dailyTotals: SessionStatistics.dailyTotals(
                     from: sessions
-                )
+                ),
+                dailyGoal: metric.dailyGoal,
+                weeklyGoal: metric.weeklyGoal
             )
+        }
+        .sheet(isPresented: $showingGoalSettings) {
+            GoalSettingsView(metric: metric)
         }
     }
 }

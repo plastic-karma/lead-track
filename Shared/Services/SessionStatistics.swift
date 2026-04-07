@@ -61,6 +61,18 @@ enum SessionStatistics {
         totals.reduce(0) { $0 + $1.duration }
     }
 
+    static func currentWeekTotal(
+        from totals: [DailyTotal]
+    ) -> TimeInterval {
+        let calendar = Calendar.current
+        guard let week = calendar.dateInterval(
+            of: .weekOfYear, for: .now
+        ) else { return 0 }
+        return totals
+            .filter { $0.date >= week.start && $0.date < week.end }
+            .reduce(0) { $0 + $1.duration }
+    }
+
     static func currentStreak(from totals: [DailyTotal]) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
