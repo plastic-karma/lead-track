@@ -61,6 +61,18 @@ enum SessionStatistics {
         totals.reduce(0) { $0 + $1.duration }
     }
 
+    static func lastSevenDaysTotal(
+        from totals: [DailyTotal]
+    ) -> TimeInterval {
+        guard let cutoff = Calendar.current.date(
+            byAdding: .day, value: -6,
+            to: Calendar.current.startOfDay(for: .now)
+        ) else { return 0 }
+        return totals
+            .filter { $0.date >= cutoff }
+            .reduce(0) { $0 + $1.duration }
+    }
+
     static func currentWeekTotal(
         from totals: [DailyTotal]
     ) -> TimeInterval {

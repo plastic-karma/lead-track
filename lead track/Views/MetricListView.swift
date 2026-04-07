@@ -7,6 +7,7 @@ struct MetricListView: View {
     @Query(filter: #Predicate<Session> { $0.endedAt == nil })
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
+    @State private var showingWeeklyReview = false
 
     var body: some View {
         List {
@@ -19,6 +20,14 @@ struct MetricListView: View {
         }
         .navigationTitle("Metrics")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { showingWeeklyReview = true } label: {
+                    Label(
+                        "Weekly Review",
+                        systemImage: "calendar.badge.clock"
+                    )
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
             }
@@ -30,6 +39,9 @@ struct MetricListView: View {
         }
         .sheet(isPresented: $showingAddSheet) {
             MetricFormView()
+        }
+        .sheet(isPresented: $showingWeeklyReview) {
+            WeeklyReviewView()
         }
         .overlay {
             if metrics.isEmpty {

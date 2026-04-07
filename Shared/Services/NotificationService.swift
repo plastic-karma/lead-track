@@ -24,6 +24,7 @@ enum NotificationService {
             scheduleReminder(for: metric)
             scheduleStreakAlert(for: metric)
         }
+        scheduleWeeklyReview(metrics: metrics)
     }
 
     static func rescheduleMetric(
@@ -73,6 +74,91 @@ extension NotificationService {
         ]
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
+    }
+}
+
+// MARK: - Weekly Review
+
+extension NotificationService {
+    private static func scheduleWeeklyReview(
+        metrics: [Metric]
+    ) {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: "weeklyReviewEnabled")
+        else { return }
+        let day = weeklyReviewDay(from: defaults)
+        let hour = defaults.object(forKey: "weeklyReviewHour")
+            as? Int ?? 9
+        let minute = defaults.integer(
+            forKey: "weeklyReviewMinute"
+        )
+        let content = weeklyReviewContent(metrics: metrics)
+        let trigger = weeklyTrigger(
+            weekday: day, hour: hour, minute: minute
+        )
+        schedule(id: "weekly-review", content: content, trigger: trigger)
+    }
+
+    private static func weeklyReviewDay(
+        from defaults: UserDefaults
+    ) -> Int {
+        let stored = defaults.integer(forKey: "weeklyReviewDay")
+        return stored > 0 ? stored : 2
+    }
+
+    private static func weeklyTrigger(
+        weekday: Int,
+        hour: Int,
+        minute: Int
+    ) -> UNCalendarNotificationTrigger {
+        var components = DateComponents()
+        components.weekday = weekday
+        components.hour = hour
+        components.minute = minute
+        return UNCalendarNotificationTrigger(
+            dateMatching: components, repeats: false
+        )
+    }
+
+    private static func weeklyReviewContent(
+        metrics: [Metric]
+    ) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = "Weekly Review"
+        content.body = weeklyReviewBody(metrics: metrics)
+        content.sound = .default
+        return content
+    }
+
+    private static func weeklyReviewBody(
+        metrics: [Metric]
+    ) -> String {
+        let allSessions = metrics.flatMap(\.sessions)
+            .filter { !$0.isRunning }
+        let totals = SessionStatistics.dailyTotals(
+            from: allSessions
+        )
+        let weekTotal = SessionStatistics.lastSevenDaysTotal(
+            from: totals
+        )
+        let formatted = DurationFormatter.format(weekTotal)
+        let active = metrics.filter { metric in
+            hasRecentActivity(metric)
+        }.count
+        return "You tracked \(formatted) across "
+            + "\(active) metrics this week."
+    }
+
+    private static func hasRecentActivity(
+        _ metric: Metric
+    ) -> Bool {
+        guard let cutoff = Calendar.current.date(
+            byAdding: .day, value: -6,
+            to: Calendar.current.startOfDay(for: .now)
+        ) else { return false }
+        return metric.sessions.contains {
+            !$0.isRunning && $0.startedAt >= cutoff
+        }
     }
 }
 
