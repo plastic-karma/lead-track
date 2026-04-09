@@ -3,6 +3,8 @@ import SwiftData
 
 @Model
 final class Metric {
+    #Unique<Metric>([\.stableID])
+    var stableID: UUID
     var name: String
     var measurementType: MeasurementType
     var unit: String?
@@ -26,6 +28,7 @@ final class Metric {
         icon: String? = nil,
         createdAt: Date = .now
     ) {
+        stableID = UUID()
         self.name = name
         self.measurementType = measurementType
         self.unit = unit

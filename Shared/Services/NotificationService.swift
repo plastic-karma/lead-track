@@ -47,7 +47,7 @@ extension NotificationService {
 
         let content = reminderContent(for: metric)
         let trigger = dailyTrigger(for: time)
-        let id = "reminder-\(metric.name)"
+        let id = "reminder-\(metric.stableID.uuidString)"
         schedule(id: id, content: content, trigger: trigger)
     }
 
@@ -63,14 +63,14 @@ extension NotificationService {
             for: metric, streak: streak
         )
         let trigger = dailyTrigger(for: time)
-        let id = "streak-\(metric.name)"
+        let id = "streak-\(metric.stableID.uuidString)"
         schedule(id: id, content: content, trigger: trigger)
     }
 
     private static func cancelForMetric(_ metric: Metric) {
         let ids = [
-            "reminder-\(metric.name)",
-            "streak-\(metric.name)"
+            "reminder-\(metric.stableID.uuidString)",
+            "streak-\(metric.stableID.uuidString)"
         ]
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
