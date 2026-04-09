@@ -44,10 +44,15 @@ struct WeeklyReviewView: View {
 
 extension WeeklyReviewView {
     private var overviewSection: some View {
-        Section {
+        let sessions = allSessions
+        let totals = SessionStatistics.dailyTotals(from: sessions)
+        return Section {
             dateRangeRow
-            totalTimeRow
-            bestDayRow
+            totalTimeRow(
+                total: totals.reduce(0) { $0 + $1.duration },
+                sessionCount: sessions.count
+            )
+            bestDayRow(from: totals)
         }
     }
 
@@ -60,24 +65,27 @@ extension WeeklyReviewView {
         }
     }
 
-    private var totalTimeRow: some View {
-        let total = allTotals.reduce(0) { $0 + $1.duration }
-        let sessions = allSessions.count
-        return HStack {
+    private func totalTimeRow(
+        total: TimeInterval,
+        sessionCount: Int
+    ) -> some View {
+        HStack {
             Image(systemName: "clock")
                 .foregroundStyle(.orange)
             VStack(alignment: .leading) {
                 Text(DurationFormatter.format(total))
                     .font(.headline)
-                Text("\(sessions) sessions")
+                Text("\(sessionCount) sessions")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
     }
 
-    private var bestDayRow: some View {
-        let best = allTotals
+    private func bestDayRow(
+        from totals: [DailyTotal]
+    ) -> some View {
+        let best = totals
             .filter { $0.date >= periodStart }
             .max(by: { $0.duration < $1.duration })
         return HStack {
@@ -173,10 +181,6 @@ extension WeeklyReviewView {
     private var allSessions: [Session] {
         metrics.flatMap(\.sessions)
             .filter { !$0.isRunning && $0.startedAt >= periodStart }
-    }
-
-    private var allTotals: [DailyTotal] {
-        SessionStatistics.dailyTotals(from: allSessions)
     }
 
     private var formattedRange: String {
