@@ -11,8 +11,8 @@ enum ExportTimeRange: String, CaseIterable {
 
 enum ExportScope: Hashable {
     case all
-    case metric(String)
-    case project(String)
+    case metric(PersistentIdentifier)
+    case project(PersistentIdentifier)
 }
 
 struct DataExportView: View {
@@ -62,11 +62,11 @@ extension DataExportView {
                 Text("All Metrics").tag(ExportScope.all)
                 ForEach(metrics) { metric in
                     Text(metric.name)
-                        .tag(ExportScope.metric(metric.name))
+                        .tag(ExportScope.metric(metric.persistentModelID))
                 }
                 ForEach(allProjects) { project in
                     Text("\(project.metric?.name ?? "") / \(project.name)")
-                        .tag(ExportScope.project(project.name))
+                        .tag(ExportScope.project(project.persistentModelID))
                 }
             }
             .pickerStyle(.inline)
@@ -134,10 +134,14 @@ extension DataExportView {
         switch scope {
         case .all:
             return sessions
-        case let .metric(name):
-            return sessions.filter { $0.metric?.name == name }
-        case let .project(name):
-            return sessions.filter { $0.project?.name == name }
+        case let .metric(id):
+            return sessions.filter {
+                $0.metric?.persistentModelID == id
+            }
+        case let .project(id):
+            return sessions.filter {
+                $0.project?.persistentModelID == id
+            }
         }
     }
 
