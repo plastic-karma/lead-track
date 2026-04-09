@@ -2,7 +2,7 @@ import Foundation
 
 enum DurationFormatter {
     static func format(_ interval: TimeInterval) -> String {
-        let totalSeconds = Int(interval)
+        let totalSeconds = max(Int(interval), 0)
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
         let seconds = totalSeconds % 60
