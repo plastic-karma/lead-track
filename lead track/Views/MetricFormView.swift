@@ -5,10 +5,17 @@ struct MetricFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    @Query private var existingMetrics: [Metric]
     @State private var name = ""
     @State private var icon = "clock"
     @State private var measurementType: MeasurementType = .duration
     @State private var unit = ""
+
+    private var nameIsDuplicate: Bool {
+        existingMetrics.contains {
+            $0.name.lowercased() == name.lowercased()
+        }
+    }
 
     private let iconOptions = [
         "clock", "book", "laptopcomputer",
@@ -19,7 +26,14 @@ struct MetricFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Name", text: $name)
+                Section {
+                    TextField("Name", text: $name)
+                    if nameIsDuplicate {
+                        Text("A metric with this name already exists.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
                 typePicker
                 iconPicker
             }
@@ -31,7 +45,7 @@ struct MetricFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(name.isEmpty)
+                        .disabled(name.isEmpty || nameIsDuplicate)
                 }
             }
         }

@@ -8,10 +8,23 @@ struct ProjectFormView: View {
     let metric: Metric
     @State private var name = ""
 
+    private var nameIsDuplicate: Bool {
+        metric.projects.contains {
+            $0.name.lowercased() == name.lowercased()
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Project Name", text: $name)
+                Section {
+                    TextField("Project Name", text: $name)
+                    if nameIsDuplicate {
+                        Text("A project with this name already exists.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
             }
             .navigationTitle("New Project")
             .navigationBarTitleDisplayMode(.inline)
@@ -21,7 +34,7 @@ struct ProjectFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(name.isEmpty)
+                        .disabled(name.isEmpty || nameIsDuplicate)
                 }
             }
         }
