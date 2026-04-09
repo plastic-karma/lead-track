@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		44DC0F785C341119F65F3C13 /* DurationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F77EFB378C1915227981BF /* DurationFormatterTests.swift */; };
+		62F24EBA9D2BF7273AD21179 /* CSVExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
@@ -48,6 +49,7 @@
 /* Begin PBXFileReference section */
 		034A5860D1A07B340E37FE9D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ValueFormatterTests.swift; sourceTree = "<group>"; };
+		507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CSVExporterTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -122,6 +124,7 @@
 				54F77EFB378C1915227981BF /* DurationFormatterTests.swift */,
 				6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */,
 				2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */,
+				507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */,
 			);
 			name = "lead trackTests";
 			path = "lead trackTests";
@@ -358,6 +361,7 @@
 				44DC0F785C341119F65F3C13 /* DurationFormatterTests.swift in Sources */,
 				D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */,
 				DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */,
+				62F24EBA9D2BF7273AD21179 /* CSVExporterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
