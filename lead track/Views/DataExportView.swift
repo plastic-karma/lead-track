@@ -191,7 +191,7 @@ extension DataExportView {
     }
 
     private func escape(_ text: String) -> String {
-        if text.contains(",") || text.contains("\"") {
+        if text.contains(",") || text.contains("\"") || text.contains("\n") {
             return "\"\(text.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
         return text
