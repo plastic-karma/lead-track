@@ -104,16 +104,24 @@ enum SessionStatistics {
     }
 
     static func longestStreak(from totals: [DailyTotal]) -> Int {
-        let dates = Set(
-            totals.map {
-                Calendar.current.startOfDay(for: $0.date)
+        let calendar = Calendar.current
+        let sorted = Set(
+            totals.map { calendar.startOfDay(for: $0.date) }
+        ).sorted()
+        guard !sorted.isEmpty else { return 0 }
+        var best = 1
+        var current = 1
+        for index in 1 ..< sorted.count {
+            let expected = calendar.date(
+                byAdding: .day, value: 1,
+                to: sorted[index - 1]
+            )
+            if sorted[index] == expected {
+                current += 1
+                best = max(best, current)
+            } else {
+                current = 1
             }
-        )
-        guard !dates.isEmpty else { return 0 }
-        var best = 0
-        for date in dates {
-            let streak = streakEndingAt(date, from: totals)
-            best = max(best, streak)
         }
         return best
     }
