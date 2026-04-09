@@ -191,10 +191,6 @@ extension MetricDetailView {
         }
     }
 
-    private func stopTimer() {
-        SessionService.stopSession(for: metric)
-    }
-
     private func deleteProjects(
         _ offsets: IndexSet,
         from projects: [Project]

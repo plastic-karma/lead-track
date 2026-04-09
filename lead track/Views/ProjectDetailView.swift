@@ -154,11 +154,6 @@ extension ProjectDetailView {
         }
     }
 
-    private func stopTimer() {
-        guard let metric = project.metric else { return }
-        SessionService.stopSession(for: metric)
-    }
-
     private func finishProject() {
         project.status = .finished
         project.finishedAt = .now
