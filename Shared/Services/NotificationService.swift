@@ -133,20 +133,23 @@ extension NotificationService {
     private static func weeklyReviewBody(
         metrics: [Metric]
     ) -> String {
-        let allSessions = metrics.flatMap(\.sessions)
+        let active = metrics.filter { hasRecentActivity($0) }
+        let durationSessions = active
+            .filter { $0.measurementType == .duration }
+            .flatMap(\.sessions)
             .filter { !$0.isRunning }
-        let totals = SessionStatistics.dailyTotals(
-            from: allSessions
+        let durationTotals = SessionStatistics.dailyTotals(
+            from: durationSessions
         )
-        let weekTotal = SessionStatistics.lastSevenDaysTotal(
-            from: totals
+        let weekDuration = SessionStatistics.lastSevenDaysTotal(
+            from: durationTotals
         )
-        let formatted = DurationFormatter.format(weekTotal)
-        let active = metrics.filter { metric in
-            hasRecentActivity(metric)
-        }.count
-        return "You tracked \(formatted) across "
-            + "\(active) metrics this week."
+        let formatted = DurationFormatter.format(weekDuration)
+        let sessionCount = active.flatMap(\.sessions)
+            .filter { !$0.isRunning }.count
+        return "You logged \(sessionCount) sessions "
+            + "(\(formatted) tracked time) across "
+            + "\(active.count) metrics this week."
     }
 
     private static func hasRecentActivity(
