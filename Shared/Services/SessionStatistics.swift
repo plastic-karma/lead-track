@@ -3,21 +3,40 @@ import Foundation
 struct DailyTotal: Identifiable {
     let date: Date
     let duration: TimeInterval
+    let sessionCount: Int
     var id: Date {
         date
+    }
+
+    init(
+        date: Date,
+        duration: TimeInterval,
+        sessionCount: Int = 0
+    ) {
+        self.date = date
+        self.duration = duration
+        self.sessionCount = sessionCount
     }
 }
 
 enum SessionStatistics {
     static func dailyTotals(from sessions: [Session]) -> [DailyTotal] {
         let calendar = Calendar.current
-        var grouped: [Date: TimeInterval] = [:]
+        var durations: [Date: TimeInterval] = [:]
+        var counts: [Date: Int] = [:]
         for session in sessions where !session.isRunning {
             let day = calendar.startOfDay(for: session.startedAt)
-            grouped[day, default: 0] += session.trackingValue
+            durations[day, default: 0] += session.trackingValue
+            counts[day, default: 0] += 1
         }
-        return grouped
-            .map { DailyTotal(date: $0.key, duration: $0.value) }
+        return durations
+            .map {
+                DailyTotal(
+                    date: $0.key,
+                    duration: $0.value,
+                    sessionCount: counts[$0.key] ?? 0
+                )
+            }
             .sorted { $0.date < $1.date }
     }
 
@@ -83,6 +102,59 @@ enum SessionStatistics {
         return totals
             .filter { $0.date >= week.start && $0.date < week.end }
             .reduce(0) { $0 + $1.duration }
+    }
+
+    static func totalSessions(from totals: [DailyTotal]) -> Int {
+        totals.reduce(0) { $0 + $1.sessionCount }
+    }
+
+    static func averageSessionsPerDay(
+        from totals: [DailyTotal]
+    ) -> Double {
+        guard let first = totals.first else { return 0 }
+        let dayCount = Calendar.current.dateComponents(
+            [.day],
+            from: first.date,
+            to: Calendar.current.startOfDay(for: .now)
+        ).day.map { max($0 + 1, 1) } ?? 1
+        return Double(totalSessions(from: totals)) / Double(dayCount)
+    }
+
+    static func recentAverageSessionsPerDay(
+        days: Int,
+        from totals: [DailyTotal]
+    ) -> Double {
+        guard let cutoff = Calendar.current.date(
+            byAdding: .day, value: -(days - 1),
+            to: Calendar.current.startOfDay(for: .now)
+        ) else { return 0 }
+        let count = totals
+            .filter { $0.date >= cutoff }
+            .reduce(0) { $0 + $1.sessionCount }
+        return Double(count) / Double(days)
+    }
+
+    static func averageSessionLength(
+        from totals: [DailyTotal]
+    ) -> TimeInterval {
+        let sessions = totalSessions(from: totals)
+        guard sessions > 0 else { return 0 }
+        return overallTotal(from: totals) / Double(sessions)
+    }
+
+    static func recentAverageSessionLength(
+        days: Int,
+        from totals: [DailyTotal]
+    ) -> TimeInterval {
+        guard let cutoff = Calendar.current.date(
+            byAdding: .day, value: -(days - 1),
+            to: Calendar.current.startOfDay(for: .now)
+        ) else { return 0 }
+        let recent = totals.filter { $0.date >= cutoff }
+        let sessions = recent.reduce(0) { $0 + $1.sessionCount }
+        guard sessions > 0 else { return 0 }
+        let total = recent.reduce(0) { $0 + $1.duration }
+        return total / Double(sessions)
     }
 
     static func currentStreak(from totals: [DailyTotal]) -> Int {

@@ -15,6 +15,7 @@ struct DetailedStatisticsView: View {
                 Section { chart }
                 goalsSection
                 Section("Metrics") { durationGrid }
+                Section("Sessions") { sessionsGrid }
                 Section("Streaks") { streakGrid }
             }
             .navigationTitle("Statistics")
@@ -171,6 +172,46 @@ extension DetailedStatisticsView {
             }
         }
     }
+
+    private var sessionsGrid: some View {
+        Grid(horizontalSpacing: 16, verticalSpacing: 12) {
+            GridRow {
+                countItem(
+                    "Total",
+                    SessionStatistics.totalSessions(from: dailyTotals)
+                )
+                rateItem(
+                    "Per Day",
+                    SessionStatistics.averageSessionsPerDay(
+                        from: dailyTotals
+                    )
+                )
+            }
+            GridRow {
+                rateItem(
+                    "5-Day / Day",
+                    SessionStatistics.recentAverageSessionsPerDay(
+                        days: 5, from: dailyTotals
+                    )
+                )
+            }
+            Divider()
+            GridRow {
+                statItem(
+                    "Avg Length",
+                    SessionStatistics.averageSessionLength(
+                        from: dailyTotals
+                    )
+                )
+                statItem(
+                    "5-Day Avg Length",
+                    SessionStatistics.recentAverageSessionLength(
+                        days: 5, from: dailyTotals
+                    )
+                )
+            }
+        }
+    }
 }
 
 // MARK: - Helpers
@@ -213,6 +254,35 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("\(days)d")
+                .font(.headline)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func countItem(
+        _ title: String,
+        _ count: Int
+    ) -> some View {
+        valueItem(title, "\(count)")
+    }
+
+    private func rateItem(
+        _ title: String,
+        _ rate: Double
+    ) -> some View {
+        valueItem(title, String(format: "%.1f", rate))
+    }
+
+    private func valueItem(
+        _ title: String,
+        _ text: String
+    ) -> some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(text)
                 .font(.headline)
                 .monospacedDigit()
         }
