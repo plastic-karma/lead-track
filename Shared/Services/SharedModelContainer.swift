@@ -16,7 +16,26 @@ enum SharedModelContainer {
             url: storeURL,
             allowsSave: true
         )
-        return try ModelContainer(for: schema, configurations: [config])
+        let container = try ModelContainer(
+            for: schema, configurations: [config]
+        )
+        try backfillMetricStableIDs(in: container)
+        return container
+    }
+
+    private static func backfillMetricStableIDs(
+        in container: ModelContainer
+    ) throws {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<Metric>(
+            predicate: #Predicate { $0.stableID == nil }
+        )
+        let metrics = try context.fetch(descriptor)
+        guard !metrics.isEmpty else { return }
+        for metric in metrics {
+            metric.stableID = UUID()
+        }
+        try context.save()
     }
 
     private static var storeURL: URL {

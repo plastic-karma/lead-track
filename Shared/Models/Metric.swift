@@ -4,7 +4,7 @@ import SwiftData
 @Model
 final class Metric {
     #Unique<Metric>([\.stableID])
-    var stableID: UUID
+    var stableID: UUID?
     var name: String
     var measurementType: MeasurementType
     var unit: String?
