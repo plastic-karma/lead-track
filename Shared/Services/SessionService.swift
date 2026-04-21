@@ -59,6 +59,25 @@ enum SessionService {
         return session
     }
 
+    @discardableResult
+    static func logDuration(
+        _ duration: TimeInterval,
+        startedAt: Date,
+        for metric: Metric,
+        project: Project? = nil,
+        in context: ModelContext
+    ) -> Session {
+        let session = Session(
+            metric: metric,
+            project: project,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(duration)
+        )
+        context.insert(session)
+        rescheduleNotifications(for: metric)
+        return session
+    }
+
     static func stopSession(for metric: Metric) {
         guard let running = activeSession(for: metric) else { return }
         running.endedAt = .now

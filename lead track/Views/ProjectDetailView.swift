@@ -8,6 +8,7 @@ struct ProjectDetailView: View {
     @Query private var sessions: [Session]
     @State private var showingDetailedStats = false
     @State private var showingCountEntry = false
+    @State private var showingDurationEntry = false
 
     init(project: Project) {
         self.project = project
@@ -65,6 +66,14 @@ struct ProjectDetailView: View {
                 )
             }
         }
+        .sheet(isPresented: $showingDurationEntry) {
+            if let metric = project.metric {
+                DurationEntryView(
+                    metric: metric,
+                    project: project
+                )
+            }
+        }
         .navigationTitle(project.name)
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
@@ -98,6 +107,11 @@ extension ProjectDetailView {
             } else if project.status == .active {
                 Button { startTimer() } label: {
                     Label("Start Timer", systemImage: "play.fill")
+                }
+            }
+            if project.status == .active {
+                Button { showingDurationEntry = true } label: {
+                    Label("Log Manually", systemImage: "plus.circle")
                 }
             }
         }

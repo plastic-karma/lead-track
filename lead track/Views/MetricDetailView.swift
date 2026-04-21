@@ -9,6 +9,7 @@ struct MetricDetailView: View {
     @State private var showingDetailedStats = false
     @State private var showingGoalSettings = false
     @State private var showingCountEntry = false
+    @State private var showingDurationEntry = false
 
     init(metric: Metric) {
         self.metric = metric
@@ -97,6 +98,9 @@ struct MetricDetailView: View {
         .sheet(isPresented: $showingCountEntry) {
             CountEntryView(metric: metric, project: nil)
         }
+        .sheet(isPresented: $showingDurationEntry) {
+            DurationEntryView(metric: metric, project: nil)
+        }
     }
 }
 
@@ -123,6 +127,9 @@ extension MetricDetailView {
                 Button { startTimer() } label: {
                     Label("Start Timer", systemImage: "play.fill")
                 }
+            }
+            Button { showingDurationEntry = true } label: {
+                Label("Log Manually", systemImage: "plus.circle")
             }
         }
     }
