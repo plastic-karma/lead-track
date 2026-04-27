@@ -16,6 +16,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		89593D9D2FA017B600A16861 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 89AF8B542F723550005F7ED1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 89AF8B5B2F723550005F7ED1;
+			remoteInfo = "lead track";
+		};
 		89AF8CAB2F800000005F7ED1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 89AF8B542F723550005F7ED1 /* Project object */;
@@ -52,9 +59,10 @@
 		507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CSVExporterTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
+		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "lead trackTests.xctest"; path = lead_trackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -68,17 +76,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		89593D982FA017B600A16861 /* lead trackUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "lead trackUITests";
+			sourceTree = "<group>";
+		};
 		89AF8B5E2F723550005F7ED1 /* lead track */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = "lead track";
 			sourceTree = "<group>";
 		};
 		89AF8BA02F723700005F7ED1 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -93,6 +102,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		89593D942FA017B600A16861 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		89AF8B592F723550005F7ED1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -126,7 +142,6 @@
 				2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */,
 				507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */,
 			);
-			name = "lead trackTests";
 			path = "lead trackTests";
 			sourceTree = "<group>";
 		};
@@ -144,6 +159,7 @@
 				89AF8BA02F723700005F7ED1 /* Shared */,
 				89AF8B5E2F723550005F7ED1 /* lead track */,
 				89AF8CA22F800000005F7ED1 /* lead-track Widget */,
+				89593D982FA017B600A16861 /* lead trackUITests */,
 				89AF8B5D2F723550005F7ED1 /* Products */,
 				8A52529E3C17535377F2910D /* Frameworks */,
 				272F28F9F5B85BC1EA789E71 /* lead trackTests */,
@@ -156,6 +172,7 @@
 				89AF8B5C2F723550005F7ED1 /* lead track.app */,
 				89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */,
 				9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */,
+				89593D972FA017B600A16861 /* lead trackUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -188,6 +205,29 @@
 			productName = "lead trackTests";
 			productReference = 9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		89593D962FA017B600A16861 /* lead trackUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 89593DA12FA017B600A16861 /* Build configuration list for PBXNativeTarget "lead trackUITests" */;
+			buildPhases = (
+				89593D932FA017B600A16861 /* Sources */,
+				89593D942FA017B600A16861 /* Frameworks */,
+				89593D952FA017B600A16861 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				89593D9E2FA017B600A16861 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				89593D982FA017B600A16861 /* lead trackUITests */,
+			);
+			name = "lead trackUITests";
+			packageProductDependencies = (
+			);
+			productName = "lead trackUITests";
+			productReference = 89593D972FA017B600A16861 /* lead trackUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		89AF8B5B2F723550005F7ED1 /* lead track */ = {
 			isa = PBXNativeTarget;
@@ -245,6 +285,10 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					89593D962FA017B600A16861 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 89AF8B5B2F723550005F7ED1;
+					};
 					89AF8B5B2F723550005F7ED1 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -270,11 +314,19 @@
 				89AF8B5B2F723550005F7ED1 /* lead track */,
 				89AF8CA02F800000005F7ED1 /* lead-track Widget */,
 				4BDEF37C1A4175A7CBCADD3F /* lead trackTests */,
+				89593D962FA017B600A16861 /* lead trackUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		89593D952FA017B600A16861 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		89AF8B5A2F723550005F7ED1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -340,6 +392,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		89593D932FA017B600A16861 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		89AF8B582F723550005F7ED1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -368,6 +427,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		89593D9E2FA017B600A16861 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 89AF8B5B2F723550005F7ED1 /* lead track */;
+			targetProxy = 89593D9D2FA017B600A16861 /* PBXContainerItemProxy */;
+		};
 		89AF8CAC2F800000005F7ED1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 89AF8CA02F800000005F7ED1 /* lead-track Widget */;
@@ -397,6 +461,48 @@
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/lead track.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/lead track";
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		89593D9F2FA017B600A16861 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-trackUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "lead track";
+			};
+			name = Debug;
+		};
+		89593DA02FA017B600A16861 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-trackUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "lead track";
 			};
 			name = Release;
 		};
@@ -677,6 +783,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		89593DA12FA017B600A16861 /* Build configuration list for PBXNativeTarget "lead trackUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89593D9F2FA017B600A16861 /* Debug */,
+				89593DA02FA017B600A16861 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		89AF8B572F723550005F7ED1 /* Build configuration list for PBXProject "lead track" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

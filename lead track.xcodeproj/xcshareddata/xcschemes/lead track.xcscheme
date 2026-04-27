@@ -29,7 +29,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4BDEF37C1A4175A7CBCADD3F"
-               BuildableName = "lead trackTests.xctest"
+               BuildableName = "lead_trackTests.xctest"
                BlueprintName = "lead trackTests"
                ReferencedContainer = "container:lead track.xcodeproj">
             </BuildableReference>
@@ -47,8 +47,19 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4BDEF37C1A4175A7CBCADD3F"
-               BuildableName = "lead trackTests.xctest"
+               BuildableName = "lead_trackTests.xctest"
                BlueprintName = "lead trackTests"
+               ReferencedContainer = "container:lead track.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "89593D962FA017B600A16861"
+               BuildableName = "lead trackUITests.xctest"
+               BlueprintName = "lead trackUITests"
                ReferencedContainer = "container:lead track.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -71,6 +82,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "89AF8B5B2F723550005F7ED1"
+            BuildableName = "lead track.app"
+            BlueprintName = "lead track"
+            ReferencedContainer = "container:lead track.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
