@@ -9,6 +9,7 @@ struct MetricListView: View {
     @State private var showingAddSheet = false
     @State private var showingWeeklyReview = false
     @State private var showingExport = false
+    @State private var showingSettings = false
 
     var body: some View {
         List {
@@ -23,6 +24,9 @@ struct MetricListView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Menu {
+                    Button { showingSettings = true } label: {
+                        Label("Settings", systemImage: "gear")
+                    }
                     Button { showingWeeklyReview = true } label: {
                         Label(
                             "Weekly Review",
@@ -56,6 +60,9 @@ struct MetricListView: View {
         }
         .sheet(isPresented: $showingExport) {
             DataExportView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            AppSettingsView()
         }
         .overlay {
             if metrics.isEmpty {
