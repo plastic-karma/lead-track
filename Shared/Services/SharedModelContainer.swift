@@ -5,21 +5,32 @@ enum SharedModelContainer {
     private static let groupID = "group.plastickarma.lead-track"
     private static let storeName = "lead-track.store"
 
-    static func create() throws -> ModelContainer {
+    static func create(inMemoryOnly: Bool = false) throws -> ModelContainer {
         let schema = Schema([
             Metric.self,
             Project.self,
             Session.self
         ])
-        let config = ModelConfiguration(
-            schema: schema,
-            url: storeURL,
-            allowsSave: true
-        )
+        let config: ModelConfiguration
+        if inMemoryOnly {
+            config = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: true,
+                allowsSave: true
+            )
+        } else {
+            config = ModelConfiguration(
+                schema: schema,
+                url: storeURL,
+                allowsSave: true
+            )
+        }
         let container = try ModelContainer(
             for: schema, configurations: [config]
         )
-        try backfillMetricStableIDs(in: container)
+        if !inMemoryOnly {
+            try backfillMetricStableIDs(in: container)
+        }
         return container
     }
 
