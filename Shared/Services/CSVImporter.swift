@@ -60,8 +60,11 @@ enum CSVImporter {
     }
 
     static func parseRows(_ text: String) -> [[String]] {
+        let normalized = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
         var parser = RowParser()
-        for char in text {
+        for char in normalized {
             parser.feed(char)
         }
         return parser.finish()
@@ -184,8 +187,6 @@ private struct RowParser {
             rows.append(row)
             row = []
             field = ""
-        case "\r":
-            break
         default:
             field.append(char)
         }

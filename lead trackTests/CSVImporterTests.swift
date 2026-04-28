@@ -2,6 +2,8 @@ import Testing
 @testable import lead_track
 
 struct CSVImporterTests {
+    // MARK: - Row Parsing
+
     @Test
     func parseRowsSplitsBasicCSV() {
         let rows = CSVImporter.parseRows("a,b,c\n1,2,3")
@@ -29,8 +31,37 @@ struct CSVImporterTests {
     }
 
     @Test
-    func parseRowsIgnoresCarriageReturn() {
+    func parseRowsNormalizesCRLF() {
         let rows = CSVImporter.parseRows("a,b\r\n1,2\r\n")
         #expect(rows == [["a", "b"], ["1", "2"]])
+    }
+
+    @Test
+    func parseRowsTrailingFieldWithoutNewline() {
+        let rows = CSVImporter.parseRows("a,b,c")
+        #expect(rows == [["a", "b", "c"]])
+    }
+
+    // MARK: - Header
+
+    @Test
+    func headerConstantIsExpected() {
+        #expect(
+            CSVImporter.expectedHeader
+                == "Metric,Project,Date,Start,End,Duration (s),Value,Type"
+        )
+    }
+
+    @Test
+    func validHeaderRecognized() {
+        let fields = CSVImporter.expectedHeader
+            .split(separator: ",")
+            .map(String.init)
+        #expect(CSVImporter.isValidHeader(fields))
+    }
+
+    @Test
+    func invalidHeaderRejected() {
+        #expect(!CSVImporter.isValidHeader(["foo", "bar"]))
     }
 }
