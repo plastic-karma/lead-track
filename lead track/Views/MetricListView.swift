@@ -9,6 +9,7 @@ struct MetricListView: View {
     @State private var showingAddSheet = false
     @State private var showingWeeklyReview = false
     @State private var showingExport = false
+    @State private var showingImport = false
     @State private var showingSettings = false
 
     var body: some View {
@@ -39,6 +40,12 @@ struct MetricListView: View {
                             systemImage: "square.and.arrow.up"
                         )
                     }
+                    Button { showingImport = true } label: {
+                        Label(
+                            "Import Data",
+                            systemImage: "square.and.arrow.down"
+                        )
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -60,6 +67,9 @@ struct MetricListView: View {
         }
         .sheet(isPresented: $showingExport) {
             DataExportView()
+        }
+        .sheet(isPresented: $showingImport) {
+            DataImportView()
         }
         .sheet(isPresented: $showingSettings) {
             AppSettingsView()
