@@ -113,6 +113,8 @@ extension ScoreboardProvider {
 struct ScoreboardWidgetView: View {
     let entry: ScoreboardEntry
     @Environment(\.widgetFamily) var family
+    @ScaledMetric(relativeTo: .caption2) private var ringLabelSize: CGFloat = 10
+    @ScaledMetric(relativeTo: .caption2) private var streakIconSize: CGFloat = 11
 
     var body: some View {
         if entry.metrics.isEmpty {
@@ -201,7 +203,7 @@ extension ScoreboardWidgetView {
         let color: Color = current >= goal ? .green : .orange
         return ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 3)
+                .stroke(Color(.systemGray5), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(
@@ -212,7 +214,7 @@ extension ScoreboardWidgetView {
                 )
                 .rotationEffect(.degrees(-90))
             Text(label)
-                .font(.system(size: 10).bold())
+                .font(.system(size: ringLabelSize).bold())
                 .foregroundStyle(color)
         }
         .frame(width: 26, height: 26)
@@ -221,7 +223,7 @@ extension ScoreboardWidgetView {
     private func streakBadge(_ days: Int) -> some View {
         HStack(spacing: 2) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 11))
+                .font(.system(size: streakIconSize))
             Text("\(days)")
                 .font(.caption.bold())
                 .monospacedDigit()

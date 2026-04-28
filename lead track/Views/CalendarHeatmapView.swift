@@ -50,7 +50,7 @@ extension CalendarHeatmapView {
         VStack(spacing: Self.spacing) {
             ForEach(0 ..< 7, id: \.self) { weekday in
                 Text(weekdayLabel(weekday))
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                     .frame(width: 14, height: Self.cellSize)
             }
@@ -83,8 +83,8 @@ extension CalendarHeatmapView {
 
     private func legendFill(_ opacity: Double) -> Color {
         opacity == 0
-            ? Color.gray.opacity(0.15)
-            : Color.orange.opacity(0.25 + 0.75 * opacity)
+            ? Color(.systemGray5)
+            : Color.accentColor.opacity(0.25 + 0.75 * opacity)
     }
 }
 
@@ -126,10 +126,10 @@ extension CalendarHeatmapView {
         }
         let value = totalsByDay[date] ?? 0
         guard maxValue > 0, value > 0 else {
-            return Color.gray.opacity(0.15)
+            return Color(.systemGray5)
         }
         let intensity = value / maxValue
-        return Color.orange.opacity(0.25 + 0.75 * intensity)
+        return Color.accentColor.opacity(0.25 + 0.75 * intensity)
     }
 
     private func weekdayLabel(_ weekday: Int) -> String {

@@ -61,18 +61,27 @@ struct MetricListView: View {
         }
         .sheet(isPresented: $showingAddSheet) {
             MetricFormView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingWeeklyReview) {
             WeeklyReviewView()
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingExport) {
             DataExportView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingImport) {
             DataImportView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingSettings) {
             AppSettingsView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .overlay {
             if metrics.isEmpty {
