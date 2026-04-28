@@ -13,6 +13,9 @@ struct DetailedStatisticsView: View {
         NavigationStack {
             List {
                 Section { chart }
+                Section("Activity") {
+                    CalendarHeatmapView(dailyTotals: dailyTotals)
+                }
                 goalsSection
                 Section("Metrics") { durationGrid }
                 Section("Sessions") { sessionsGrid }
