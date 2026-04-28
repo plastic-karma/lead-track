@@ -6,6 +6,7 @@ struct CountEntryView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var valueText = ""
+    @State private var saveTrigger = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -36,6 +37,7 @@ struct CountEntryView: View {
                 }
             }
             .onAppear { isFocused = true }
+            .sensoryFeedback(.success, trigger: saveTrigger)
         }
     }
 
@@ -51,6 +53,7 @@ struct CountEntryView: View {
             project: project,
             in: modelContext
         )
+        saveTrigger.toggle()
         dismiss()
     }
 }

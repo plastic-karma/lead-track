@@ -12,6 +12,7 @@ struct GoalSettingsView: View {
     @State private var reminderTime: Date
     @State private var hasStreakAlert: Bool
     @State private var streakAlertTime: Date
+    @State private var saveTrigger = false
 
     init(metric: Metric) {
         self.metric = metric
@@ -64,6 +65,7 @@ struct GoalSettingsView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .sensoryFeedback(.success, trigger: saveTrigger)
         }
     }
 }
@@ -192,6 +194,7 @@ extension GoalSettingsView {
         metric.streakAlertTime = hasStreakAlert
             ? streakAlertTime : nil
         NotificationService.rescheduleMetric(metric)
+        saveTrigger.toggle()
         dismiss()
     }
 

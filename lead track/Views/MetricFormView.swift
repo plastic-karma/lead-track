@@ -10,6 +10,7 @@ struct MetricFormView: View {
     @State private var icon = "clock"
     @State private var measurementType: MeasurementType = .duration
     @State private var unit = ""
+    @State private var saveTrigger = false
 
     private var nameIsDuplicate: Bool {
         existingMetrics.contains {
@@ -48,6 +49,7 @@ struct MetricFormView: View {
                         .disabled(name.isEmpty || nameIsDuplicate)
                 }
             }
+            .sensoryFeedback(.success, trigger: saveTrigger)
         }
     }
 
@@ -109,6 +111,7 @@ struct MetricFormView: View {
             icon: icon
         )
         modelContext.insert(metric)
+        saveTrigger.toggle()
         dismiss()
     }
 }
