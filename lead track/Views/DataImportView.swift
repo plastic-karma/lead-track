@@ -45,9 +45,9 @@ extension DataImportView {
     private var introSection: some View {
         Section {
             Text(
-                "Import sessions from a CSV file produced by " +
-                    "lead-track export. Missing metrics or projects " +
-                    "will be created automatically."
+                "Import sessions from a CSV file produced by "
+                    + "lead-track export. Missing metrics or projects "
+                    + "will be created automatically."
             )
             .font(.caption)
             .foregroundStyle(.secondary)

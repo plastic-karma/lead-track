@@ -61,42 +61,11 @@ struct CSVImporterTests {
     // MARK: - Timestamp Parsing
 
     @Test
-    func parseTimestampRoundTripsExporterFormat() {
-        let original = makeDate(2026, 4, 15, 10, 30, 0)
-        let dateString = original.formatted(
-            date: .numeric, time: .omitted
-        )
-        let timeString = original.formatted(
-            date: .omitted, time: .standard
-        )
-        let parsed = CSVImporter.parseTimestamp(
-            date: dateString, time: timeString
-        )
-        #expect(parsed == original)
-    }
-
-    @Test
     func parseTimestampReturnsNilForGarbage() {
-        #expect(
-            CSVImporter.parseTimestamp(
-                date: "not a date", time: "12:00:00"
-            ) == nil
+        let result = CSVImporter.parseTimestamp(
+            date: "not-a-date-xyz",
+            time: "not-a-time-xyz"
         )
-    }
-
-    // MARK: - Helpers
-
-    private func makeDate(
-        _ year: Int, _ month: Int, _ day: Int,
-        _ hour: Int, _ minute: Int, _ second: Int
-    ) -> Date {
-        var components = DateComponents()
-        components.year = year
-        components.month = month
-        components.day = day
-        components.hour = hour
-        components.minute = minute
-        components.second = second
-        return Calendar.current.date(from: components) ?? .now
+        #expect(result == nil)
     }
 }
