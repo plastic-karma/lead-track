@@ -27,4 +27,16 @@ struct CSVImporterTests {
         let rows = CSVImporter.parseRows("\"line1\nline2\",x")
         #expect(rows == [["line1\nline2", "x"]])
     }
+
+    @Test
+    func parseRowsIgnoresCarriageReturn() {
+        let rows = CSVImporter.parseRows("a,b\r\n1,2\r\n")
+        #expect(rows == [["a", "b"], ["1", "2"]])
+    }
+
+    @Test
+    func parseRowsTrailingFieldWithoutNewline() {
+        let rows = CSVImporter.parseRows("a,b,c")
+        #expect(rows == [["a", "b", "c"]])
+    }
 }
