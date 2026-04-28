@@ -101,6 +101,15 @@ struct MetricDetailView: View {
         .sheet(isPresented: $showingDurationEntry) {
             DurationEntryView(metric: metric, project: nil)
         }
+        .sensoryFeedback(trigger: activeSession != nil) { wasActive, isActive in
+            if !wasActive, isActive {
+                .impact(weight: .medium)
+            } else if wasActive, !isActive {
+                .success
+            } else {
+                nil
+            }
+        }
     }
 }
 

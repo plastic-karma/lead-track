@@ -36,7 +36,7 @@ struct GoalProgressView: View {
     private var progressRing: some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+                .stroke(Color(.systemGray5), lineWidth: 4)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(

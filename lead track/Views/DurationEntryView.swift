@@ -8,6 +8,7 @@ struct DurationEntryView: View {
     @State private var hours = 0
     @State private var minutes = 30
     @State private var startedAt = Date.now
+    @State private var saveTrigger = false
 
     var body: some View {
         NavigationStack {
@@ -42,6 +43,7 @@ struct DurationEntryView: View {
                         .disabled(duration == 0)
                 }
             }
+            .sensoryFeedback(.success, trigger: saveTrigger)
         }
     }
 
@@ -58,6 +60,7 @@ struct DurationEntryView: View {
             project: project,
             in: modelContext
         )
+        saveTrigger.toggle()
         dismiss()
     }
 }
