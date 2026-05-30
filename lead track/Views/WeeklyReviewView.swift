@@ -13,10 +13,18 @@ struct WeeklyReviewView: View {
         ) ?? .now
     }
 
+    private var previousPeriodStart: Date {
+        Calendar.current.date(
+            byAdding: .day, value: -13,
+            to: Calendar.current.startOfDay(for: .now)
+        ) ?? .now
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 overviewSection
+                highlightsSection
                 metricsSection
             }
             .navigationTitle("Weekly Review")
@@ -107,6 +115,52 @@ extension WeeklyReviewView {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+// MARK: - Highlights
+
+extension WeeklyReviewView {
+    @ViewBuilder
+    private var highlightsSection: some View {
+        let insights = allInsights
+        if !insights.isEmpty {
+            Section("Highlights") {
+                ForEach(Array(insights.enumerated()), id: \.offset) { _, insight in
+                    insightRow(insight)
+                }
+            }
+        }
+    }
+
+    private func insightRow(_ insight: Insight) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: insight.symbol)
+                .foregroundStyle(.orange)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(insight.headline)
+                    .font(.subheadline)
+                Text(insight.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var allInsights: [Insight] {
+        let perMetric = metrics.map { metric in
+            InsightGenerator.generate(
+                for: metric,
+                currentStart: periodStart,
+                previousStart: previousPeriodStart
+            )
+        }
+        return InsightGenerator.cap(perMetric: perMetric, to: maxHighlights)
+    }
+
+    private var maxHighlights: Int {
+        6
     }
 }
 
