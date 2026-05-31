@@ -20,6 +20,21 @@ xcodebuild -project "lead track.xcodeproj" -scheme "lead track" -destination 'pl
 
 No external dependencies — uses only Apple frameworks (SwiftUI, SwiftData, Foundation).
 
+### Validating builds from a non-Mac machine
+
+The `xcodebuild` commands above require macOS. From Linux/Windows there is no local build path, so validate via GitHub Actions (`.github/workflows/ios.yml`, runs on `macos-latest`), which lints, builds, and tests. A green run confirms the app compiles.
+
+```bash
+# On-demand: trigger CI for the current pushed branch (no PR needed; requires workflow_dispatch)
+git push -u origin HEAD
+gh workflow run ios.yml --ref "$(git branch --show-current)"
+gh run watch --exit-status \
+  "$(gh run list --workflow=ios.yml --branch "$(git branch --show-current)" --limit 1 --json databaseId --jq '.[0].databaseId')"
+
+# Or open a PR, which triggers the same workflow automatically:
+gh pr create --fill && gh pr checks --watch
+```
+
 ## Architecture
 
 - **Data layer**: SwiftData with `@Model` classes (see `lead track/Item.swift`)
