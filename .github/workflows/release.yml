@@ -16,10 +16,12 @@
 #   APP_STORE_CONNECT_API_KEY_ID      Key ID, e.g. 2X9R4HXF34
 #   APP_STORE_CONNECT_API_ISSUER_ID   Issuer ID (a UUID)
 #   APP_STORE_CONNECT_API_KEY         Full text of the AuthKey_<KEYID>.p8 file
-# The API key needs the "App Manager" (or "Admin") role so Xcode can create the
-# distribution certificate and provisioning profiles. The app + widget bundle
-# IDs (plastickarma.lead-track, plastickarma.lead-track.widget) must already
-# exist in App Store Connect.
+# The API key MUST have the "Admin" role. Creating the Apple *Distribution*
+# certificate via cloud signing requires Admin; an "App Manager"/"Developer" key
+# can do development signing (so the Archive step succeeds) but fails Export with
+# "Cloud signing permission error". The app + widget bundle IDs
+# (plastickarma.lead-track, plastickarma.lead-track.widget) must already exist in
+# App Store Connect.
 
 name: Release IPA
 
@@ -129,6 +131,8 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
           set -euo pipefail
+          LOG="$RUNNER_TEMP/export.log"
+          : > "$LOG"
           export_ipa () {
             xcodebuild -exportArchive \
               -archivePath "$ARCHIVE_PATH" \
@@ -137,13 +141,21 @@ jobs:
               -allowProvisioningUpdates \
               -authenticationKeyPath "$API_KEY_PATH" \
               -authenticationKeyID "$KEY_ID" \
-              -authenticationKeyIssuerID "$ISSUER_ID"
+              -authenticationKeyIssuerID "$ISSUER_ID" 2>&1 | tee -a "$LOG"
+            return "${PIPESTATUS[0]}"
           }
+          ok=0
           if ! export_ipa "ExportOptions.plist"; then
             echo "::warning::export with method 'app-store-connect' failed; retrying with legacy 'app-store'"
             sed 's/app-store-connect/app-store/' ExportOptions.plist > "$RUNNER_TEMP/ExportOptions-legacy.plist"
             rm -rf "$EXPORT_DIR"
-            export_ipa "$RUNNER_TEMP/ExportOptions-legacy.plist"
+            export_ipa "$RUNNER_TEMP/ExportOptions-legacy.plist" || ok=1
+          fi
+          if [ "$ok" -ne 0 ]; then
+            if grep -q "Cloud signing permission error" "$LOG"; then
+              echo "::error::Export hit 'Cloud signing permission error'. The App Store Connect API key must have the **Admin** role so Xcode can create the Apple Distribution certificate via cloud signing. An App Manager/Developer key only does development signing (the Archive step still succeeds). Recreate the key with the Admin role, update the APP_STORE_CONNECT_API_* secrets, and re-run. See docs/RELEASE.md."
+            fi
+            exit 1
           fi
           shopt -s nullglob
           ipas=("$EXPORT_DIR"/*.ipa)

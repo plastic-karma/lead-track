@@ -13,8 +13,12 @@ profiles automatically for both the app and its widget extension.
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access**
    → **Integrations** → **App Store Connect API** (Team Keys).
-2. Create a key with the **App Manager** (or **Admin**) role — it must be allowed to
-   manage signing assets. Note the **Key ID** and the **Issuer ID** shown on the page.
+2. Create a key with the **Admin** role. This is required: exporting an App Store
+   build makes Xcode create the **Apple Distribution** certificate via cloud
+   signing, and only an Admin-role key may do that. An App Manager/Developer key
+   can do *development* signing (so the archive step succeeds) but the export then
+   fails with `Cloud signing permission error`. Note the **Key ID** and the
+   **Issuer ID** shown on the page.
 3. Download the `AuthKey_<KEYID>.p8` file. **You can only download it once.**
 4. Make sure the app and widget bundle IDs already exist under **Certificates,
    Identifiers & Profiles → Identifiers**:
@@ -74,3 +78,11 @@ processing.
   falls back to the legacy `app-store` value automatically on older Xcode.
 - This is independent of [`ios.yml`](../.github/workflows/ios.yml), which lints,
   builds, and tests every push/PR. `release.yml` only runs on demand or on `v*` tags.
+
+## Troubleshooting
+
+- **`Cloud signing permission error` / `No profiles for '…' were found` during
+  Export** (the Archive step succeeded first): the API key is not an **Admin** key.
+  Creating the Apple Distribution certificate via cloud signing requires the Admin
+  role. Generate a new Admin key, update the `APP_STORE_CONNECT_API_*` secrets, and
+  re-run. (You can't elevate an existing key's role — make a new one.)
