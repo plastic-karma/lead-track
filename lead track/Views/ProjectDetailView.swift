@@ -40,6 +40,7 @@ struct ProjectDetailView: View {
                 unit: project.metric?.unit,
                 dailyGoal: nil,
                 weeklyGoal: nil,
+                excludedWeekdays: [],
                 showingDetailedStats: $showingDetailedStats
             )
             statusSection
@@ -55,7 +56,8 @@ struct ProjectDetailView: View {
                 measurementType: project.metric?.measurementType ?? .duration,
                 unit: project.metric?.unit,
                 dailyGoal: nil,
-                weeklyGoal: nil
+                weeklyGoal: nil,
+                excludedWeekdays: []
             )
         }
         .sheet(isPresented: $showingCountEntry) {

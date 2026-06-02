@@ -53,6 +53,7 @@ struct MetricDetailView: View {
                 unit: metric.unit,
                 dailyGoal: metric.dailyGoal,
                 weeklyGoal: metric.weeklyGoal,
+                excludedWeekdays: metric.excludedWeekdays,
                 showingDetailedStats: $showingDetailedStats
             )
             if !activeProjects.isEmpty {
@@ -89,7 +90,8 @@ struct MetricDetailView: View {
                 measurementType: metric.measurementType,
                 unit: metric.unit,
                 dailyGoal: metric.dailyGoal,
-                weeklyGoal: metric.weeklyGoal
+                weeklyGoal: metric.weeklyGoal,
+                excludedWeekdays: metric.excludedWeekdays
             )
         }
         .sheet(isPresented: $showingGoalSettings) {

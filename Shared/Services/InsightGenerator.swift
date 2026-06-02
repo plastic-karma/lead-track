@@ -175,7 +175,9 @@ private extension InsightGenerator {
         sessions: [Session]
     ) -> Insight? {
         let totals = SessionStatistics.dailyTotals(from: sessions)
-        let streak = SessionStatistics.currentStreak(from: totals)
+        let streak = SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: metric.excludedWeekdaySet
+        )
         guard streak >= minStreakDays else { return nil }
         return .currentStreak(metricName: metric.name, days: streak)
     }
