@@ -1,14 +1,17 @@
-# Builds a signed, App Store-ready .ipa and publishes it for download.
+# Builds a signed, App Store-ready .ipa, publishes it for download, and can
+# upload it straight to TestFlight.
 #
 # Two ways to run it:
-#   * Actions tab -> "Release IPA" -> Run workflow      (download the artifact)
+#   * Actions tab -> "Release IPA" -> Run workflow. Tick "publish_testflight"
+#     to send the build to TestFlight; otherwise you just get the artifact.
 #   * push a tag:  git tag v1.2.0 && git push origin v1.2.0
-#                                                       (artifact + GitHub Release)
+#     (always: artifact + GitHub Release + TestFlight upload)
 #
 # The .ipa is uploaded as a workflow artifact ("lead-track-ipa") and, for tag
-# builds, attached to a GitHub Release. Download it, then upload to Apple via
-# Transporter, Xcode Organizer, or `xcrun altool --upload-app` (see the run
-# summary / docs/RELEASE.md).
+# builds, attached to a GitHub Release. When publishing, it is uploaded to App
+# Store Connect via `xcrun altool` and appears in TestFlight after processing.
+# To install on a device, use the TestFlight app (App Store distribution builds
+# cannot be sideloaded directly). See docs/RELEASE.md.
 #
 # One-time setup — add these repository secrets
 # (Settings -> Secrets and variables -> Actions). See docs/RELEASE.md for how
@@ -32,6 +35,11 @@ on:
         description: "Marketing version override, e.g. 1.2.0 (blank = keep project value)"
         required: false
         type: string
+      publish_testflight:
+        description: "Upload the build to TestFlight after exporting"
+        required: false
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -174,6 +182,33 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload to TestFlight
+        # Runs when dispatched with publish_testflight=true, or on any v* tag push.
+        if: ${{ inputs.publish_testflight || startsWith(github.ref, 'refs/tags/') }}
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          # altool locates the key by name under ~/.appstoreconnect/private_keys.
+          KEYS_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEYS_DIR"
+          cp "$API_KEY_PATH" "$KEYS_DIR/AuthKey_${KEY_ID}.p8"
+          trap 'rm -f "$KEYS_DIR/AuthKey_${KEY_ID}.p8"' EXIT
+          echo "Uploading $IPA_PATH to App Store Connect…"
+          if ! xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$KEY_ID" \
+            --apiIssuer "$ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/upload.log"; then
+            if grep -qi "No suitable application records\|app.*not.*found\|cannot be found" "$RUNNER_TEMP/upload.log"; then
+              echo "::error::Upload failed: no matching app record. Create the app for bundle ID 'plastickarma.lead-track' in App Store Connect (My Apps) first, then re-run. See docs/RELEASE.md."
+            fi
+            exit 1
+          fi
+          echo "PUBLISHED_TESTFLIGHT=1" >> "$GITHUB_ENV"
+          echo "Uploaded — the build appears in TestFlight once App Store Connect finishes processing."
+
       - name: Attach .ipa to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -191,11 +226,9 @@ jobs:
             echo ""
             echo "- **Version**: \`${MARKETING_VERSION:-project default}\` (build \`${BUILD_NUMBER}\`)"
             echo "- **Download**: the **lead-track-ipa** artifact below (tag builds also attach it to the Release)."
-            echo ""
-            echo "Upload it to App Store Connect with Transporter, Xcode Organizer, or:"
-            echo ""
-            echo '```sh'
-            echo 'xcrun altool --upload-app -t ios -f "lead track.ipa" \'
-            echo '  --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"'
-            echo '```'
+            if [ "${PUBLISHED_TESTFLIGHT:-0}" = "1" ]; then
+              echo "- **TestFlight**: uploaded to App Store Connect ✅ — it appears under TestFlight once processing finishes, then install it via the TestFlight app on your iPhone."
+            else
+              echo "- **TestFlight**: not uploaded. Re-run with **publish_testflight** ticked (or push a \`v*\` tag) to send it to TestFlight."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

@@ -39,38 +39,51 @@ profiles automatically for both the app and its widget extension.
 **On demand** (just want a build to download):
 
 - GitHub → **Actions** → **Release IPA** → **Run workflow**. Optionally type a
-  marketing version (e.g. `1.2.0`); leave blank to keep the project's value.
+  marketing version (e.g. `1.2.0`); leave blank to keep the project's value. Tick
+  **publish_testflight** to also upload the build to TestFlight.
 - Or from this machine:
   ```sh
+  # build only (download the artifact):
   gh workflow run release.yml -f marketing_version=1.2.0
+  # build AND upload to TestFlight:
+  gh workflow run release.yml -f marketing_version=1.2.0 -f publish_testflight=true
   gh run watch "$(gh run list --workflow=release.yml -L1 --json databaseId --jq '.[0].databaseId')" --exit-status
   ```
 
-**By tagging a version** (also publishes a GitHub Release):
+**By tagging a version** (publishes a GitHub Release **and** uploads to TestFlight):
 
 ```sh
 git tag v1.2.0 && git push origin v1.2.0
 ```
 
-A `v*` tag sets the marketing version from the tag (`v1.2.0` → `1.2.0`). The build
-number (`CFBundleVersion`) is always the workflow run number, so every build is
-unique and accepted by App Store Connect.
+A `v*` tag sets the marketing version from the tag (`v1.2.0` → `1.2.0`) and always
+uploads to TestFlight. The build number (`CFBundleVersion`) is always the workflow
+run number, so every build is unique and accepted by App Store Connect.
 
-## Downloading and uploading to Apple
+## Testing on your iPhone (TestFlight)
 
-1. Open the finished run → **Artifacts** → download **lead-track-ipa** (tag builds
-   also attach the `.ipa` to the GitHub Release).
-2. Upload to App Store Connect with any of:
-   - **Transporter** app (Mac App Store) — drag in the `.ipa`.
-   - **Xcode** → Organizer, or `xcrun altool`:
-     ```sh
-     xcrun altool --upload-app -t ios -f "lead track.ipa" \
-       --apiKey <KEY_ID> --apiIssuer <ISSUER_ID>
-     ```
-     (`altool` reads the key from `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8`.)
+App Store distribution builds **cannot be sideloaded** directly onto a device — they
+install through TestFlight. When the workflow publishes (the `publish_testflight`
+tick or a `v*` tag), it uploads the `.ipa` to App Store Connect for you via
+`xcrun altool`, so you don't need a Mac.
 
-The build then appears in App Store Connect → TestFlight after Apple finishes
-processing.
+1. Run the workflow with publishing enabled (see above) and wait for it to go green.
+2. In [App Store Connect](https://appstoreconnect.apple.com) → your app → **TestFlight**,
+   wait a few minutes for the build to finish **Processing**.
+3. Add yourself under **Internal Testing** (internal testers need no Beta App
+   Review, so it's immediate).
+4. On the iPhone: install the **TestFlight** app from the App Store, sign in with
+   that Apple ID, and tap **Install** next to the build.
+
+Prerequisite: an **app record** for `plastickarma.lead-track` must exist in App Store
+Connect → **My Apps** (separate from registering the bundle identifier). If it's
+missing, the upload step fails telling you to create it.
+
+### Manual upload (fallback)
+
+If you'd rather upload by hand, download the **lead-track-ipa** artifact from the run
+(tag builds also attach it to the GitHub Release) and drag it into the **Transporter**
+app (Mac App Store), or use Xcode → Organizer / `xcrun altool --upload-app`.
 
 ## Notes
 
@@ -86,3 +99,10 @@ processing.
   Creating the Apple Distribution certificate via cloud signing requires the Admin
   role. Generate a new Admin key, update the `APP_STORE_CONNECT_API_*` secrets, and
   re-run. (You can't elevate an existing key's role — make a new one.)
+- **Upload step fails with "no suitable application records" / app not found**: the
+  app record doesn't exist yet. Create it in App Store Connect → **My Apps** for
+  bundle ID `plastickarma.lead-track`, then re-run.
+- **Build shows "Missing Compliance" in TestFlight** and testers can't install it:
+  answer the export-compliance question on the build in App Store Connect (most apps
+  using only standard/HTTPS encryption are exempt). To skip this prompt permanently,
+  add an `ITSAppUsesNonExemptEncryption` key to the app's Info.plist.
