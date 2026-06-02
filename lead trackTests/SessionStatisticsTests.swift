@@ -213,4 +213,71 @@ struct SessionStatisticsTests {
         )
         #expect(avg == 100)
     }
+
+    // MARK: - Streak Rest Days
+
+    private func weekday(daysAgo: Int) -> Int {
+        let date = calendar.date(
+            byAdding: .day, value: -daysAgo,
+            to: calendar.startOfDay(for: .now)
+        )!
+        return calendar.component(.weekday, from: date)
+    }
+
+    @Test
+    func excludedWeekdayBridgesStreakGap() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 2, duration: 100)
+        ]
+        let streak = SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: [weekday(daysAgo: 1)]
+        )
+        #expect(streak == 2)
+    }
+
+    @Test
+    func unrelatedExclusionStillBreaksStreak() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 2, duration: 100)
+        ]
+        let streak = SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: [weekday(daysAgo: 0)]
+        )
+        #expect(streak == 1)
+    }
+
+    @Test
+    func restDayTodayKeepsStreakAlive() {
+        let totals = [
+            makeTotal(daysAgo: 1, duration: 100),
+            makeTotal(daysAgo: 2, duration: 100)
+        ]
+        let streak = SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: [weekday(daysAgo: 0)]
+        )
+        #expect(streak == 2)
+    }
+
+    @Test
+    func allWeekdaysExcludedYieldsNoStreak() {
+        let totals = [makeTotal(daysAgo: 0, duration: 100)]
+        let streak = SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: Set(1 ... 7)
+        )
+        #expect(streak == 0)
+    }
+
+    @Test
+    func longestStreakBridgesExcludedDay() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 2, duration: 100)
+        ]
+        let streak = SessionStatistics.longestStreak(
+            from: totals, excludedWeekdays: [weekday(daysAgo: 1)]
+        )
+        #expect(streak == 2)
+    }
 }

@@ -14,6 +14,7 @@ final class Metric {
     var weeklyGoal: TimeInterval?
     var reminderTime: Date?
     var streakAlertTime: Date?
+    var excludedWeekdays: [Int] = []
 
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
     var projects: [Project] = []
@@ -34,5 +35,19 @@ final class Metric {
         self.unit = unit
         self.icon = icon
         self.createdAt = createdAt
+    }
+}
+
+// MARK: - Daily Goal Schedule
+
+extension Metric {
+    /// Weekday numbers (1 = Sunday ... 7 = Saturday) excluded from the daily goal.
+    var excludedWeekdaySet: Set<Int> {
+        Set(excludedWeekdays)
+    }
+
+    /// Whether the daily goal applies on the given date's weekday.
+    func isGoalDay(on date: Date, calendar: Calendar = .current) -> Bool {
+        !excludedWeekdays.contains(calendar.component(.weekday, from: date))
     }
 }

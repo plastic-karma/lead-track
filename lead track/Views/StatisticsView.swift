@@ -6,6 +6,7 @@ struct StatisticsView: View {
     let unit: String?
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
+    let excludedWeekdays: [Int]
     @Binding var showingDetailedStats: Bool
 
     private var dailyTotals: [DailyTotal] {
@@ -36,7 +37,8 @@ struct StatisticsView: View {
                 streakItem(
                     "Streak",
                     SessionStatistics.currentStreak(
-                        from: dailyTotals
+                        from: dailyTotals,
+                        excludedWeekdays: Set(excludedWeekdays)
                     )
                 )
             }
@@ -51,10 +53,11 @@ extension StatisticsView {
     private var todayItem: some View {
         let today = SessionStatistics.todayTotal(from: dailyTotals)
         if let goal = dailyGoal {
-            GoalProgressView(
+            DailyGoalItem(
                 label: "Today",
-                current: today,
+                today: today,
                 goal: goal,
+                excludedWeekdays: excludedWeekdays,
                 measurementType: measurementType,
                 unit: unit
             )

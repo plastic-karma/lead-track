@@ -45,9 +45,11 @@ extension NotificationService {
         guard let time = metric.reminderTime else { return }
         guard let stableID = metric.stableID else { return }
         guard !hasLoggedToday(metric) else { return }
+        guard let trigger = goalDayTrigger(
+            for: time, excludedWeekdays: metric.excludedWeekdaySet
+        ) else { return }
 
         let content = reminderContent(for: metric)
-        let trigger = dailyTrigger(for: time)
         let id = "reminder-\(stableID.uuidString)"
         schedule(id: id, content: content, trigger: trigger)
     }
@@ -60,11 +62,13 @@ extension NotificationService {
         guard !hasLoggedToday(metric) else { return }
         let streak = currentStreak(for: metric)
         guard streak > 0 else { return }
+        guard let trigger = goalDayTrigger(
+            for: time, excludedWeekdays: metric.excludedWeekdaySet
+        ) else { return }
 
         let content = streakContent(
             for: metric, streak: streak
         )
-        let trigger = dailyTrigger(for: time)
         let id = "streak-\(stableID.uuidString)"
         schedule(id: id, content: content, trigger: trigger)
     }
@@ -200,14 +204,55 @@ extension NotificationService {
 // MARK: - Helpers
 
 extension NotificationService {
-    private static func dailyTrigger(
-        for time: Date
-    ) -> UNCalendarNotificationTrigger {
+    private static func goalDayTrigger(
+        for time: Date,
+        excludedWeekdays: Set<Int>
+    ) -> UNCalendarNotificationTrigger? {
+        guard let date = nextGoalDate(
+            for: time, excludedWeekdays: excludedWeekdays
+        ) else { return nil }
         let components = Calendar.current.dateComponents(
-            [.hour, .minute], from: time
+            [.year, .month, .day, .hour, .minute], from: date
         )
         return UNCalendarNotificationTrigger(
             dateMatching: components, repeats: false
+        )
+    }
+
+    private static func nextGoalDate(
+        for time: Date,
+        excludedWeekdays: Set<Int>
+    ) -> Date? {
+        let now = Date.now
+        return (0 ... 7)
+            .compactMap { goalCandidate(offset: $0, time: time) }
+            .first { isGoalMoment($0, after: now, excludedWeekdays: excludedWeekdays) }
+    }
+
+    private static func isGoalMoment(
+        _ date: Date,
+        after now: Date,
+        excludedWeekdays: Set<Int>
+    ) -> Bool {
+        guard date > now else { return false }
+        let weekday = Calendar.current.component(.weekday, from: date)
+        return !excludedWeekdays.contains(weekday)
+    }
+
+    private static func goalCandidate(
+        offset: Int,
+        time: Date
+    ) -> Date? {
+        let calendar = Calendar.current
+        let comps = calendar.dateComponents([.hour, .minute], from: time)
+        guard let day = calendar.date(
+            byAdding: .day, value: offset,
+            to: calendar.startOfDay(for: .now)
+        ) else { return nil }
+        return calendar.date(
+            bySettingHour: comps.hour ?? 0,
+            minute: comps.minute ?? 0,
+            second: 0, of: day
         )
     }
 
@@ -239,7 +284,9 @@ extension NotificationService {
         let totals = SessionStatistics.dailyTotals(
             from: sessions
         )
-        return SessionStatistics.currentStreak(from: totals)
+        return SessionStatistics.currentStreak(
+            from: totals, excludedWeekdays: metric.excludedWeekdaySet
+        )
     }
 }
 #endif

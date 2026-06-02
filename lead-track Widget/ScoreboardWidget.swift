@@ -16,6 +16,7 @@ struct MetricSnapshot: Identifiable {
     let weeklyTotal: TimeInterval
     let weeklyGoal: TimeInterval?
     let streak: Int
+    let isRestDay: Bool
 }
 
 struct ScoreboardProvider: TimelineProvider {
@@ -88,7 +89,10 @@ extension ScoreboardProvider {
                 from: totals
             ),
             weeklyGoal: metric.weeklyGoal,
-            streak: SessionStatistics.currentStreak(from: totals)
+            streak: SessionStatistics.currentStreak(
+                from: totals, excludedWeekdays: metric.excludedWeekdaySet
+            ),
+            isRestDay: !metric.isGoalDay(on: .now)
         )
     }
 
@@ -102,7 +106,8 @@ extension ScoreboardProvider {
                 dailyGoal: 1800,
                 weeklyTotal: 9000,
                 weeklyGoal: 18000,
-                streak: 5
+                streak: 5,
+                isRestDay: false
             )
         ]
     }
@@ -177,7 +182,7 @@ extension ScoreboardWidgetView {
     private func goalRings(
         _ metric: MetricSnapshot
     ) -> some View {
-        if let goal = metric.dailyGoal {
+        if let goal = metric.dailyGoal, !metric.isRestDay {
             miniRing(
                 current: metric.todayTotal,
                 goal: goal,

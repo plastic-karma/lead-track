@@ -6,6 +6,7 @@ struct GoalSettingsView: View {
 
     @State private var hasDailyGoal: Bool
     @State private var dailyGoalValue: Double
+    @State private var excludedWeekdays: Set<Int>
     @State private var hasWeeklyGoal: Bool
     @State private var weeklyGoalValue: Double
     @State private var hasReminder: Bool
@@ -17,9 +18,8 @@ struct GoalSettingsView: View {
     init(metric: Metric) {
         self.metric = metric
         let isCount = metric.measurementType == .count
-        _hasDailyGoal = State(
-            initialValue: metric.dailyGoal != nil
-        )
+        _hasDailyGoal = State(initialValue: metric.dailyGoal != nil)
+        _excludedWeekdays = State(initialValue: Set(metric.excludedWeekdays))
         _dailyGoalValue = State(
             initialValue: isCount
                 ? (metric.dailyGoal ?? 10)
@@ -74,11 +74,29 @@ struct GoalSettingsView: View {
 
 extension GoalSettingsView {
     private var dailyGoalSection: some View {
-        Section {
+        Section(footer: restDaysFooter) {
             Toggle("Daily Goal", isOn: $hasDailyGoal)
             if hasDailyGoal {
                 dailyGoalPicker
+                restDaysRow
             }
+        }
+    }
+
+    private var restDaysRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Rest Days")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            WeekdaySelector(excludedWeekdays: $excludedWeekdays)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var restDaysFooter: some View {
+        if hasDailyGoal {
+            Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
         }
     }
 
@@ -186,6 +204,7 @@ extension GoalSettingsView {
         metric.dailyGoal = hasDailyGoal
             ? (isCount ? dailyGoalValue : dailyGoalValue * 60)
             : nil
+        metric.excludedWeekdays = hasDailyGoal ? excludedWeekdays.sorted() : []
         metric.weeklyGoal = hasWeeklyGoal
             ? (isCount ? weeklyGoalValue : weeklyGoalValue * 3600)
             : nil

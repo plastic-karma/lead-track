@@ -157,38 +157,31 @@ enum SessionStatistics {
         return total / Double(sessions)
     }
 
-    static func currentStreak(from totals: [DailyTotal]) -> Int {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
-        let dates = Set(
-            totals.map { calendar.startOfDay(for: $0.date) }
+    static func currentStreak(
+        from totals: [DailyTotal],
+        excludedWeekdays: Set<Int> = []
+    ) -> Int {
+        guard excludedWeekdays.count < 7 else { return 0 }
+        let dates = loggedDays(from: totals)
+        let start = streakStart(dates: dates, excludedWeekdays: excludedWeekdays)
+        return streakEndingAt(
+            start, dates: dates, excludedWeekdays: excludedWeekdays
         )
-        let start = if dates.contains(today) {
-            today
-        } else if let yesterday = calendar.date(
-            byAdding: .day, value: -1, to: today
-        ) {
-            yesterday
-        } else {
-            today
-        }
-        return streakEndingAt(start, from: totals)
     }
 
-    static func longestStreak(from totals: [DailyTotal]) -> Int {
-        let calendar = Calendar.current
-        let sorted = Set(
-            totals.map { calendar.startOfDay(for: $0.date) }
-        ).sorted()
+    static func longestStreak(
+        from totals: [DailyTotal],
+        excludedWeekdays: Set<Int> = []
+    ) -> Int {
+        let sorted = loggedDays(from: totals).sorted()
         guard !sorted.isEmpty else { return 0 }
         var best = 1
         var current = 1
         for index in 1 ..< sorted.count {
-            let expected = calendar.date(
-                byAdding: .day, value: 1,
-                to: sorted[index - 1]
-            )
-            if sorted[index] == expected {
+            if consecutiveGoalDays(
+                from: sorted[index - 1], to: sorted[index],
+                excludedWeekdays: excludedWeekdays
+            ) {
                 current += 1
                 best = max(best, current)
             } else {
@@ -197,24 +190,75 @@ enum SessionStatistics {
         }
         return best
     }
+}
+
+// MARK: - Streak Helpers
+
+extension SessionStatistics {
+    private static func loggedDays(
+        from totals: [DailyTotal]
+    ) -> Set<Date> {
+        let calendar = Calendar.current
+        return Set(totals.map { calendar.startOfDay(for: $0.date) })
+    }
+
+    private static func streakStart(
+        dates: Set<Date>,
+        excludedWeekdays: Set<Int>
+    ) -> Date {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        if holdsStreak(on: today, dates: dates, excludedWeekdays: excludedWeekdays) {
+            return today
+        }
+        return calendar.date(byAdding: .day, value: -1, to: today) ?? today
+    }
 
     private static func streakEndingAt(
         _ date: Date,
-        from totals: [DailyTotal]
+        dates: Set<Date>,
+        excludedWeekdays: Set<Int>
     ) -> Int {
         let calendar = Calendar.current
-        let dates = Set(
-            totals.map { calendar.startOfDay(for: $0.date) }
-        )
         var day = calendar.startOfDay(for: date)
         var count = 0
-        while dates.contains(day) {
-            count += 1
+        while holdsStreak(on: day, dates: dates, excludedWeekdays: excludedWeekdays) {
+            if dates.contains(day) { count += 1 }
             guard let prev = calendar.date(
                 byAdding: .day, value: -1, to: day
             ) else { break }
             day = prev
         }
         return count
+    }
+
+    /// A day keeps a streak alive when it was logged or is an excluded rest day.
+    private static func holdsStreak(
+        on day: Date,
+        dates: Set<Date>,
+        excludedWeekdays: Set<Int>
+    ) -> Bool {
+        if dates.contains(day) { return true }
+        let weekday = Calendar.current.component(.weekday, from: day)
+        return excludedWeekdays.contains(weekday)
+    }
+
+    /// Whether `later` is the next goal day after `earlier`, skipping rest days.
+    private static func consecutiveGoalDays(
+        from earlier: Date,
+        to later: Date,
+        excludedWeekdays: Set<Int>
+    ) -> Bool {
+        let calendar = Calendar.current
+        var day = calendar.date(byAdding: .day, value: 1, to: earlier) ?? later
+        while day < later {
+            let weekday = calendar.component(.weekday, from: day)
+            if !excludedWeekdays.contains(weekday) { return false }
+            guard let next = calendar.date(
+                byAdding: .day, value: 1, to: day
+            ) else { return false }
+            day = next
+        }
+        return day == later
     }
 }

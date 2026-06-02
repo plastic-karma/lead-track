@@ -7,6 +7,7 @@ struct DetailedStatisticsView: View {
     let unit: String?
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
+    let excludedWeekdays: [Int]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -91,12 +92,13 @@ extension DetailedStatisticsView {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 if let goal = dailyGoal {
-                    GoalProgressView(
+                    DailyGoalItem(
                         label: "Today",
-                        current: SessionStatistics.todayTotal(
+                        today: SessionStatistics.todayTotal(
                             from: dailyTotals
                         ),
                         goal: goal,
+                        excludedWeekdays: excludedWeekdays,
                         measurementType: measurementType,
                         unit: unit
                     )
@@ -163,13 +165,15 @@ extension DetailedStatisticsView {
                 streakItem(
                     "Current Streak",
                     SessionStatistics.currentStreak(
-                        from: dailyTotals
+                        from: dailyTotals,
+                        excludedWeekdays: Set(excludedWeekdays)
                     )
                 )
                 streakItem(
                     "Longest Streak",
                     SessionStatistics.longestStreak(
-                        from: dailyTotals
+                        from: dailyTotals,
+                        excludedWeekdays: Set(excludedWeekdays)
                     )
                 )
             }
