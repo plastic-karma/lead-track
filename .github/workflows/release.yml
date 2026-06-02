@@ -115,7 +115,12 @@ jobs:
           INPUT_MKT: ${{ inputs.marketing_version }}
         run: |
           set -euo pipefail
-          BUILD="${{ github.run_number }}"
+          # CFBundleVersion must be unique per marketing version; App Store Connect
+          # rejects a build that collides with an existing one. github.run_number
+          # repeats when a run is *re-run* (only run_attempt changes), so derive the
+          # build from a monotonic UTC timestamp instead — always unique and higher
+          # than the last, and within CFBundleVersion's uint32 limit until ~2106.
+          BUILD="$(date -u +%s)"
           MKT="$INPUT_MKT"
           if [ -z "$MKT" ] && [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             MKT="${GITHUB_REF_NAME#v}"
