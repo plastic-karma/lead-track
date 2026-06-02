@@ -63,6 +63,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Select newest Xcode
+        # App Store uploads require the build to use a current SDK (iOS 26 / Xcode
+        # 26). The runner's default Xcode can be older, so pick the newest installed.
+        run: |
+          set -euo pipefail
+          echo "Installed Xcodes:"; ls -d /Applications/Xcode*.app 2>/dev/null || true
+          newest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -n "$newest" ]; then
+            echo "Selecting $newest"
+            sudo xcode-select -s "$newest/Contents/Developer"
+          fi
+          xcodebuild -version
+
       - name: Set up output paths
         # runner.temp isn't available in job-level env, so resolve paths here.
         run: |
@@ -201,7 +214,12 @@ jobs:
             --file "$IPA_PATH" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/upload.log"; then
-            if grep -qi "No suitable application records\|app.*not.*found\|cannot be found" "$RUNNER_TEMP/upload.log"; then
+            log="$RUNNER_TEMP/upload.log"
+            if grep -qi "must be built with the iOS .* SDK" "$log"; then
+              echo "::error::Upload rejected: build used too old an SDK. App Store requires the iOS 26 SDK (Xcode 26). The 'Select newest Xcode' step picks the newest Xcode on the runner; if that is still too old, the runner image lacks Xcode 26 — pin a newer 'runs-on' image. See docs/RELEASE.md."
+            elif grep -qi "closed for new build submissions\|must contain a higher version" "$log"; then
+              echo "::error::Upload rejected: this version already exists on App Store Connect. Re-run with a higher marketing version (e.g. -f marketing_version=1.0.1, or push a higher v* tag). See docs/RELEASE.md."
+            elif grep -qi "No suitable application records\|app.*not.*found\|cannot be found" "$log"; then
               echo "::error::Upload failed: no matching app record. Create the app for bundle ID 'plastickarma.lead-track' in App Store Connect (My Apps) first, then re-run. See docs/RELEASE.md."
             fi
             exit 1

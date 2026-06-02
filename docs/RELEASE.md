@@ -106,3 +106,11 @@ app (Mac App Store), or use Xcode → Organizer / `xcrun altool --upload-app`.
   answer the export-compliance question on the build in App Store Connect (most apps
   using only standard/HTTPS encryption are exempt). To skip this prompt permanently,
   add an `ITSAppUsesNonExemptEncryption` key to the app's Info.plist.
+- **Upload rejected: "must be built with the iOS 26 SDK"**: the runner built with an
+  older Xcode. The workflow's *Select newest Xcode* step picks the newest Xcode
+  installed on the runner; if that's still too old, the `macos-latest` image doesn't
+  have Xcode 26 yet — pin a newer image with `runs-on:` (e.g. a `macos-26` label).
+- **Upload rejected: "train version 'X' is closed" / "CFBundleShortVersionString must
+  contain a higher version"**: that marketing version is already on App Store Connect.
+  Re-run with a higher version — `-f marketing_version=1.0.1` or a higher `v*` tag.
+  (The build number auto-increments per run; only the marketing version can collide.)
