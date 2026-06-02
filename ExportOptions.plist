@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Export options for the App Store distribution build produced by
+  .github/workflows/release.yml (xcodebuild -exportArchive).
+
+  method=app-store-connect targets App Store / TestFlight. On older Xcode
+  (<16) the workflow automatically retries with the legacy "app-store" value.
+  signingStyle=automatic lets Xcode (via the App Store Connect API key) manage
+  the distribution certificate and provisioning profiles for the app and its
+  embedded widget extension.
+-->
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store-connect</string>
+    <key>destination</key>
+    <string>export</string>
+    <key>signingStyle</key>
+    <string>automatic</string>
+    <key>teamID</key>
+    <string>9492A97LWY</string>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
+</dict>
+</plist>
