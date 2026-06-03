@@ -10,6 +10,7 @@ struct MetricDetailView: View {
     @State private var showingGoalSettings = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
+    @State private var showingAllSessions = false
     @State private var sessionToMove: Session?
 
     init(metric: Metric) {
@@ -43,6 +44,12 @@ struct MetricDetailView: View {
         sessions
             .filter { $0.project == nil && !$0.isRunning }
             .sorted { $0.startedAt > $1.startedAt }
+    }
+
+    private var visibleDirectSessions: [Session] {
+        showingAllSessions
+            ? directSessions
+            : Array(directSessions.prefix(SessionStatistics.sessionListPreviewLimit))
     }
 
     var body: some View {
@@ -192,7 +199,7 @@ extension MetricDetailView {
 
     private var directSessionsSection: some View {
         Section("Sessions") {
-            ForEach(directSessions) { session in
+            ForEach(visibleDirectSessions) { session in
                 SessionRowView(session: session)
                     .swipeActions(edge: .leading) {
                         if !metric.projects.isEmpty {
@@ -204,6 +211,10 @@ extension MetricDetailView {
                     }
             }
             .onDelete(perform: deleteDirectSessions)
+            SessionListExpandButton(
+                totalCount: directSessions.count,
+                isExpanded: $showingAllSessions
+            )
         }
     }
 }
@@ -255,7 +266,7 @@ extension MetricDetailView {
     private func deleteDirectSessions(_ offsets: IndexSet) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(directSessions[index])
+                modelContext.delete(visibleDirectSessions[index])
             }
         }
     }

@@ -20,6 +20,10 @@ struct DailyTotal: Identifiable {
 }
 
 enum SessionStatistics {
+    /// Number of sessions shown in a list before collapsing the remainder
+    /// behind a "Show All" toggle.
+    static let sessionListPreviewLimit = 10
+
     static func dailyTotals(from sessions: [Session]) -> [DailyTotal] {
         let calendar = Calendar.current
         var durations: [Date: TimeInterval] = [:]

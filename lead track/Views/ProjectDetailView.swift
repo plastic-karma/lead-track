@@ -9,6 +9,7 @@ struct ProjectDetailView: View {
     @State private var showingDetailedStats = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
+    @State private var showingAllSessions = false
     @State private var sessionToMove: Session?
 
     init(project: Project) {
@@ -30,6 +31,12 @@ struct ProjectDetailView: View {
         sessions
             .filter { !$0.isRunning }
             .sorted { $0.startedAt > $1.startedAt }
+    }
+
+    private var visibleSessions: [Session] {
+        showingAllSessions
+            ? completedSessions
+            : Array(completedSessions.prefix(SessionStatistics.sessionListPreviewLimit))
     }
 
     var body: some View {
@@ -164,7 +171,7 @@ extension ProjectDetailView {
 
     private var sessionsSection: some View {
         Section("Sessions") {
-            ForEach(completedSessions) { session in
+            ForEach(visibleSessions) { session in
                 SessionRowView(session: session)
                     .swipeActions(edge: .leading) {
                         Button { sessionToMove = session } label: {
@@ -174,6 +181,10 @@ extension ProjectDetailView {
                     }
             }
             .onDelete(perform: deleteSessions)
+            SessionListExpandButton(
+                totalCount: completedSessions.count,
+                isExpanded: $showingAllSessions
+            )
         }
     }
 }
@@ -208,7 +219,7 @@ extension ProjectDetailView {
     private func deleteSessions(_ offsets: IndexSet) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(completedSessions[index])
+                modelContext.delete(visibleSessions[index])
             }
         }
     }
