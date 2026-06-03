@@ -8,8 +8,10 @@ final class LeadTrackUITests: XCTestCase {
     @MainActor
     func testAppLaunchesAndShowsMetricsScreen() {
         let app = launchUITestApp()
+        // A freshly cloned simulator's first cold launch in CI can take well
+        // over 5s, so allow a generous timeout to avoid flaky failures.
         XCTAssertTrue(
-            app.navigationBars["Metrics"].waitForExistence(timeout: 5)
+            app.navigationBars["Metrics"].waitForExistence(timeout: 30)
         )
     }
 
