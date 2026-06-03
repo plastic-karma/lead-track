@@ -280,4 +280,63 @@ struct SessionStatisticsTests {
         )
         #expect(streak == 2)
     }
+
+    // MARK: - Trend Series
+
+    private func makeDate(daysAgo: Int) -> Date {
+        calendar.date(
+            byAdding: .day, value: -daysAgo,
+            to: calendar.startOfDay(for: .now)
+        )!
+    }
+
+    @Test
+    func weeklyTotalsConservesDuration() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100, sessionCount: 1),
+            makeTotal(daysAgo: 1, duration: 200, sessionCount: 2),
+            makeTotal(daysAgo: 8, duration: 300, sessionCount: 3)
+        ]
+        let weeks = SessionStatistics.weeklyTotals(from: totals, since: makeDate(daysAgo: 30))
+        let total = weeks.reduce(0) { $0 + $1.duration }
+        #expect(total == 600)
+    }
+
+    @Test
+    func weeklyTotalsRespectsCutoff() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 20, duration: 999)
+        ]
+        let weeks = SessionStatistics.weeklyTotals(from: totals, since: makeDate(daysAgo: 3))
+        let total = weeks.reduce(0) { $0 + $1.duration }
+        #expect(total == 100)
+    }
+
+    @Test
+    func weeklyTotalsBucketsAreWeekStarts() {
+        let totals = [makeTotal(daysAgo: 0, duration: 100)]
+        let weeks = SessionStatistics.weeklyTotals(from: totals, since: makeDate(daysAgo: 7))
+        for week in weeks {
+            let start = calendar.dateInterval(of: .weekOfYear, for: week.date)?.start
+            #expect(start == week.date)
+        }
+    }
+
+    @Test
+    func movingAverageDividesTrailingWindow() {
+        let totals = [makeTotal(daysAgo: 0, duration: 700)]
+        let avg = SessionStatistics.movingAverage(days: 7, from: totals, since: makeDate(daysAgo: 0))
+        #expect(avg.count == 1)
+        #expect(avg[0].duration == 100)
+    }
+
+    @Test
+    func movingAverageSmoothsAcrossDays() {
+        let totals = (0 ... 6).map { makeTotal(daysAgo: $0, duration: 70) }
+        let avg = SessionStatistics.movingAverage(days: 7, from: totals, since: makeDate(daysAgo: 6))
+        #expect(avg.count == 7)
+        #expect(avg[0].duration == 10)
+        #expect(avg[6].duration == 70)
+    }
 }

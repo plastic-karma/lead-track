@@ -17,6 +17,7 @@ struct StatisticsView: View {
         if !dailyTotals.isEmpty {
             Section("Statistics") {
                 statsContent
+                paceBanner
                 Button {
                     showingDetailedStats = true
                 } label: {
@@ -27,6 +28,21 @@ struct StatisticsView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private var paceBanner: some View {
+        if let pace = weekPace {
+            GoalPaceView(pace: pace, measurementType: measurementType, unit: unit)
+        }
+    }
+
+    private var weekPace: GoalPace? {
+        GoalPace.forWeek(
+            dailyTotals: dailyTotals,
+            weeklyGoal: weeklyGoal,
+            excludedWeekdays: excludedWeekdays
+        )
     }
 
     private var statsContent: some View {
