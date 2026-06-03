@@ -142,6 +142,8 @@ extension MetricDetailView {
             Button { showingDurationEntry = true } label: {
                 Label("Log Manually", systemImage: "plus.circle")
             }
+        } footer: {
+            defaultProjectFooter
         }
     }
 
@@ -153,6 +155,18 @@ extension MetricDetailView {
                     systemImage: "plus.circle"
                 )
             }
+        } footer: {
+            defaultProjectFooter
+        }
+    }
+
+    @ViewBuilder
+    private var defaultProjectFooter: some View {
+        if let project = metric.defaultProject {
+            Label(
+                "Logging to \(project.name)",
+                systemImage: "star.fill"
+            )
         }
     }
 
@@ -188,6 +202,12 @@ extension MetricDetailView {
     private func projectRow(_ project: Project) -> some View {
         HStack {
             Text(project.name)
+            if project.isDefault {
+                Image(systemName: "star.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("Default project")
+            }
             Spacer()
             if project.sessions.contains(where: \.isRunning) {
                 Image(systemName: "record.circle")

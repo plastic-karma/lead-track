@@ -135,6 +135,7 @@ extension ProjectDetailView {
     private var statusSection: some View {
         Section {
             if project.status == .active {
+                Toggle("Default Project", isOn: defaultBinding)
                 Button("Mark as Finished") {
                     finishProject()
                 }
@@ -143,7 +144,18 @@ extension ProjectDetailView {
                     reopenProject()
                 }
             }
+        } footer: {
+            if project.isDefault {
+                Text("New entries logged from the metric are added here automatically.")
+            }
         }
+    }
+
+    private var defaultBinding: Binding<Bool> {
+        Binding(
+            get: { project.isDefault },
+            set: { ProjectService.setDefault(project, $0) }
+        )
     }
 
     private var sessionsSection: some View {
@@ -171,13 +183,11 @@ extension ProjectDetailView {
     }
 
     private func finishProject() {
-        project.status = .finished
-        project.finishedAt = .now
+        ProjectService.finish(project)
     }
 
     private func reopenProject() {
-        project.status = .active
-        project.finishedAt = nil
+        ProjectService.reopen(project)
     }
 
     private func deleteProject() {

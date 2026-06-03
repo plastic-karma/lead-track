@@ -18,6 +18,7 @@ enum SessionService {
         if let running = activeSession(for: metric) {
             return running
         }
+        let project = project ?? metric.defaultProject
         let session = Session(
             metric: metric,
             project: project,
@@ -47,6 +48,7 @@ enum SessionService {
         project: Project? = nil,
         in context: ModelContext
     ) -> Session {
+        let project = project ?? metric.defaultProject
         let session = Session(
             metric: metric,
             project: project,
@@ -67,6 +69,7 @@ enum SessionService {
         project: Project? = nil,
         in context: ModelContext
     ) -> Session {
+        let project = project ?? metric.defaultProject
         let session = Session(
             metric: metric,
             project: project,
