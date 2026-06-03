@@ -38,6 +38,16 @@ final class Metric {
     }
 }
 
+// MARK: - Default Project
+
+extension Metric {
+    /// The active project that new recordings are auto-assigned to, if any.
+    /// At most one active project per metric can be the default.
+    var defaultProject: Project? {
+        projects.first { $0.isDefault && $0.status == .active }
+    }
+}
+
 // MARK: - Daily Goal Schedule
 
 extension Metric {

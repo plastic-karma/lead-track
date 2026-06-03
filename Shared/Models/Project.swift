@@ -8,6 +8,7 @@ final class Project {
     var status: ProjectStatus
     var startedAt: Date
     var finishedAt: Date?
+    var isDefault: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \Session.project)
     var sessions: [Session] = []
