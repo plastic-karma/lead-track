@@ -266,3 +266,99 @@ extension SessionStatistics {
         return day == later
     }
 }
+
+// MARK: - Trend Series
+
+extension SessionStatistics {
+    /// Daily totals collapsed into per-week sums for dates on or after `cutoff`.
+    static func weeklyTotals(
+        from totals: [DailyTotal],
+        since cutoff: Date,
+        calendar: Calendar = .current
+    ) -> [DailyTotal] {
+        let start = calendar.startOfDay(for: cutoff)
+        let recent = totals.filter { $0.date >= start }
+        let groups = Dictionary(grouping: recent) { weekStart(of: $0.date, calendar: calendar) }
+        let weeks = groups.map { weekTotal(weekStart: $0.key, items: $0.value) }
+        return weeks.sorted { $0.date < $1.date }
+    }
+
+    /// Trailing `window`-day moving average, one point per day from `cutoff`
+    /// through today, so a smooth line can be overlaid on the daily bars.
+    static func movingAverage(
+        days window: Int,
+        from totals: [DailyTotal],
+        since cutoff: Date,
+        calendar: Calendar = .current
+    ) -> [DailyTotal] {
+        let byDay = durationsByDay(from: totals, calendar: calendar)
+        let today = calendar.startOfDay(for: .now)
+        let start = calendar.startOfDay(for: cutoff)
+        return dayRange(from: start, to: today, calendar: calendar).map { day in
+            DailyTotal(
+                date: day,
+                duration: trailingAverage(ending: day, window: window, byDay: byDay, calendar: calendar)
+            )
+        }
+    }
+}
+
+// MARK: - Trend Series Helpers
+
+extension SessionStatistics {
+    private static func weekStart(of date: Date, calendar: Calendar) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start
+            ?? calendar.startOfDay(for: date)
+    }
+
+    private static func weekTotal(
+        weekStart: Date,
+        items: [DailyTotal]
+    ) -> DailyTotal {
+        DailyTotal(
+            date: weekStart,
+            duration: items.reduce(0) { $0 + $1.duration },
+            sessionCount: items.reduce(0) { $0 + $1.sessionCount }
+        )
+    }
+
+    private static func durationsByDay(
+        from totals: [DailyTotal],
+        calendar: Calendar
+    ) -> [Date: TimeInterval] {
+        var result: [Date: TimeInterval] = [:]
+        for total in totals {
+            result[calendar.startOfDay(for: total.date), default: 0] += total.duration
+        }
+        return result
+    }
+
+    private static func dayRange(
+        from start: Date,
+        to end: Date,
+        calendar: Calendar
+    ) -> [Date] {
+        var days: [Date] = []
+        var day = start
+        while day <= end {
+            days.append(day)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return days
+    }
+
+    private static func trailingAverage(
+        ending day: Date,
+        window: Int,
+        byDay: [Date: TimeInterval],
+        calendar: Calendar
+    ) -> TimeInterval {
+        var sum = 0.0
+        for offset in 0 ..< window {
+            let prior = calendar.date(byAdding: .day, value: -offset, to: day)
+            sum += byDay[prior ?? day] ?? 0
+        }
+        return sum / Double(window)
+    }
+}

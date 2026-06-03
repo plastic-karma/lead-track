@@ -1,4 +1,3 @@
-import Charts
 import SwiftUI
 
 struct DetailedStatisticsView: View {
@@ -13,7 +12,7 @@ struct DetailedStatisticsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section { chart }
+                Section { trends }
                 Section("Activity") {
                     CalendarHeatmapView(dailyTotals: dailyTotals)
                 }
@@ -32,47 +31,14 @@ struct DetailedStatisticsView: View {
         }
     }
 
-    private var chart: some View {
-        Chart {
-            ForEach(recentTotals) { daily in
-                BarMark(
-                    x: .value("Date", daily.date, unit: .day),
-                    y: .value(
-                        chartLabel,
-                        ValueFormatter.chartValue(
-                            daily.duration, type: measurementType
-                        )
-                    )
-                )
-                .foregroundStyle(.orange.gradient)
-            }
-            if let goal = dailyGoal {
-                goalRule(goal)
-            }
-        }
-        .chartYAxisLabel(chartLabel)
-        .frame(height: 200)
-    }
-
-    private var chartLabel: String {
-        ValueFormatter.chartLabel(
-            type: measurementType, unit: unit
+    private var trends: some View {
+        TrendsChartView(
+            dailyTotals: dailyTotals,
+            measurementType: measurementType,
+            unit: unit,
+            dailyGoal: dailyGoal,
+            weeklyGoal: weeklyGoal
         )
-    }
-
-    private func goalRule(
-        _ goal: TimeInterval
-    ) -> some ChartContent {
-        RuleMark(
-            y: .value(
-                "Goal",
-                ValueFormatter.chartValue(
-                    goal, type: measurementType
-                )
-            )
-        )
-        .foregroundStyle(.green)
-        .lineStyle(StrokeStyle(dash: [5, 5]))
     }
 }
 
@@ -84,8 +50,24 @@ extension DetailedStatisticsView {
         if dailyGoal != nil || weeklyGoal != nil {
             Section("Goals") {
                 goalsGrid
+                paceBanner
             }
         }
+    }
+
+    @ViewBuilder
+    private var paceBanner: some View {
+        if let pace = weekPace {
+            GoalPaceView(pace: pace, measurementType: measurementType, unit: unit)
+        }
+    }
+
+    private var weekPace: GoalPace? {
+        GoalPace.forWeek(
+            dailyTotals: dailyTotals,
+            weeklyGoal: weeklyGoal,
+            excludedWeekdays: excludedWeekdays
+        )
     }
 
     private var goalsGrid: some View {
@@ -224,15 +206,6 @@ extension DetailedStatisticsView {
 // MARK: - Helpers
 
 extension DetailedStatisticsView {
-    private var recentTotals: [DailyTotal] {
-        guard let cutoff = Calendar.current.date(
-            byAdding: .day,
-            value: -13,
-            to: Calendar.current.startOfDay(for: .now)
-        ) else { return [] }
-        return dailyTotals.filter { $0.date >= cutoff }
-    }
-
     private func statItem(
         _ title: String,
         _ value: TimeInterval
