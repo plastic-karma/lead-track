@@ -10,6 +10,7 @@ struct MetricDetailView: View {
     @State private var showingGoalSettings = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
+    @State private var sessionToMove: Session?
 
     init(metric: Metric) {
         self.metric = metric
@@ -103,6 +104,9 @@ struct MetricDetailView: View {
         .sheet(isPresented: $showingDurationEntry) {
             DurationEntryView(metric: metric, project: nil)
         }
+        .sheet(item: $sessionToMove) { session in
+            MoveSessionView(session: session)
+        }
         .sensoryFeedback(trigger: activeSession != nil) { wasActive, isActive in
             if !wasActive, isActive {
                 .impact(weight: .medium)
@@ -190,6 +194,14 @@ extension MetricDetailView {
         Section("Sessions") {
             ForEach(directSessions) { session in
                 SessionRowView(session: session)
+                    .swipeActions(edge: .leading) {
+                        if !metric.projects.isEmpty {
+                            Button { sessionToMove = session } label: {
+                                Label("Move", systemImage: "folder")
+                            }
+                            .tint(.blue)
+                        }
+                    }
             }
             .onDelete(perform: deleteDirectSessions)
         }

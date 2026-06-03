@@ -33,6 +33,18 @@ enum SessionService {
         return session
     }
 
+    /// Reassigns a completed session to another project under the same metric,
+    /// or to no project (top level) when `project` is nil. Returns false and
+    /// makes no change if the target project belongs to a different metric.
+    @discardableResult
+    static func move(_ session: Session, to project: Project?) -> Bool {
+        if let project, project.metric !== session.metric {
+            return false
+        }
+        session.project = project
+        return true
+    }
+
     static func stopSession(_ session: Session) {
         session.endedAt = .now
         stopLiveActivity()
