@@ -114,3 +114,11 @@ app (Mac App Store), or use Xcode → Organizer / `xcrun altool --upload-app`.
   contain a higher version"**: that marketing version is already on App Store Connect.
   Re-run with a higher version — `-f marketing_version=1.0.1` or a higher `v*` tag.
   (The build number auto-increments per run; only the marketing version can collide.)
+- **"You can only submit one build from version X to Beta App Review"**: external
+  TestFlight reviews only one build per version at a time, so a previously-submitted
+  build still *Waiting for Review* / *In Review* blocks the new one. On publish the
+  workflow auto-expires those stuck builds first — the *Expire builds stuck in Beta App
+  Review* step, run by [`expire-builds-in-review.rb`](../.github/scripts/expire-builds-in-review.rb) —
+  so the new build can be submitted; approved builds testers are using are left
+  untouched. Fastest path of all: distribute to **Internal Testing**, which skips Beta
+  App Review entirely.

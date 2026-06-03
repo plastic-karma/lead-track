@@ -213,6 +213,19 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Expire builds stuck in Beta App Review
+        # Beta App Review allows only one build per version in review at a time,
+        # so a previously-submitted build still waiting/in review blocks
+        # submitting this one ("You can only submit one build from version X…").
+        # Expire those first to free the slot. Best-effort: only touches builds
+        # in review (never an approved build testers use) and never fails the job.
+        if: ${{ inputs.publish_testflight || startsWith(github.ref, 'refs/tags/') }}
+        continue-on-error: true
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: ruby .github/scripts/expire-builds-in-review.rb
+
       - name: Upload to TestFlight
         # Runs when dispatched with publish_testflight=true, or on any v* tag push.
         if: ${{ inputs.publish_testflight || startsWith(github.ref, 'refs/tags/') }}
