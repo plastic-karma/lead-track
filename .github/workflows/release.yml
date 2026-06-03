@@ -129,6 +129,19 @@ jobs:
           echo "MARKETING_VERSION=$MKT" >> "$GITHUB_ENV"
           echo "Build number: $BUILD ; marketing version override: '${MKT:-<none>}'"
 
+      - name: Free up signing certificates
+        # Cloud signing mints a new Apple Development certificate on every run
+        # (each CI VM starts with an empty keychain). Apple caps certificates
+        # per account, so Archive eventually fails with "maximum number of
+        # certificates". Revoke existing development certs via the App Store
+        # Connect API first; Archive then creates one fresh cert under the cap.
+        # Best-effort and never fatal; distribution certs are left untouched.
+        continue-on-error: true
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: ruby .github/scripts/revoke-dev-certs.rb
+
       - name: Archive
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}

@@ -9,6 +9,7 @@ struct ProjectDetailView: View {
     @State private var showingDetailedStats = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
+    @State private var sessionToMove: Session?
 
     init(project: Project) {
         self.project = project
@@ -75,6 +76,9 @@ struct ProjectDetailView: View {
                     project: project
                 )
             }
+        }
+        .sheet(item: $sessionToMove) { session in
+            MoveSessionView(session: session)
         }
         .navigationTitle(project.name)
         .toolbar {
@@ -162,6 +166,12 @@ extension ProjectDetailView {
         Section("Sessions") {
             ForEach(completedSessions) { session in
                 SessionRowView(session: session)
+                    .swipeActions(edge: .leading) {
+                        Button { sessionToMove = session } label: {
+                            Label("Move", systemImage: "folder")
+                        }
+                        .tint(.blue)
+                    }
             }
             .onDelete(perform: deleteSessions)
         }
