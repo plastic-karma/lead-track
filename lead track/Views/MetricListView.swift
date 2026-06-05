@@ -14,6 +14,7 @@ struct MetricListView: View {
 
     var body: some View {
         List {
+            GoalSummaryView(metrics: metrics)
             ForEach(metrics) { metric in
                 NavigationLink(value: metric) {
                     metricRow(metric)
