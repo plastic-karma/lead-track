@@ -6,5 +6,6 @@ struct TimerWidgetBundle: WidgetBundle {
     var body: some Widget {
         TimerActivityLiveActivity()
         ScoreboardWidget()
+        TimerControlWidget()
     }
 }

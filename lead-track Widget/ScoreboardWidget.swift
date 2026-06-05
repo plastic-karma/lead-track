@@ -1,4 +1,3 @@
-import AppIntents
 import SwiftData
 import SwiftUI
 import WidgetKit
@@ -10,11 +9,8 @@ struct ScoreboardEntry: TimelineEntry {
 
 struct MetricSnapshot: Identifiable {
     let id: String
-    let stableID: String
     let name: String
     let icon: String
-    let measurementType: MeasurementType
-    let isRunning: Bool
     let todayTotal: TimeInterval
     let dailyGoal: TimeInterval?
     let weeklyTotal: TimeInterval
@@ -85,11 +81,8 @@ extension ScoreboardProvider {
         )
         return MetricSnapshot(
             id: metric.name,
-            stableID: metric.stableID?.uuidString ?? "",
             name: metric.name,
             icon: metric.icon ?? "clock",
-            measurementType: metric.measurementType,
-            isRunning: metric.sessions.contains(where: \.isRunning),
             todayTotal: SessionStatistics.todayTotal(from: totals),
             dailyGoal: metric.dailyGoal,
             weeklyTotal: SessionStatistics.currentWeekTotal(
@@ -107,11 +100,8 @@ extension ScoreboardProvider {
         [
             MetricSnapshot(
                 id: "sample",
-                stableID: "",
                 name: "Reading",
                 icon: "book",
-                measurementType: .duration,
-                isRunning: false,
                 todayTotal: 1200,
                 dailyGoal: 1800,
                 weeklyTotal: 9000,
@@ -188,7 +178,6 @@ extension ScoreboardWidgetView {
                 goalRings(metric)
             }
             streakBadge(metric.streak)
-            actionButton(metric)
         }
     }
 
@@ -248,37 +237,6 @@ extension ScoreboardWidgetView {
                 .monospacedDigit()
         }
         .foregroundStyle(days > 0 ? .orange : .secondary)
-    }
-}
-
-// MARK: - Action Button
-
-extension ScoreboardWidgetView {
-    @ViewBuilder
-    private func actionButton(_ metric: MetricSnapshot) -> some View {
-        if metric.measurementType == .count {
-            Button(intent: LogEntryIntent(metricID: metric.stableID)) {
-                actionIcon("plus", tint: .orange)
-            }
-            .buttonStyle(.plain)
-        } else if metric.isRunning {
-            Button(intent: StopTimerIntent(metricID: metric.stableID)) {
-                actionIcon("stop.fill", tint: .red)
-            }
-            .buttonStyle(.plain)
-        } else {
-            Button(intent: StartTimerIntent(metricID: metric.stableID)) {
-                actionIcon("play.fill", tint: .green)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func actionIcon(_ symbol: String, tint: Color) -> some View {
-        Image(systemName: symbol)
-            .font(.body)
-            .foregroundStyle(tint)
-            .frame(width: 26, height: 26)
     }
 }
 
