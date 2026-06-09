@@ -41,7 +41,7 @@ final class PhoneWatchSyncService: NSObject {
         guard let container,
               let action = WatchSyncCodec.action(from: message)
         else { return }
-        try? WatchActionHandler.apply(action, in: container.mainContext)
+        try? WatchActionHandler.apply(action, in: ModelContext(container))
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -49,7 +49,7 @@ final class PhoneWatchSyncService: NSObject {
 
     private func currentSnapshot() -> WatchSnapshot? {
         guard let container else { return nil }
-        return WatchSnapshotBuilder.snapshot(in: container.mainContext)
+        return WatchSnapshotBuilder.snapshot(in: ModelContext(container))
     }
 
     private func push(_ snapshot: WatchSnapshot) {
