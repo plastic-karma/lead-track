@@ -52,7 +52,7 @@ end
 def describe(token, bundle)
   attrs = bundle['attributes']
   puts "#{attrs['identifier']}  (name: #{attrs['name']}, platform: #{attrs['platform']}, id: #{bundle['id']})"
-  caps = paged(token, "/v1/bundleIds/#{bundle['id']}/bundleIdCapabilities?limit=200")
+  caps = paged(token, "/v1/bundleIds/#{bundle['id']}/bundleIdCapabilities")
   caps.each do |cap|
     settings = cap.dig('attributes', 'settings')
     puts "  capability: #{cap.dig('attributes', 'capabilityType')}  settings: #{settings.inspect}"
