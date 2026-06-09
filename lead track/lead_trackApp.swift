@@ -15,6 +15,12 @@ struct lead_trackApp: App {
         }
     }()
 
+    init() {
+        // Activate in init, not on scene phase: the system may launch the app
+        // in the background to deliver a queued watch action.
+        PhoneWatchSyncService.shared.activate(container: sharedModelContainer)
+    }
+
     var body: some Scene {
         WindowGroup {
             content
@@ -38,7 +44,10 @@ struct lead_trackApp: App {
 
     private func handle(phase: ScenePhase) {
         lockService.handleScenePhase(phase)
-        guard phase == .active else { return }
+        guard phase == .active else {
+            PhoneWatchSyncService.shared.pushSnapshot()
+            return
+        }
         NotificationService.requestPermission()
         NotificationService.rescheduleAll(
             container: sharedModelContainer

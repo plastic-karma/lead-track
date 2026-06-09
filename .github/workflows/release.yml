@@ -22,9 +22,9 @@
 # The API key MUST have the "Admin" role. Creating the Apple *Distribution*
 # certificate via cloud signing requires Admin; an "App Manager"/"Developer" key
 # can do development signing (so the Archive step succeeds) but fails Export with
-# "Cloud signing permission error". The app + widget bundle IDs
-# (plastickarma.lead-track, plastickarma.lead-track.widget) must already exist in
-# App Store Connect.
+# "Cloud signing permission error". An app record for plastickarma.lead-track
+# must exist in App Store Connect; the bundle IDs themselves (app, .widget,
+# .watchkitapp) are registered automatically by cloud signing during Archive.
 
 name: Release IPA
 

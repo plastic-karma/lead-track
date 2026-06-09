@@ -18,7 +18,7 @@ xcodebuild -project "lead track.xcodeproj" -scheme "lead track" \
   -destination 'platform=iOS Simulator,name=iPhone 16' build
 
 # watchOS app
-xcodebuild -project "lead track.xcodeproj" -scheme "lead track" \
+xcodebuild -project "lead track.xcodeproj" -scheme "lead-track Watch App" \
   -destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' build
 ```
 

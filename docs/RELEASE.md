@@ -20,11 +20,11 @@ profiles automatically for both the app and its widget extension.
    fails with `Cloud signing permission error`. Note the **Key ID** and the
    **Issuer ID** shown on the page.
 3. Download the `AuthKey_<KEYID>.p8` file. **You can only download it once.**
-4. Make sure the app and widget bundle IDs already exist under **Certificates,
-   Identifiers & Profiles → Identifiers**:
-   - `plastickarma.lead-track`
-   - `plastickarma.lead-track.widget`
-   …and that an app record for `plastickarma.lead-track` exists in App Store Connect.
+4. Make sure an app record for `plastickarma.lead-track` exists in App Store
+   Connect → **My Apps**. The bundle IDs themselves (`plastickarma.lead-track`,
+   `.widget`, `.watchkitapp`) don't need manual registration: with an Admin key,
+   cloud signing registers missing bundle IDs automatically during Archive
+   (observed when the watch app shipped for the first time).
 5. Add three repository secrets (**Settings → Secrets and variables → Actions →
    New repository secret**):
 
