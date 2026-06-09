@@ -129,6 +129,26 @@ jobs:
           echo "MARKETING_VERSION=$MKT" >> "$GITHUB_ENV"
           echo "Build number: $BUILD ; marketing version override: '${MKT:-<none>}'"
 
+      - name: Register watch widget bundle ID
+        # Cloud signing can't create App IDs whose entitlements include app
+        # groups (API-key auth is rejected for that write), so pre-register
+        # the bundle ID via the ASC API. Group assignment remains a one-time
+        # manual portal step.
+        continue-on-error: true
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: ruby .github/scripts/register-watch-widget-bundle-id.rb
+
+      - name: Diagnose bundle IDs & profiles
+        # Read-only: prints the account's bundle IDs, capabilities, and
+        # provisioning profiles to debug cloud-signing failures.
+        continue-on-error: true
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: ruby .github/scripts/diagnose-bundle-ids.rb
+
       - name: Free up signing certificates
         # Cloud signing mints a new Apple Development certificate on every run
         # (each CI VM starts with an empty keychain). Apple caps certificates
