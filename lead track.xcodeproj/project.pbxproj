@@ -105,6 +105,13 @@
 			);
 			target = 89AF8CA02F800000005F7ED1 /* lead-track Widget */;
 		};
+		0A1CAF010000000000000018 /* Exceptions for "lead-track Watch App" folder in "lead-track Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0A1CAF010000000000000003 /* lead-track Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -133,6 +140,9 @@
 		};
 		0A1CAF010000000000000001 /* lead-track Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0A1CAF010000000000000018 /* Exceptions for "lead-track Watch App" folder in "lead-track Watch App" target */,
+			);
 			path = "lead-track Watch App";
 			sourceTree = "<group>";
 		};
@@ -898,6 +908,7 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = LeadStone;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -932,6 +943,7 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = LeadStone;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
