@@ -48,6 +48,9 @@ struct lead_trackApp: App {
             PhoneWatchSyncService.shared.pushSnapshot()
             return
         }
+        SessionService.syncLiveActivity(
+            in: ModelContext(sharedModelContainer)
+        )
         NotificationService.requestPermission()
         NotificationService.rescheduleAll(
             container: sharedModelContainer

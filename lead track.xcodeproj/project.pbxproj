@@ -15,6 +15,7 @@
 		D1F00100000000000000C002 /* GoalPaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000C001 /* GoalPaceTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */; };
 		0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
@@ -51,6 +52,13 @@
 			remoteGlobalIDString = 0A1CAF010000000000000003;
 			remoteInfo = "lead-track Watch App";
 		};
+		0A1CAF020000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 89AF8B542F723550005F7ED1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A1CAF020000000000000003;
+			remoteInfo = "lead-track Watch Widget";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -76,6 +84,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A1CAF020000000000000009 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +112,7 @@
 		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "lead trackTests.xctest"; path = lead_trackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1CAF010000000000000002 /* lead-track Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead-track Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A1CAF020000000000000002 /* lead-track Watch Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Watch Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSyncCodecTests.swift; sourceTree = "<group>"; };
 		0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchActionHandlerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -111,6 +131,13 @@
 				Info.plist,
 			);
 			target = 0A1CAF010000000000000003 /* lead-track Watch App */;
+		};
+		0A1CAF020000000000000018 /* Exceptions for "lead-track Watch Widget" folder in "lead-track Watch Widget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0A1CAF020000000000000003 /* lead-track Watch Widget */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -144,6 +171,14 @@
 				0A1CAF010000000000000018 /* Exceptions for "lead-track Watch App" folder in "lead-track Watch App" target */,
 			);
 			path = "lead-track Watch App";
+			sourceTree = "<group>";
+		};
+		0A1CAF020000000000000001 /* lead-track Watch Widget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0A1CAF020000000000000018 /* Exceptions for "lead-track Watch Widget" folder in "lead-track Watch Widget" target */,
+			);
+			path = "lead-track Watch Widget";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -185,6 +220,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A1CAF020000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -219,6 +261,7 @@
 				89AF8BA02F723700005F7ED1 /* Shared */,
 				89AF8B5E2F723550005F7ED1 /* lead track */,
 				0A1CAF010000000000000001 /* lead-track Watch App */,
+				0A1CAF020000000000000001 /* lead-track Watch Widget */,
 				89AF8CA22F800000005F7ED1 /* lead-track Widget */,
 				89593D982FA017B600A16861 /* lead trackUITests */,
 				89AF8B5D2F723550005F7ED1 /* Products */,
@@ -232,6 +275,7 @@
 			children = (
 				89AF8B5C2F723550005F7ED1 /* lead track.app */,
 				0A1CAF010000000000000002 /* lead-track Watch App.app */,
+				0A1CAF020000000000000002 /* lead-track Watch Widget.appex */,
 				89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */,
 				9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */,
 				89593D972FA017B600A16861 /* lead trackUITests.xctest */,
@@ -325,10 +369,12 @@
 				0A1CAF010000000000000011 /* Sources */,
 				0A1CAF010000000000000012 /* Frameworks */,
 				0A1CAF010000000000000013 /* Resources */,
+				0A1CAF020000000000000009 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0A1CAF020000000000000008 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				89AF8BA02F723700005F7ED1 /* Shared */,
@@ -338,6 +384,27 @@
 			productName = "lead-track Watch App";
 			productReference = 0A1CAF010000000000000002 /* lead-track Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		0A1CAF020000000000000003 /* lead-track Watch Widget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A1CAF020000000000000006 /* Build configuration list for PBXNativeTarget "lead-track Watch Widget" */;
+			buildPhases = (
+				0A1CAF020000000000000011 /* Sources */,
+				0A1CAF020000000000000012 /* Frameworks */,
+				0A1CAF020000000000000013 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				89AF8BA02F723700005F7ED1 /* Shared */,
+				0A1CAF020000000000000001 /* lead-track Watch Widget */,
+			);
+			name = "lead-track Watch Widget";
+			productName = "lead-track Watch Widget";
+			productReference = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		89AF8CA02F800000005F7ED1 /* lead-track Widget */ = {
 			isa = PBXNativeTarget;
@@ -373,6 +440,9 @@
 					0A1CAF010000000000000003 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					0A1CAF020000000000000003 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					89593D962FA017B600A16861 = {
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 89AF8B5B2F723550005F7ED1;
@@ -401,6 +471,7 @@
 			targets = (
 				89AF8B5B2F723550005F7ED1 /* lead track */,
 				0A1CAF010000000000000003 /* lead-track Watch App */,
+				0A1CAF020000000000000003 /* lead-track Watch Widget */,
 				89AF8CA02F800000005F7ED1 /* lead-track Widget */,
 				4BDEF37C1A4175A7CBCADD3F /* lead trackTests */,
 				89593D962FA017B600A16861 /* lead trackUITests */,
@@ -438,6 +509,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A1CAF010000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0A1CAF020000000000000013 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -533,6 +611,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0A1CAF020000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -556,6 +641,11 @@
 			isa = PBXTargetDependency;
 			target = 0A1CAF010000000000000003 /* lead-track Watch App */;
 			targetProxy = 0A1CAF010000000000000007 /* PBXContainerItemProxy */;
+		};
+		0A1CAF020000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0A1CAF020000000000000003 /* lead-track Watch Widget */;
+			targetProxy = 0A1CAF020000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -903,6 +993,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Watch App/lead_track_watch_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9492A97LWY;
@@ -938,6 +1029,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Watch App/lead_track_watch_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9492A97LWY;
@@ -955,6 +1047,66 @@
 				);
 				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		0A1CAF020000000000000004 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Watch Widget/lead_track_watch_widget.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Watch Widget/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.watchkitapp.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		0A1CAF020000000000000005 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Watch Widget/lead_track_watch_widget.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Watch Widget/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.watchkitapp.widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1021,6 +1173,15 @@
 			buildConfigurations = (
 				0A1CAF010000000000000004 /* Debug */,
 				0A1CAF010000000000000005 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0A1CAF020000000000000006 /* Build configuration list for PBXNativeTarget "lead-track Watch Widget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A1CAF020000000000000004 /* Debug */,
+				0A1CAF020000000000000005 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

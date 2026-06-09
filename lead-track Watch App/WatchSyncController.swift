@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import WidgetKit
 
 /// Bridges the watch UI to the phone over WatchConnectivity. Keeps the last
 /// snapshot cached locally, applies actions optimistically, and falls back to
@@ -69,6 +70,7 @@ final class WatchSyncController: NSObject {
     private func update(to snapshot: WatchSnapshot) {
         self.snapshot = snapshot
         WatchSnapshotCache.save(snapshot)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

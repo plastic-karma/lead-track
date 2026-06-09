@@ -110,6 +110,31 @@ enum SessionService {
 
     // MARK: - Live Activity
 
+    /// Aligns the Live Activity with the store. Sessions started from the
+    /// watch while the app was backgrounded can't show one immediately (the
+    /// system only lets foreground apps start Live Activities), so the app
+    /// calls this whenever it becomes active.
+    static func syncLiveActivity(in context: ModelContext) {
+        #if canImport(ActivityKit)
+        let descriptor = FetchDescriptor<Session>(
+            predicate: #Predicate { $0.endedAt == nil && $0.value == nil }
+        )
+        guard let running = try? context.fetch(descriptor).first,
+              let metric = running.metric
+        else {
+            stopLiveActivity()
+            return
+        }
+        guard Activity<TimerActivityAttributes>.activities.isEmpty
+        else { return }
+        startLiveActivity(
+            metric: metric,
+            project: running.project,
+            startedAt: running.startedAt
+        )
+        #endif
+    }
+
     private static func startLiveActivity(
         metric: Metric,
         project: Project?,
