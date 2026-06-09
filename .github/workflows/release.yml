@@ -129,6 +129,15 @@ jobs:
           echo "MARKETING_VERSION=$MKT" >> "$GITHUB_ENV"
           echo "Build number: $BUILD ; marketing version override: '${MKT:-<none>}'"
 
+      - name: Diagnose bundle IDs & profiles
+        # Read-only: prints the account's bundle IDs, capabilities, and
+        # provisioning profiles to debug cloud-signing failures.
+        continue-on-error: true
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: ruby .github/scripts/diagnose-bundle-ids.rb
+
       - name: Free up signing certificates
         # Cloud signing mints a new Apple Development certificate on every run
         # (each CI VM starts with an empty keychain). Apple caps certificates
