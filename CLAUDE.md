@@ -58,6 +58,12 @@ swiftformat --lint .
 swiftformat .
 ```
 
+Both tools ship official Linux binaries, so lint runs locally even on a non-Mac
+dev box (use the same major versions CI installs via brew): download
+`swiftlint_linux_arm64.zip` (use `swiftlint-static`) from realm/SwiftLint and
+`swiftformat_linux_aarch64.zip` from nicklockwood/SwiftFormat releases into
+`~/.local/bin`. Run both before pushing — CI fails on any SwiftFormat diff.
+
 Complexity thresholds are intentionally strict (see `.swiftlint.yml`): max 5 cyclomatic complexity (warning), 30-line function bodies, 4 parameters. Keep code simple.
 
 ## Key Configuration
