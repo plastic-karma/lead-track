@@ -96,7 +96,7 @@ struct WatchSnapshotReducerTests {
     }
 
     @Test
-    func startKeepsEarlierRunningStart() throws {
+    func startKeepsEarlierRunningStart() {
         let original = Date(timeIntervalSince1970: 1_750_000_000)
         let action = WatchAction(
             kind: .startTimer,
@@ -130,7 +130,7 @@ struct WatchSnapshotReducerTests {
     }
 
     @Test
-    func logAddsValueToTodayTotal() throws {
+    func logAddsValueToTodayTotal() {
         let action = WatchAction(
             kind: .logValue, metricID: metricID, value: 5
         )
