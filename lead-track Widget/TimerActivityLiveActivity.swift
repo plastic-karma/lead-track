@@ -29,7 +29,7 @@ struct TimerActivityLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(context.state.startedAt, style: .timer)
                         .monospacedDigit()
-                        .font(.title3)
+                        .font(.system(.title3, design: .rounded))
                         .foregroundStyle(tint(context.attributes))
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -45,6 +45,7 @@ struct TimerActivityLiveActivity: Widget {
             } compactTrailing: {
                 Text(context.state.startedAt, style: .timer)
                     .monospacedDigit()
+                    .fontDesign(.rounded)
                     .foregroundStyle(tint(context.attributes))
             } minimal: {
                 Image(systemName: context.attributes.icon)
@@ -76,7 +77,7 @@ struct TimerActivityLiveActivity: Widget {
             Spacer()
             Text(context.state.startedAt, style: .timer)
                 .monospacedDigit()
-                .font(.title)
+                .font(.system(.title, design: .rounded))
                 .foregroundStyle(tint(context.attributes))
             Button(intent: StopTimerIntent()) {
                 Image(systemName: "stop.fill")

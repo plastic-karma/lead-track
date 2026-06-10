@@ -243,7 +243,7 @@ extension ScoreboardWidgetView {
             Image(systemName: "flame.fill")
                 .font(.system(size: streakIconSize))
             Text("\(days)")
-                .font(.caption.bold())
+                .font(.system(.caption, design: .rounded).bold())
                 .monospacedDigit()
         }
         .foregroundStyle(days > 0 ? tint : Color.secondary)

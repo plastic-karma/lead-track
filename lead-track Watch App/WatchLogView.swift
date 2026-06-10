@@ -70,7 +70,7 @@ struct WatchLogView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(.green)
+        .tint(MetricColor.color(named: metric.colorName))
     }
 
     private func log() {
