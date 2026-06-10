@@ -36,11 +36,11 @@ struct SessionRowView: View {
             TimerDisplay(startedAt: session.startedAt)
         } else if let count = session.value {
             Text(countText(count))
-                .monospacedDigit()
+                .numeralStyle(.stat)
                 .foregroundStyle(.secondary)
         } else {
             Text(DurationFormatter.format(session.duration))
-                .monospacedDigit()
+                .numeralStyle(.stat)
                 .foregroundStyle(.secondary)
         }
     }

@@ -46,8 +46,8 @@ extension TrendsChartView {
                 x: .value("Date", point.date, unit: barUnit),
                 y: .value(chartLabel, plot(point.duration))
             )
-            .foregroundStyle(tint.gradient)
-            .cornerRadius(3)
+            .foregroundStyle(tint)
+            .cornerRadius(4)
         }
     }
 

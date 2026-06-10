@@ -8,8 +8,7 @@ struct TimerDisplay: View {
 
     var body: some View {
         Text(startedAt, style: .timer)
-            .font(.system(.headline, design: .rounded))
-            .monospacedDigit()
+            .numeralStyle(.stat)
             .foregroundStyle(.red)
     }
 }

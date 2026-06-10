@@ -31,8 +31,7 @@ extension MetricHeroView {
     private var heroValue: some View {
         VStack(spacing: 4) {
             valueText
-                .font(.system(size: 56, weight: .bold, design: .rounded))
-                .monospacedDigit()
+                .numeralStyle(.hero)
                 .foregroundStyle(metric.displayColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)

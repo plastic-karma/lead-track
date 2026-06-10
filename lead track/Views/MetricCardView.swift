@@ -79,8 +79,7 @@ extension MetricCardView {
     private func valueRow(_ totals: [DailyTotal]) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 16) {
             todayValue(totals)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .monospacedDigit()
+                .numeralStyle(.value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Spacer()
