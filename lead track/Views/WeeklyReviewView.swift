@@ -67,7 +67,7 @@ extension WeeklyReviewView {
     private var dateRangeRow: some View {
         HStack {
             Image(systemName: "calendar")
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
             Text(formattedRange)
                 .font(.subheadline)
         }
@@ -79,7 +79,7 @@ extension WeeklyReviewView {
     ) -> some View {
         HStack {
             Image(systemName: "clock")
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
             VStack(alignment: .leading) {
                 Text(DurationFormatter.format(total))
                     .numeralStyle(.stat)
@@ -98,7 +98,7 @@ extension WeeklyReviewView {
             .max(by: { $0.duration < $1.duration })
         return HStack {
             Image(systemName: "trophy")
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
             if let best {
                 VStack(alignment: .leading) {
                     Text("Best day")
@@ -136,7 +136,7 @@ extension WeeklyReviewView {
     private func insightRow(_ insight: Insight) -> some View {
         HStack(spacing: 10) {
             Image(systemName: insight.symbol)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(insight.headline)
@@ -184,7 +184,7 @@ extension WeeklyReviewView {
     ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: summary.icon)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(summary.name).font(.subheadline)
@@ -225,7 +225,7 @@ extension WeeklyReviewView {
                 .font(.caption.bold())
                 .monospacedDigit()
         }
-        .foregroundStyle(.orange)
+        .foregroundStyle(.secondary)
     }
 }
 

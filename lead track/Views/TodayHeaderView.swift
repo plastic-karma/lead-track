@@ -33,7 +33,8 @@ struct TodayHeaderView: View {
 
 /// A small segmented ring with its met/total count beside it — the collapsed
 /// form of the old full-width goal progress section. One segment per goal,
-/// filling green as goals are met, with a checkmark once all are done.
+/// filling with the accent as goals are met, with a checkmark once all are
+/// done.
 private struct CompactGoalRing: View {
     let label: String
     let summary: GoalSummary
@@ -62,7 +63,7 @@ private struct CompactGoalRing: View {
             if summary.isComplete {
                 Image(systemName: "checkmark")
                     .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.tint)
             }
         }
         .frame(width: 24, height: 24)
@@ -77,7 +78,7 @@ private struct CompactGoalRing: View {
                 to: Double(index + 1) * span - gap / 2
             )
             .stroke(
-                index < summary.met ? Color.green : Color(.systemGray4),
+                index < summary.met ? Color.accentColor : Theme.inactive,
                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
             )
             .rotationEffect(.degrees(-90))

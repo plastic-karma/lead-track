@@ -9,6 +9,7 @@ struct MetricFormView: View {
     @State private var name = ""
     @State private var icon = "clock"
     @State private var color: MetricColor = .copper
+    @State private var didSuggestColor = false
     @State private var measurementType: MeasurementType = .duration
     @State private var unit = ""
     @State private var saveTrigger = false
@@ -45,7 +46,18 @@ struct MetricFormView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saveTrigger)
+            .onAppear(perform: suggestColor)
         }
+    }
+
+    /// Preselects the least-used identity color so metrics differentiate
+    /// themselves on the dashboard without the user having to think about it.
+    private func suggestColor() {
+        guard !didSuggestColor else { return }
+        didSuggestColor = true
+        color = MetricColor.nextAvailable(
+            usedNames: existingMetrics.map(\.colorName)
+        )
     }
 
     private var nameSection: some View {

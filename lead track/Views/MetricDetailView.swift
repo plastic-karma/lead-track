@@ -232,13 +232,13 @@ extension MetricDetailView {
             if project.isDefault {
                 Image(systemName: "star.fill")
                     .font(.caption2)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.secondary)
                     .accessibilityLabel("Default project")
             }
             Spacer()
             if project.sessions.contains(where: \.isRunning) {
                 Image(systemName: "record.circle")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(metric.displayColor)
                     .symbolEffect(.pulse)
             }
             Text("\(project.sessions.count) sessions")

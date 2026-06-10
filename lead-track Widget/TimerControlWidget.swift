@@ -187,7 +187,7 @@ extension TimerControlWidgetView {
             Button(intent: StopTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Stop", icon: "stop.fill")
             }
-            .tint(.red)
+            .tint(tint(for: metric))
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else {

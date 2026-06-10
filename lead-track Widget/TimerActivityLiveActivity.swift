@@ -28,7 +28,7 @@ struct TimerActivityLiveActivity: Widget {
                 expandedTimer(context)
             }
             DynamicIslandExpandedRegion(.bottom) {
-                stopButton
+                stopButton(context)
             }
         } compactLeading: {
             metricIcon(context)
@@ -78,12 +78,12 @@ extension TimerActivityLiveActivity {
             .foregroundStyle(tint(context.attributes))
     }
 
-    private var stopButton: some View {
+    private func stopButton(_ context: ActivityContext) -> some View {
         Button(intent: StopTimerIntent()) {
             Label("Stop", systemImage: "stop.fill")
                 .frame(maxWidth: .infinity)
         }
-        .tint(.red)
+        .tint(tint(context.attributes))
     }
 }
 
@@ -113,7 +113,7 @@ extension TimerActivityLiveActivity {
                 Image(systemName: "stop.fill")
                     .font(.title2)
             }
-            .tint(.red)
+            .tint(tint(context.attributes))
         }
         .padding()
     }

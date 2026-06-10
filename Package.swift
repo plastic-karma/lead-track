@@ -15,7 +15,6 @@ let package = Package(
             name: "lead_track",
             path: "Shared",
             exclude: [
-                "Models/MetricColor.swift",
                 "Services/LogEntryIntent.swift",
                 "Services/SessionService.swift",
                 "Services/SharedModelContainer.swift",
