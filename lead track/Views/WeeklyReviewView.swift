@@ -82,7 +82,7 @@ extension WeeklyReviewView {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading) {
                 Text(DurationFormatter.format(total))
-                    .font(.headline)
+                    .numeralStyle(.stat)
                 Text("\(sessionCount) sessions")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -224,8 +224,7 @@ extension DetailedStatisticsView {
                     value, type: measurementType
                 )
             )
-            .font(.system(.headline, design: .rounded))
-            .monospacedDigit()
+            .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)
     }
@@ -239,8 +238,7 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("\(days)d")
-                .font(.system(.headline, design: .rounded))
-                .monospacedDigit()
+                .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)
     }
@@ -268,8 +266,7 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(text)
-                .font(.system(.headline, design: .rounded))
-                .monospacedDigit()
+                .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)
     }

@@ -122,8 +122,7 @@ extension StatisticsView {
                     value, type: measurementType
                 )
             )
-            .font(.system(.headline, design: .rounded))
-            .monospacedDigit()
+            .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)
     }
@@ -137,8 +136,7 @@ extension StatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("\(days)d")
-                .font(.system(.headline, design: .rounded))
-                .monospacedDigit()
+                .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)
     }
