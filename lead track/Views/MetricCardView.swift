@@ -20,15 +20,7 @@ struct MetricCardView: View {
                 CountEntryView(metric: metric, project: nil)
             }
             .sensoryFeedback(.increase, trigger: quickLogTrigger)
-            .sensoryFeedback(trigger: runningSession != nil) { wasActive, isActive in
-                if !wasActive, isActive {
-                    .impact(weight: .medium)
-                } else if wasActive, !isActive {
-                    .success
-                } else {
-                    nil
-                }
-            }
+            .recordingFeedback(isActive: runningSession != nil)
     }
 
     private func content(_ totals: [DailyTotal]) -> some View {
@@ -65,7 +57,7 @@ extension MetricCardView {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Image(systemName: metric.icon ?? "clock")
+            Image(systemName: metric.displayIcon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 36, height: 36)
@@ -97,7 +89,12 @@ extension MetricCardView {
     @ViewBuilder
     private func todayValue(_ totals: [DailyTotal]) -> some View {
         if let session = runningSession {
-            Text(liveTimerStart(session, totals: totals), style: .timer)
+            Text(
+                session.liveTimerOrigin(
+                    backdatedBy: SessionStatistics.todayTotal(from: totals)
+                ),
+                style: .timer
+            )
         } else {
             Text(
                 ValueFormatter.format(
@@ -107,17 +104,6 @@ extension MetricCardView {
                 )
             )
         }
-    }
-
-    /// Backdates the live timer's origin by today's completed total so the
-    /// counting value shows the whole day, not just the current session.
-    private func liveTimerStart(
-        _ session: Session,
-        totals: [DailyTotal]
-    ) -> Date {
-        session.startedAt.addingTimeInterval(
-            -SessionStatistics.todayTotal(from: totals)
-        )
     }
 
     private func streakLine(_ totals: [DailyTotal]) -> some View {
@@ -198,11 +184,7 @@ extension MetricCardView {
 
     private func toggleTimer() {
         withAnimation {
-            if let session = runningSession {
-                SessionService.stopSession(session)
-            } else {
-                SessionService.startSession(for: metric, in: modelContext)
-            }
+            SessionService.toggleSession(for: metric, in: modelContext)
         }
     }
 

@@ -11,6 +11,7 @@ final class PhoneWatchSyncService: NSObject {
 
     private var container: ModelContainer?
     private var saveObserver: (any NSObjectProtocol)?
+    private var lastPushed: WatchSnapshot?
 
     func activate(container: ModelContainer) {
         guard WCSession.isSupported() else { return }
@@ -33,8 +34,9 @@ final class PhoneWatchSyncService: NSObject {
     private func handle(message: [String: Any]) -> [String: Any] {
         applyAction(from: message)
         guard let snapshot = currentSnapshot() else { return [:] }
-        push(snapshot)
-        return WatchSyncCodec.context(for: snapshot)
+        let context = WatchSyncCodec.context(for: snapshot)
+        push(snapshot, encodedAs: context)
+        return context
     }
 
     private func applyAction(from message: [String: Any]) {
@@ -52,15 +54,26 @@ final class PhoneWatchSyncService: NSObject {
         return WatchSnapshotBuilder.snapshot(in: ModelContext(container))
     }
 
-    private func push(_ snapshot: WatchSnapshot) {
+    /// Updates the watch's application context, skipping the transfer when
+    /// the watch already holds identical state.
+    private func push(
+        _ snapshot: WatchSnapshot,
+        encodedAs encoded: [String: Any]? = nil
+    ) {
         let session = WCSession.default
         guard session.activationState == .activated,
               session.isPaired,
-              session.isWatchAppInstalled
+              session.isWatchAppInstalled,
+              snapshot != lastPushed
         else { return }
-        try? session.updateApplicationContext(
-            WatchSyncCodec.context(for: snapshot)
-        )
+        do {
+            try session.updateApplicationContext(
+                encoded ?? WatchSyncCodec.context(for: snapshot)
+            )
+            lastPushed = snapshot
+        } catch {
+            // Leave lastPushed stale so the next change retries the transfer.
+        }
     }
 
     private func observeSaves() {

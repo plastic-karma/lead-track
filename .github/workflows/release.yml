@@ -40,6 +40,11 @@ on:
         required: false
         type: boolean
         default: false
+      diagnose_signing:
+        description: "Print the account's bundle IDs, capabilities & profiles (debug cloud signing)"
+        required: false
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -142,7 +147,9 @@ jobs:
 
       - name: Diagnose bundle IDs & profiles
         # Read-only: prints the account's bundle IDs, capabilities, and
-        # provisioning profiles to debug cloud-signing failures.
+        # provisioning profiles to debug cloud-signing failures. Off by
+        # default — tick "diagnose_signing" when signing breaks.
+        if: ${{ inputs.diagnose_signing }}
         continue-on-error: true
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}

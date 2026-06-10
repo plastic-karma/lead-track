@@ -24,13 +24,17 @@ struct StartTimerIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         let container = try SharedModelContainer.create()
         let context = ModelContext(container)
-        let metrics = try context.fetch(FetchDescriptor<Metric>())
-        if let metric = metrics.first(where: { $0.stableID?.uuidString == metricID }) {
+        if let metric = try targetMetric(in: context) {
             SessionService.startSession(for: metric, in: context)
             try context.save()
         }
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
+    }
+
+    private func targetMetric(in context: ModelContext) throws -> Metric? {
+        guard let id = UUID(uuidString: metricID) else { return nil }
+        return try Metric.find(stableID: id, in: context)
     }
 }
 #endif

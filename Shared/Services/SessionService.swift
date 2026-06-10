@@ -9,11 +9,27 @@ enum SessionService {
         metric.sessions.first { $0.isRunning }
     }
 
+    /// Starts the metric's timer, or stops the one already running — the
+    /// single toggle behind every start/stop button.
+    static func toggleSession(
+        for metric: Metric,
+        in context: ModelContext
+    ) {
+        if let running = activeSession(for: metric) {
+            stopSession(running)
+        } else {
+            startSession(for: metric, in: context)
+        }
+    }
+
+    /// `at` records when the session actually began (clamped to now), so
+    /// actions queued offline — e.g. from the watch — are backdated.
     @discardableResult
     static func startSession(
         for metric: Metric,
         project: Project? = nil,
-        in context: ModelContext
+        in context: ModelContext,
+        at timestamp: Date = .now
     ) -> Session {
         if let running = activeSession(for: metric) {
             return running
@@ -22,7 +38,7 @@ enum SessionService {
         let session = Session(
             metric: metric,
             project: project,
-            startedAt: .now
+            startedAt: min(timestamp, .now)
         )
         context.insert(session)
         startLiveActivity(
@@ -45,8 +61,9 @@ enum SessionService {
         return true
     }
 
-    static func stopSession(_ session: Session) {
-        session.endedAt = .now
+    /// Ends the session at `timestamp`, clamped between its start and now.
+    static func stopSession(_ session: Session, at timestamp: Date = .now) {
+        session.endedAt = max(min(timestamp, .now), session.startedAt)
         stopLiveActivity()
         if let metric = session.metric {
             rescheduleNotifications(for: metric)
@@ -58,14 +75,16 @@ enum SessionService {
         _ value: Double,
         for metric: Metric,
         project: Project? = nil,
-        in context: ModelContext
+        in context: ModelContext,
+        at timestamp: Date = .now
     ) -> Session {
         let project = project ?? metric.defaultProject
+        let logged = min(timestamp, .now)
         let session = Session(
             metric: metric,
             project: project,
-            startedAt: .now,
-            endedAt: .now,
+            startedAt: logged,
+            endedAt: logged,
             value: value
         )
         context.insert(session)
@@ -93,11 +112,9 @@ enum SessionService {
         return session
     }
 
-    static func stopSession(for metric: Metric) {
+    static func stopSession(for metric: Metric, at timestamp: Date = .now) {
         guard let running = activeSession(for: metric) else { return }
-        running.endedAt = .now
-        stopLiveActivity()
-        rescheduleNotifications(for: metric)
+        stopSession(running, at: timestamp)
     }
 
     private static func rescheduleNotifications(
@@ -117,7 +134,7 @@ enum SessionService {
     static func syncLiveActivity(in context: ModelContext) {
         #if canImport(ActivityKit)
         let descriptor = FetchDescriptor<Session>(
-            predicate: #Predicate { $0.endedAt == nil && $0.value == nil }
+            predicate: Session.isRunningPredicate
         )
         guard let running = try? context.fetch(descriptor).first,
               let metric = running.metric
@@ -144,7 +161,7 @@ enum SessionService {
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
             projectName: project?.name,
-            icon: metric.icon ?? "clock",
+            icon: metric.displayIcon,
             colorName: metric.colorName
         )
         let state = TimerActivityAttributes.ContentState(

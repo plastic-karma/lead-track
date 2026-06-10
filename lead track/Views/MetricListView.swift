@@ -7,7 +7,7 @@ import SwiftUI
 struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
-    @Query(filter: #Predicate<Session> { $0.endedAt == nil })
+    @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
     @State private var showingWeeklyReview = false

@@ -61,6 +61,35 @@ extension Metric {
     }
 }
 
+// MARK: - Display Icon
+
+extension Metric {
+    /// The SF Symbol every surface shows for the metric, with the shared
+    /// fallback for metrics saved before icons existed.
+    var displayIcon: String {
+        icon ?? "clock"
+    }
+}
+
+// MARK: - Lookup
+
+#if canImport(SwiftData)
+extension Metric {
+    /// Fetches the metric carrying this stable identity — the ID that watch
+    /// actions, widget configurations, and intents reference.
+    static func find(
+        stableID id: UUID,
+        in context: ModelContext
+    ) throws -> Metric? {
+        var descriptor = FetchDescriptor<Metric>(
+            predicate: #Predicate { $0.stableID == id }
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+}
+#endif
+
 // MARK: - Daily Goal Schedule
 
 extension Metric {

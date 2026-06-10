@@ -22,7 +22,7 @@ struct StopTimerIntent: LiveActivityIntent {
         let container = try SharedModelContainer.create()
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Session>(
-            predicate: #Predicate { $0.endedAt == nil && $0.value == nil }
+            predicate: Session.isRunningPredicate
         )
         let running = try context.fetch(descriptor)
         var names: Set<String> = []

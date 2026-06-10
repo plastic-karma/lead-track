@@ -57,10 +57,11 @@ struct MetricDetailView: View {
     }
 
     var body: some View {
+        let totals = dailyTotals
         List {
-            heroSection
+            heroSection(totals)
             statisticsSection
-            activitySection
+            ActivitySection(dailyTotals: totals, tint: metric.displayColor)
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
@@ -110,27 +111,19 @@ struct MetricDetailView: View {
         .sheet(item: $sessionToMove) { session in
             MoveSessionView(session: session)
         }
-        .sensoryFeedback(trigger: activeSession != nil) { wasActive, isActive in
-            if !wasActive, isActive {
-                .impact(weight: .medium)
-            } else if wasActive, !isActive {
-                .success
-            } else {
-                nil
-            }
-        }
+        .recordingFeedback(isActive: activeSession != nil)
     }
 }
 
 // MARK: - Sections
 
 extension MetricDetailView {
-    private var heroSection: some View {
+    private func heroSection(_ totals: [DailyTotal]) -> some View {
         Section {
             MetricHeroView(
                 metric: metric,
                 activeSession: activeSession,
-                todayTotal: SessionStatistics.todayTotal(from: dailyTotals),
+                todayTotal: SessionStatistics.todayTotal(from: totals),
                 onLogManually: showManualEntry
             )
             .listRowBackground(Color.clear)
@@ -151,18 +144,6 @@ extension MetricDetailView {
             showingDetailedStats: $showingDetailedStats,
             tint: metric.displayColor
         )
-    }
-
-    @ViewBuilder
-    private var activitySection: some View {
-        if !dailyTotals.isEmpty {
-            Section("Activity") {
-                CalendarHeatmapView(
-                    dailyTotals: dailyTotals,
-                    tint: metric.displayColor
-                )
-            }
-        }
     }
 
     @ViewBuilder

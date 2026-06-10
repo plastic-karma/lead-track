@@ -150,14 +150,11 @@ extension ProjectDetailView {
         }
     }
 
-    @ViewBuilder
     private var activitySection: some View {
-        let totals = SessionStatistics.dailyTotals(from: sessions)
-        if !totals.isEmpty {
-            Section("Activity") {
-                CalendarHeatmapView(dailyTotals: totals, tint: metricTint)
-            }
-        }
+        ActivitySection(
+            dailyTotals: SessionStatistics.dailyTotals(from: sessions),
+            tint: metricTint
+        )
     }
 
     private var statusSection: some View {

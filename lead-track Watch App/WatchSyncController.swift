@@ -23,30 +23,32 @@ final class WatchSyncController: NSObject {
     }
 
     func requestRefresh() {
-        let session = WCSession.default
-        guard session.activationState == .activated, session.isReachable
-        else { return }
-        session.sendMessage(
-            WatchSyncCodec.refreshRequest,
-            replyHandler: { [weak self] reply in
-                Task { @MainActor in
-                    self?.receive(context: reply)
-                }
-            },
-            errorHandler: nil
-        )
+        send(WatchSyncCodec.refreshRequest)
     }
 
     func perform(_ action: WatchAction) {
         update(to: WatchSnapshotReducer.applying(action, to: snapshot))
-        deliver(WatchSyncCodec.message(for: action))
+        let message = WatchSyncCodec.message(for: action)
+        send(message) {
+            WCSession.default.transferUserInfo(message)
+        }
     }
 
-    private func deliver(_ message: [String: Any]) {
+    /// Sends a message while the phone is reachable, applying the snapshot
+    /// that comes back in the reply. When it isn't — or sending fails —
+    /// `fallback` runs instead (queued delivery for actions, nothing for
+    /// refresh requests).
+    private func send(
+        _ message: [String: Any],
+        fallback: (() -> Void)? = nil
+    ) {
         let session = WCSession.default
         guard session.activationState == .activated, session.isReachable else {
-            session.transferUserInfo(message)
+            fallback?()
             return
+        }
+        let errorHandler: ((Error) -> Void)? = fallback.map { handler in
+            { _ in handler() }
         }
         session.sendMessage(
             message,
@@ -55,9 +57,7 @@ final class WatchSyncController: NSObject {
                     self?.receive(context: reply)
                 }
             },
-            errorHandler: { _ in
-                WCSession.default.transferUserInfo(message)
-            }
+            errorHandler: errorHandler
         )
     }
 
@@ -68,6 +68,7 @@ final class WatchSyncController: NSObject {
     }
 
     private func update(to snapshot: WatchSnapshot) {
+        guard snapshot != self.snapshot else { return }
         self.snapshot = snapshot
         WatchSnapshotCache.save(snapshot)
         WidgetCenter.shared.reloadAllTimelines()

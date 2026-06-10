@@ -18,6 +18,10 @@ struct MetricSnapshot: Identifiable {
     let weeklyGoal: TimeInterval?
     let streak: Int
     let isRestDay: Bool
+
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
 }
 
 struct ScoreboardProvider: TimelineProvider {
@@ -66,24 +70,15 @@ extension ScoreboardProvider {
         )
         guard let metrics = try? context.fetch(descriptor)
         else { return [] }
-        return metrics.prefix(4).map { metric in
-            snapshot(for: metric, context: context)
-        }
+        return metrics.prefix(4).map { snapshot(for: $0) }
     }
 
-    private func snapshot(
-        for metric: Metric,
-        context: ModelContext
-    ) -> MetricSnapshot {
-        let sessions = (metric.sessions)
-            .filter { !$0.isRunning }
-        let totals = SessionStatistics.dailyTotals(
-            from: sessions
-        )
+    private func snapshot(for metric: Metric) -> MetricSnapshot {
+        let totals = SessionStatistics.dailyTotals(from: metric.sessions)
         return MetricSnapshot(
             id: metric.name,
             name: metric.name,
-            icon: metric.icon ?? "clock",
+            icon: metric.displayIcon,
             colorName: metric.colorName,
             todayTotal: SessionStatistics.todayTotal(from: totals),
             dailyGoal: metric.dailyGoal,
@@ -164,17 +159,13 @@ struct ScoreboardWidgetView: View {
 // MARK: - Metric Row
 
 extension ScoreboardWidgetView {
-    private func tint(for metric: MetricSnapshot) -> Color {
-        MetricColor.color(named: metric.colorName)
-    }
-
     private func metricRow(
         _ metric: MetricSnapshot
     ) -> some View {
         HStack(spacing: 8) {
             Image(systemName: metric.icon)
                 .font(.body)
-                .foregroundStyle(tint(for: metric))
+                .foregroundStyle(metric.displayColor)
                 .frame(width: 20)
             Text(metric.name)
                 .font(.subheadline)
@@ -184,7 +175,7 @@ extension ScoreboardWidgetView {
             if family != .systemSmall {
                 goalRings(metric)
             }
-            streakBadge(metric.streak, tint: tint(for: metric))
+            streakBadge(metric.streak, tint: metric.displayColor)
         }
     }
 
@@ -197,7 +188,7 @@ extension ScoreboardWidgetView {
                 current: metric.todayTotal,
                 goal: goal,
                 label: "D",
-                tint: tint(for: metric)
+                tint: metric.displayColor
             )
         }
         if let goal = metric.weeklyGoal {
@@ -205,7 +196,7 @@ extension ScoreboardWidgetView {
                 current: metric.weeklyTotal,
                 goal: goal,
                 label: "W",
-                tint: tint(for: metric)
+                tint: metric.displayColor
             )
         }
     }
@@ -242,8 +233,7 @@ extension ScoreboardWidgetView {
             Image(systemName: "flame.fill")
                 .font(.system(size: streakIconSize))
             Text("\(days)")
-                .font(.system(.caption, design: .rounded).bold())
-                .monospacedDigit()
+                .roundedDigits(.caption, weight: .bold)
         }
         .foregroundStyle(days > 0 ? tint : Color.secondary)
     }

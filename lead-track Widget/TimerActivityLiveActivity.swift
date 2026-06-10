@@ -38,10 +38,6 @@ struct TimerActivityLiveActivity: Widget {
             metricIcon(context)
         }
     }
-
-    private func tint(_ attributes: TimerActivityAttributes) -> Color {
-        MetricColor.color(named: attributes.colorName)
-    }
 }
 
 // MARK: - Island Pieces
@@ -49,7 +45,7 @@ struct TimerActivityLiveActivity: Widget {
 extension TimerActivityLiveActivity {
     private func metricIcon(_ context: ActivityContext) -> some View {
         Image(systemName: context.attributes.icon)
-            .foregroundStyle(tint(context.attributes))
+            .foregroundStyle(context.attributes.displayColor)
     }
 
     private func expandedCenter(_ context: ActivityContext) -> some View {
@@ -66,16 +62,15 @@ extension TimerActivityLiveActivity {
 
     private func expandedTimer(_ context: ActivityContext) -> some View {
         Text(context.state.startedAt, style: .timer)
-            .monospacedDigit()
-            .font(.system(.title3, design: .rounded))
-            .foregroundStyle(tint(context.attributes))
+            .roundedDigits(.title3)
+            .foregroundStyle(context.attributes.displayColor)
     }
 
     private func compactTimer(_ context: ActivityContext) -> some View {
         Text(context.state.startedAt, style: .timer)
             .monospacedDigit()
             .fontDesign(.rounded)
-            .foregroundStyle(tint(context.attributes))
+            .foregroundStyle(context.attributes.displayColor)
     }
 
     private func stopButton(_ context: ActivityContext) -> some View {
@@ -83,7 +78,7 @@ extension TimerActivityLiveActivity {
             Label("Stop", systemImage: "stop.fill")
                 .frame(maxWidth: .infinity)
         }
-        .tint(tint(context.attributes))
+        .tint(context.attributes.displayColor)
     }
 }
 
@@ -94,7 +89,7 @@ extension TimerActivityLiveActivity {
         HStack {
             Image(systemName: context.attributes.icon)
                 .font(.title2)
-                .foregroundStyle(tint(context.attributes))
+                .foregroundStyle(context.attributes.displayColor)
             VStack(alignment: .leading) {
                 Text(context.attributes.metricName)
                     .font(.headline)
@@ -106,14 +101,13 @@ extension TimerActivityLiveActivity {
             }
             Spacer()
             Text(context.state.startedAt, style: .timer)
-                .monospacedDigit()
-                .font(.system(.title, design: .rounded))
-                .foregroundStyle(tint(context.attributes))
+                .roundedDigits(.title)
+                .foregroundStyle(context.attributes.displayColor)
             Button(intent: StopTimerIntent()) {
                 Image(systemName: "stop.fill")
                     .font(.title2)
             }
-            .tint(tint(context.attributes))
+            .tint(context.attributes.displayColor)
         }
         .padding()
     }

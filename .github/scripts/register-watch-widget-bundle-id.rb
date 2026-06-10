@@ -10,26 +10,10 @@
 #
 # Reads: API_KEY_PATH (the .p8 file), KEY_ID, ISSUER_ID.
 
-require 'openssl'
-require 'base64'
-require 'json'
-require 'net/http'
+require_relative 'asc_api'
 
-HOST = 'api.appstoreconnect.apple.com'
 IDENTIFIER = 'plastickarma.lead-track.watchkitapp.widget'
 NAME = 'lead-track Watch Widget'
-
-def make_token(key, key_id, issuer_id)
-  b64 = ->(bytes) { Base64.urlsafe_encode64(bytes).delete('=') }
-  now = Time.now.to_i
-  header = { alg: 'ES256', kid: key_id, typ: 'JWT' }
-  claims = { iss: issuer_id, iat: now, exp: now + 1140, aud: 'appstoreconnect-v1' }
-  signing_input = "#{b64.call(JSON.generate(header))}.#{b64.call(JSON.generate(claims))}"
-  der = key.sign(OpenSSL::Digest.new('SHA256'), signing_input)
-  parts = OpenSSL::ASN1.decode(der).value
-  raw = parts[0].value.to_s(2).rjust(32, "\x00") + parts[1].value.to_s(2).rjust(32, "\x00")
-  "#{signing_input}.#{b64.call(raw)}"
-end
 
 def request(token, method, path, payload = nil)
   http = Net::HTTP.new(HOST, 443)
@@ -88,8 +72,7 @@ def enable_app_groups(token, bundle)
 end
 
 begin
-  key = OpenSSL::PKey.read(File.read(ENV.fetch('API_KEY_PATH')))
-  token = make_token(key, ENV.fetch('KEY_ID'), ENV.fetch('ISSUER_ID'))
+  token = token_from_env
   bundle = existing_bundle_id(token)
   if bundle
     puts "Bundle ID #{IDENTIFIER} already registered (id #{bundle['id']})."
