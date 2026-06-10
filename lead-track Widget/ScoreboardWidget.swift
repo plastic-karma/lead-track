@@ -218,14 +218,13 @@ extension ScoreboardWidgetView {
     ) -> some View {
         let fraction = goal > 0
             ? min(current / goal, 1.0) : 0
-        let color: Color = current >= goal ? .green : tint
         return ZStack {
             Circle()
-                .stroke(Color(.systemGray5), lineWidth: 3)
+                .stroke(Theme.inactive, lineWidth: 3)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(
-                    color,
+                    tint,
                     style: StrokeStyle(
                         lineWidth: 3, lineCap: .round
                     )
@@ -233,7 +232,7 @@ extension ScoreboardWidgetView {
                 .rotationEffect(.degrees(-90))
             Text(label)
                 .font(.system(size: ringLabelSize).bold())
-                .foregroundStyle(color)
+                .foregroundStyle(tint)
         }
         .frame(width: 26, height: 26)
     }

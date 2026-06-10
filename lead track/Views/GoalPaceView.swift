@@ -6,12 +6,13 @@ struct GoalPaceView: View {
     let pace: GoalPace
     var measurementType: MeasurementType = .duration
     var unit: String?
+    var tint: Color = .accentColor
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: symbol)
                 .font(.title3)
-                .foregroundStyle(tint)
+                .foregroundStyle(symbolColor)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(headline)
@@ -75,11 +76,12 @@ extension GoalPaceView {
         }
     }
 
-    private var tint: Color {
+    /// A goal reached or beaten earns the metric's color; everything else
+    /// stays quiet — the gauge symbol and copy already carry the status.
+    private var symbolColor: Color {
         switch pace.status {
-        case .achieved, .ahead: .green
-        case .onTrack: .orange
-        case .behind: .red
+        case .achieved, .ahead: tint
+        case .onTrack, .behind: .secondary
         }
     }
 }

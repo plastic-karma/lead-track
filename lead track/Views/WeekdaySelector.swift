@@ -30,7 +30,7 @@ extension WeekdaySelector {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(isGoalDay ? Color.white : Color.secondary)
                 .frame(width: diameter, height: diameter)
-                .background(isGoalDay ? Color.accentColor : Color(.systemGray5))
+                .background(isGoalDay ? Color.accentColor : Theme.inactive)
                 .clipShape(Circle())
                 .frame(maxWidth: .infinity)
         }

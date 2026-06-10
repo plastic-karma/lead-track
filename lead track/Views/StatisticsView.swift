@@ -26,6 +26,7 @@ struct StatisticsView: View {
                         "All Statistics",
                         systemImage: "chart.bar.xaxis"
                     )
+                    .foregroundStyle(.primary)
                 }
             }
         }
@@ -34,7 +35,12 @@ struct StatisticsView: View {
     @ViewBuilder
     private var paceBanner: some View {
         if let pace = weekPace {
-            GoalPaceView(pace: pace, measurementType: measurementType, unit: unit)
+            GoalPaceView(
+                pace: pace,
+                measurementType: measurementType,
+                unit: unit,
+                tint: tint
+            )
         }
     }
 

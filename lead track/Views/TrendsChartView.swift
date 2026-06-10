@@ -71,7 +71,7 @@ extension TrendsChartView {
     private var goalMark: some ChartContent {
         if let goal = activeGoal {
             RuleMark(y: .value("Goal", plot(goal)))
-                .foregroundStyle(.green)
+                .foregroundStyle(.secondary)
                 .lineStyle(StrokeStyle(dash: [5, 5]))
                 .annotation(position: .top, alignment: .trailing) {
                     Text(goalLabel(goal))

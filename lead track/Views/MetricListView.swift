@@ -26,7 +26,7 @@ struct MetricListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Theme.screenBackground)
         .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {

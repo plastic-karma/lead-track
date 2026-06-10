@@ -88,7 +88,7 @@ extension MetricHeroView {
             .padding(.vertical, 4)
         }
         .prominentCapsuleButtonStyle()
-        .tint(activeSession == nil ? metric.displayColor : .red)
+        .tint(metric.displayColor)
     }
 
     private var countButton: some View {

@@ -4,7 +4,9 @@ import SwiftUI
 /// One dashboard card per metric: identity, today's value with a seven-day
 /// sparkline, streak, optional goal progress, and the primary action
 /// (start/stop timer or +1) right where the status is shown. While a timer
-/// runs the value counts live and the card wears a red recording border.
+/// runs the value counts live and the stop symbol pulses in the metric's
+/// color. The metric color is reserved for the action and the data ink;
+/// the rest of the card stays monochrome.
 struct MetricCardView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
@@ -42,8 +44,11 @@ struct MetricCardView: View {
             }
         }
         .padding(16)
-        .background(cardShape.fill(Color(.secondarySystemGroupedBackground)))
-        .overlay(cardShape.strokeBorder(borderColor, lineWidth: 1.5))
+        .background(
+            cardShape
+                .fill(Theme.cardBackground)
+                .shadow(color: Theme.cardShadow, radius: 10, y: 2)
+        )
     }
 }
 
@@ -54,10 +59,6 @@ extension MetricCardView {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
     }
 
-    private var borderColor: Color {
-        runningSession == nil ? .clear : .red.opacity(0.4)
-    }
-
     private var tint: Color {
         metric.displayColor
     }
@@ -66,9 +67,9 @@ extension MetricCardView {
         HStack(spacing: 12) {
             Image(systemName: metric.icon ?? "clock")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
+                .foregroundStyle(.secondary)
                 .frame(width: 36, height: 36)
-                .background(Circle().fill(tint.opacity(0.12)))
+                .background(Circle().fill(Theme.chipFill))
             Text(metric.name)
                 .font(.headline)
             Spacer()
@@ -137,7 +138,7 @@ extension MetricCardView {
         HStack(spacing: 12) {
             ProgressView(value: min(today / max(goal, 1), 1))
                 .progressViewStyle(.linear)
-                .tint(today >= goal ? Color.green : tint)
+                .tint(tint)
             Text(
                 "goal \(ValueFormatter.formatShort(goal, type: metric.measurementType))"
             )
@@ -190,12 +191,9 @@ extension MetricCardView {
         Image(systemName: systemName)
             .font(.subheadline.weight(.bold))
             .foregroundStyle(.white)
+            .symbolEffect(.pulse, isActive: runningSession != nil)
             .frame(width: 36, height: 36)
-            .background(
-                Circle().fill(
-                    runningSession == nil ? tint : Color.red
-                )
-            )
+            .background(Circle().fill(tint))
     }
 
     private func toggleTimer() {

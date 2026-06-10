@@ -83,9 +83,7 @@ extension CalendarHeatmapView {
     }
 
     private func legendFill(_ opacity: Double) -> Color {
-        opacity == 0
-            ? Color(.systemGray5)
-            : tint.opacity(0.25 + 0.75 * opacity)
+        opacity == 0 ? emptyCellColor : rampColor(opacity)
     }
 }
 
@@ -127,10 +125,21 @@ extension CalendarHeatmapView {
         }
         let value = totalsByDay[date] ?? 0
         guard maxValue > 0, value > 0 else {
-            return Color(.systemGray5)
+            return emptyCellColor
         }
-        let intensity = value / maxValue
-        return tint.opacity(0.25 + 0.75 * intensity)
+        return rampColor(value / maxValue)
+    }
+
+    /// A whisper of the tint instead of a gray grid, so empty days recede.
+    private var emptyCellColor: Color {
+        tint.opacity(0.08)
+    }
+
+    /// Opacity carries the low end while the hue deepens toward the top, so
+    /// heavy days read rich instead of washed out.
+    private func rampColor(_ intensity: Double) -> Color {
+        tint.mix(with: .black, by: 0.25 * intensity)
+            .opacity(0.25 + 0.75 * intensity)
     }
 
     private func weekdayLabel(_ weekday: Int) -> String {

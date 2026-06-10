@@ -33,7 +33,10 @@ struct SessionRowView: View {
     @ViewBuilder
     private var valueLabel: some View {
         if session.isRunning {
-            TimerDisplay(startedAt: session.startedAt)
+            TimerDisplay(
+                startedAt: session.startedAt,
+                tint: session.metric?.displayColor ?? .accentColor
+            )
         } else if let count = session.value {
             Text(countText(count))
                 .numeralStyle(.stat)

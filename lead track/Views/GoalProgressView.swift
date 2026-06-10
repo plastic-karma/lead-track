@@ -12,10 +12,6 @@ struct GoalProgressView: View {
         goal > 0 ? min(current / goal, 1.0) : 0
     }
 
-    private var isComplete: Bool {
-        current >= goal
-    }
-
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
@@ -37,11 +33,11 @@ struct GoalProgressView: View {
     private var progressRing: some View {
         ZStack {
             Circle()
-                .stroke(Color(.systemGray5), lineWidth: 4)
+                .stroke(Theme.inactive, lineWidth: 4)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(
-                    ringColor,
+                    tint,
                     style: StrokeStyle(
                         lineWidth: 4, lineCap: .round
                     )
@@ -52,10 +48,6 @@ struct GoalProgressView: View {
                 .monospacedDigit()
         }
         .frame(width: 44, height: 44)
-    }
-
-    private var ringColor: Color {
-        isComplete ? .green : tint
     }
 
     private var percentText: String {
