@@ -194,16 +194,20 @@ extension MetricDetailView {
     @ViewBuilder
     private var directSessionsSections: some View {
         ForEach(SessionDayGrouping.group(visibleDirectSessions)) { group in
-            Section(SessionDayGrouping.label(for: group.day)) {
-                ForEach(group.sessions) { session in
-                    sessionRow(session)
-                }
-                .onDelete { offsets in
-                    deleteSessions(offsets, in: group)
-                }
-            }
+            sessionDaySection(group)
         }
         expandSection
+    }
+
+    private func sessionDaySection(_ group: SessionDayGroup) -> some View {
+        Section(SessionDayGrouping.label(for: group.day)) {
+            ForEach(group.sessions) { session in
+                sessionRow(session)
+            }
+            .onDelete { offsets in
+                deleteSessions(offsets, in: group)
+            }
+        }
     }
 
     @ViewBuilder
