@@ -35,22 +35,13 @@ struct MetricCardView: View {
                 )
             }
         }
-        .padding(16)
-        .background(
-            cardShape
-                .fill(Theme.cardBackground)
-                .shadow(color: Theme.cardShadow, radius: 10, y: 2)
-        )
+        .cardSurface()
     }
 }
 
 // MARK: - Card Pieces
 
 extension MetricCardView {
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
-    }
-
     private var tint: Color {
         metric.displayColor
     }

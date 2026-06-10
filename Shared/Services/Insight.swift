@@ -35,21 +35,21 @@ enum TimeOfDayBucket: String, Equatable, CaseIterable {
     }
 }
 
+/// One detected pattern in a single metric's week. Insights are always shown
+/// inside that metric's own context (its weekly review card), so the copy
+/// never repeats the metric name.
 enum Insight: Equatable {
     case timeOfDayMode(
-        metricName: String,
         bucket: TimeOfDayBucket,
         ratio: Double,
         sessionCount: Int
     )
     case dayOfWeekMode(
-        metricName: String,
         weekday: Int,
         ratio: Double,
         sessionCount: Int
     )
     case volumeChange(
-        metricName: String,
         measurementType: MeasurementType,
         unit: String?,
         currentTotal: Double,
@@ -58,16 +58,13 @@ enum Insight: Equatable {
         previousCount: Int
     )
     case activeDaysChange(
-        metricName: String,
         currentDays: Int,
         previousDays: Int
     )
     case currentStreak(
-        metricName: String,
         days: Int
     )
     case goalHitRateChange(
-        metricName: String,
         currentHits: Int,
         previousHits: Int
     )
@@ -85,15 +82,15 @@ extension Insight {
 
     var symbol: String {
         switch self {
-        case let .timeOfDayMode(_, bucket, _, _):
+        case let .timeOfDayMode(bucket, _, _):
             bucket.symbol
         case .dayOfWeekMode:
             "calendar"
-        case let .volumeChange(_, _, _, current, previous, _, _):
+        case let .volumeChange(_, _, current, previous, _, _):
             current >= previous
                 ? "chart.line.uptrend.xyaxis"
                 : "chart.line.downtrend.xyaxis"
-        case let .activeDaysChange(_, current, previous):
+        case let .activeDaysChange(current, previous):
             current >= previous
                 ? "calendar.badge.checkmark"
                 : "calendar.badge.exclamationmark"
@@ -108,40 +105,40 @@ extension Insight {
 extension Insight {
     var headline: String {
         switch self {
-        case let .timeOfDayMode(name, bucket, _, _):
-            "\(name) is mostly a \(bucket.label) thing"
-        case let .dayOfWeekMode(name, weekday, _, _):
-            "\(name) is mostly a \(Self.weekdayName(weekday)) thing"
-        case let .volumeChange(name, _, _, current, previous, _, _):
-            current >= previous ? "\(name) up this week" : "\(name) down this week"
-        case let .activeDaysChange(name, current, previous):
-            current >= previous ? "\(name) on more days" : "\(name) on fewer days"
-        case let .currentStreak(name, _):
-            "\(name) streak going"
-        case let .goalHitRateChange(name, current, previous):
+        case let .timeOfDayMode(bucket, _, _):
+            "Mostly a \(bucket.label) thing"
+        case let .dayOfWeekMode(weekday, _, _):
+            "Mostly a \(Self.weekdayName(weekday)) thing"
+        case let .volumeChange(_, _, current, previous, _, _):
+            current >= previous ? "Up this week" : "Down this week"
+        case let .activeDaysChange(current, previous):
+            current >= previous ? "Active on more days" : "Active on fewer days"
+        case .currentStreak:
+            "On a streak"
+        case let .goalHitRateChange(current, previous):
             current >= previous
-                ? "\(name) hitting goal more often"
-                : "\(name) hitting goal less often"
+                ? "Hitting the goal more often"
+                : "Hitting the goal less often"
         }
     }
 
     var detail: String {
         switch self {
-        case let .timeOfDayMode(_, _, ratio, count):
+        case let .timeOfDayMode(_, ratio, count):
             return Self.percentageDetail(ratio: ratio, count: count, suffix: "in that window")
-        case let .dayOfWeekMode(_, _, ratio, count):
+        case let .dayOfWeekMode(_, ratio, count):
             return Self.percentageDetail(ratio: ratio, count: count, suffix: "on that day")
-        case let .volumeChange(_, type, unit, currentTotal, previousTotal, currentCount, previousCount):
+        case let .volumeChange(type, unit, currentTotal, previousTotal, currentCount, previousCount):
             return Self.volumeDetail(
                 type: type, unit: unit,
                 current: VolumeSnapshot(total: currentTotal, sessions: currentCount),
                 previous: VolumeSnapshot(total: previousTotal, sessions: previousCount)
             )
-        case let .activeDaysChange(_, current, previous):
+        case let .activeDaysChange(current, previous):
             return "\(current)/7 days vs \(previous)/7 last week"
-        case let .currentStreak(_, days):
+        case let .currentStreak(days):
             return "\(days) days in a row"
-        case let .goalHitRateChange(_, current, previous):
+        case let .goalHitRateChange(current, previous):
             return "Hit goal \(current)/7 days vs \(previous)/7"
         }
     }
