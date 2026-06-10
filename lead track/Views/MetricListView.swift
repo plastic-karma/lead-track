@@ -1,6 +1,9 @@
 import SwiftData
 import SwiftUI
 
+/// The "Today" dashboard: a scrolling stack of living metric cards under a
+/// date-and-goal-rings header. Cards show today's value and act in place;
+/// tapping a card still navigates to the metric's detail screen.
 struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
@@ -13,46 +16,21 @@ struct MetricListView: View {
     @State private var showingSettings = false
 
     var body: some View {
-        List {
-            GoalSummaryView(metrics: metrics)
-            ForEach(metrics) { metric in
-                NavigationLink(value: metric) {
-                    metricRow(metric)
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                TodayHeaderView(metrics: metrics)
+                ForEach(metrics) { metric in
+                    metricCard(metric)
                 }
             }
-            .onDelete(perform: deleteMetrics)
+            .padding(.horizontal)
+            .padding(.bottom, 24)
         }
-        .navigationTitle("Metrics")
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Menu {
-                    Button { showingSettings = true } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    Button { showingWeeklyReview = true } label: {
-                        Label(
-                            "Weekly Review",
-                            systemImage: "calendar.badge.clock"
-                        )
-                    }
-                    Button { showingExport = true } label: {
-                        Label(
-                            "Export Data",
-                            systemImage: "square.and.arrow.up"
-                        )
-                    }
-                    Button { showingImport = true } label: {
-                        Label(
-                            "Import Data",
-                            systemImage: "square.and.arrow.down"
-                        )
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                EditButton()
+                appMenu
             }
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
@@ -94,34 +72,57 @@ struct MetricListView: View {
             }
         }
     }
+}
 
-    private func metricRow(_ metric: Metric) -> some View {
-        HStack {
-            Image(systemName: metric.icon ?? "clock")
-                .foregroundStyle(.tint)
-                .frame(width: 30)
-            Text(metric.name)
-            Spacer()
-            if hasActiveSession(metric) {
-                Image(systemName: "record.circle")
-                    .foregroundStyle(.red)
-                    .symbolEffect(.pulse)
+// MARK: - Pieces
+
+extension MetricListView {
+    private var appMenu: some View {
+        Menu {
+            Button { showingSettings = true } label: {
+                Label("Settings", systemImage: "gear")
+            }
+            Button { showingWeeklyReview = true } label: {
+                Label("Weekly Review", systemImage: "calendar.badge.clock")
+            }
+            Button { showingExport = true } label: {
+                Label("Export Data", systemImage: "square.and.arrow.up")
+            }
+            Button { showingImport = true } label: {
+                Label("Import Data", systemImage: "square.and.arrow.down")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+    }
+
+    private func metricCard(_ metric: Metric) -> some View {
+        NavigationLink(value: metric) {
+            MetricCardView(
+                metric: metric,
+                runningSession: runningSession(for: metric)
+            )
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                delete(metric)
+            } label: {
+                Label("Delete Metric", systemImage: "trash")
             }
         }
     }
 
-    private func hasActiveSession(_ metric: Metric) -> Bool {
+    private func runningSession(for metric: Metric) -> Session? {
         let id = metric.persistentModelID
-        return runningSessions.contains {
+        return runningSessions.first {
             $0.metric?.persistentModelID == id
         }
     }
 
-    private func deleteMetrics(offsets: IndexSet) {
+    private func delete(_ metric: Metric) {
         withAnimation {
-            for index in offsets {
-                modelContext.delete(metrics[index])
-            }
+            modelContext.delete(metric)
         }
     }
 }
