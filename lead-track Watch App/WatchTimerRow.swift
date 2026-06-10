@@ -15,7 +15,9 @@ struct WatchTimerRow: View {
             WatchMetricLabel(
                 metric: metric,
                 accessory: isRunning ? "stop.circle.fill" : "play.circle.fill",
-                accessoryColor: isRunning ? .red : .green
+                accessoryColor: isRunning
+                    ? .red
+                    : MetricColor.color(named: metric.colorName)
             )
         }
     }

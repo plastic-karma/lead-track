@@ -144,7 +144,8 @@ enum SessionService {
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
             projectName: project?.name,
-            icon: metric.icon ?? "clock"
+            icon: metric.icon ?? "clock",
+            colorName: metric.colorName
         )
         let state = TimerActivityAttributes.ContentState(
             startedAt: startedAt

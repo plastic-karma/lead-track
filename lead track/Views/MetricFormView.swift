@@ -8,6 +8,7 @@ struct MetricFormView: View {
     @Query private var existingMetrics: [Metric]
     @State private var name = ""
     @State private var icon = "clock"
+    @State private var color: MetricColor = .copper
     @State private var measurementType: MeasurementType = .duration
     @State private var unit = ""
     @State private var saveTrigger = false
@@ -27,16 +28,10 @@ struct MetricFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    TextField("Name", text: $name)
-                    if nameIsDuplicate {
-                        Text("A metric with this name already exists.")
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    }
-                }
+                nameSection
                 typePicker
                 iconPicker
+                colorPicker
             }
             .navigationTitle("New Metric")
             .navigationBarTitleDisplayMode(.inline)
@@ -50,6 +45,17 @@ struct MetricFormView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saveTrigger)
+        }
+    }
+
+    private var nameSection: some View {
+        Section {
+            TextField("Name", text: $name)
+            if nameIsDuplicate {
+                Text("A metric with this name already exists.")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
         }
     }
 
@@ -103,12 +109,46 @@ struct MetricFormView: View {
         .buttonStyle(.plain)
     }
 
+    private var colorPicker: some View {
+        Section("Color") {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 44))],
+                spacing: 12
+            ) {
+                ForEach(MetricColor.allCases) { option in
+                    colorButton(option)
+                }
+            }
+        }
+    }
+
+    private func colorButton(_ option: MetricColor) -> some View {
+        Button {
+            color = option
+        } label: {
+            Circle()
+                .fill(option.color)
+                .frame(width: 26, height: 26)
+                .frame(width: 44, height: 44)
+                .background(
+                    color == option
+                        ? option.color.opacity(0.2)
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(option.label)
+        .accessibilityAddTraits(color == option ? .isSelected : [])
+    }
+
     private func save() {
         let metric = Metric(
             name: name,
             measurementType: measurementType,
             unit: measurementType == .count ? unit : nil,
-            icon: icon
+            icon: icon,
+            colorName: color.rawValue
         )
         modelContext.insert(metric)
         saveTrigger.toggle()

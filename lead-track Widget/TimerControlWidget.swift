@@ -13,6 +13,7 @@ struct TimerMetricState {
     let stableID: String
     let name: String
     let icon: String
+    let colorName: String?
     let isRunning: Bool
     let runningSince: Date?
     let todayTotal: TimeInterval
@@ -74,6 +75,7 @@ extension TimerControlProvider {
             stableID: metric.stableID?.uuidString ?? "",
             name: metric.name,
             icon: metric.icon ?? "clock",
+            colorName: metric.colorName,
             isRunning: running != nil,
             runningSince: running?.startedAt,
             todayTotal: SessionStatistics.todayTotal(from: totals)
@@ -85,6 +87,7 @@ extension TimerControlProvider {
             stableID: "",
             name: "Reading",
             icon: "book",
+            colorName: "sage",
             isRunning: false,
             runningSince: nil,
             todayTotal: 1200
@@ -133,10 +136,14 @@ extension TimerControlWidgetView {
         }
     }
 
+    private func tint(for metric: TimerMetricState) -> Color {
+        MetricColor.color(named: metric.colorName)
+    }
+
     private func header(_ metric: TimerMetricState) -> some View {
         HStack(spacing: 6) {
             Image(systemName: metric.icon)
-                .foregroundStyle(.orange)
+                .foregroundStyle(tint(for: metric))
             Text(metric.name)
                 .font(.headline)
                 .lineLimit(1)
@@ -151,7 +158,7 @@ extension TimerControlWidgetView {
             Text(since, style: .timer)
                 .font(.system(.title, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-                .foregroundStyle(.orange)
+                .foregroundStyle(tint(for: metric))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         } else {
@@ -187,7 +194,7 @@ extension TimerControlWidgetView {
             Button(intent: StartTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Start", icon: "play.fill")
             }
-            .tint(.green)
+            .tint(tint(for: metric))
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }

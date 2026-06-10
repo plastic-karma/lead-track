@@ -52,23 +52,20 @@ struct MetricDetailView: View {
             : Array(directSessions.prefix(SessionStatistics.sessionListPreviewLimit))
     }
 
+    private var dailyTotals: [DailyTotal] {
+        SessionStatistics.dailyTotals(from: sessions)
+    }
+
     var body: some View {
         List {
-            timerSection
-            StatisticsView(
-                sessions: sessions,
-                measurementType: metric.measurementType,
-                unit: metric.unit,
-                dailyGoal: metric.dailyGoal,
-                weeklyGoal: metric.weeklyGoal,
-                excludedWeekdays: metric.excludedWeekdays,
-                showingDetailedStats: $showingDetailedStats
-            )
+            heroSection
+            statisticsSection
+            activitySection
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
             if !directSessions.isEmpty {
-                directSessionsSection
+                directSessionsSections
             }
             if !finishedProjects.isEmpty {
                 projectsSection("Finished", finishedProjects)
@@ -92,14 +89,13 @@ struct MetricDetailView: View {
         }
         .sheet(isPresented: $showingDetailedStats) {
             DetailedStatisticsView(
-                dailyTotals: SessionStatistics.dailyTotals(
-                    from: sessions
-                ),
+                dailyTotals: dailyTotals,
                 measurementType: metric.measurementType,
                 unit: metric.unit,
                 dailyGoal: metric.dailyGoal,
                 weeklyGoal: metric.weeklyGoal,
-                excludedWeekdays: metric.excludedWeekdays
+                excludedWeekdays: metric.excludedWeekdays,
+                tint: metric.displayColor
             )
         }
         .sheet(isPresented: $showingGoalSettings) {
@@ -129,45 +125,43 @@ struct MetricDetailView: View {
 // MARK: - Sections
 
 extension MetricDetailView {
-    @ViewBuilder
-    private var timerSection: some View {
-        if metric.measurementType == .duration {
-            durationSection
-        } else {
-            countSection
-        }
-    }
-
-    private var durationSection: some View {
+    private var heroSection: some View {
         Section {
-            if let session = activeSession {
-                ActiveSessionBanner(session: session)
-                Button("Stop Timer", role: .destructive) {
-                    SessionService.stopSession(session)
-                }
-            } else {
-                Button { startTimer() } label: {
-                    Label("Start Timer", systemImage: "play.fill")
-                }
-            }
-            Button { showingDurationEntry = true } label: {
-                Label("Log Manually", systemImage: "plus.circle")
-            }
+            MetricHeroView(
+                metric: metric,
+                activeSession: activeSession,
+                todayTotal: SessionStatistics.todayTotal(from: dailyTotals),
+                onLogManually: showManualEntry
+            )
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         } footer: {
             defaultProjectFooter
         }
     }
 
-    private var countSection: some View {
-        Section {
-            Button { showingCountEntry = true } label: {
-                Label(
-                    "Log Entry",
-                    systemImage: "plus.circle"
+    private var statisticsSection: some View {
+        StatisticsView(
+            sessions: sessions,
+            measurementType: metric.measurementType,
+            unit: metric.unit,
+            dailyGoal: metric.dailyGoal,
+            weeklyGoal: metric.weeklyGoal,
+            excludedWeekdays: metric.excludedWeekdays,
+            showingDetailedStats: $showingDetailedStats,
+            tint: metric.displayColor
+        )
+    }
+
+    @ViewBuilder
+    private var activitySection: some View {
+        if !dailyTotals.isEmpty {
+            Section("Activity") {
+                CalendarHeatmapView(
+                    dailyTotals: dailyTotals,
+                    tint: metric.displayColor
                 )
             }
-        } footer: {
-            defaultProjectFooter
         }
     }
 
@@ -197,24 +191,34 @@ extension MetricDetailView {
         }
     }
 
-    private var directSessionsSection: some View {
-        Section("Sessions") {
-            ForEach(visibleDirectSessions) { session in
-                SessionRowView(session: session)
-                    .swipeActions(edge: .leading) {
-                        if !metric.projects.isEmpty {
-                            Button { sessionToMove = session } label: {
-                                Label("Move", systemImage: "folder")
-                            }
-                            .tint(.blue)
-                        }
-                    }
+    @ViewBuilder
+    private var directSessionsSections: some View {
+        ForEach(SessionDayGrouping.group(visibleDirectSessions)) { group in
+            sessionDaySection(group)
+        }
+        expandSection
+    }
+
+    private func sessionDaySection(_ group: SessionDayGroup) -> some View {
+        Section(SessionDayGrouping.label(for: group.day)) {
+            ForEach(group.sessions) { session in
+                sessionRow(session)
             }
-            .onDelete(perform: deleteDirectSessions)
-            SessionListExpandButton(
-                totalCount: directSessions.count,
-                isExpanded: $showingAllSessions
-            )
+            .onDelete { offsets in
+                deleteSessions(offsets, in: group)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var expandSection: some View {
+        if directSessions.count > SessionStatistics.sessionListPreviewLimit {
+            Section {
+                SessionListExpandButton(
+                    totalCount: directSessions.count,
+                    isExpanded: $showingAllSessions
+                )
+            }
         }
     }
 }
@@ -243,12 +247,23 @@ extension MetricDetailView {
         }
     }
 
-    private func startTimer() {
-        withAnimation {
-            SessionService.startSession(
-                for: metric,
-                in: modelContext
-            )
+    private func sessionRow(_ session: Session) -> some View {
+        SessionRowView(session: session, showsDate: false)
+            .swipeActions(edge: .leading) {
+                if !metric.projects.isEmpty {
+                    Button { sessionToMove = session } label: {
+                        Label("Move", systemImage: "folder")
+                    }
+                    .tint(.blue)
+                }
+            }
+    }
+
+    private func showManualEntry() {
+        if metric.measurementType == .duration {
+            showingDurationEntry = true
+        } else {
+            showingCountEntry = true
         }
     }
 
@@ -263,10 +278,13 @@ extension MetricDetailView {
         }
     }
 
-    private func deleteDirectSessions(_ offsets: IndexSet) {
+    private func deleteSessions(
+        _ offsets: IndexSet,
+        in group: SessionDayGroup
+    ) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(visibleDirectSessions[index])
+                modelContext.delete(group.sessions[index])
             }
         }
     }

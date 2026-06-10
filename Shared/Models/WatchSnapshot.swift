@@ -9,6 +9,7 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     let measurementType: MeasurementType
     let unit: String?
     let icon: String?
+    let colorName: String?
     var runningSince: Date?
     var todayTotal: Double
 }

@@ -11,6 +11,7 @@ struct MetricSnapshot: Identifiable {
     let id: String
     let name: String
     let icon: String
+    let colorName: String?
     let todayTotal: TimeInterval
     let dailyGoal: TimeInterval?
     let weeklyTotal: TimeInterval
@@ -83,6 +84,7 @@ extension ScoreboardProvider {
             id: metric.name,
             name: metric.name,
             icon: metric.icon ?? "clock",
+            colorName: metric.colorName,
             todayTotal: SessionStatistics.todayTotal(from: totals),
             dailyGoal: metric.dailyGoal,
             weeklyTotal: SessionStatistics.currentWeekTotal(
@@ -102,6 +104,7 @@ extension ScoreboardProvider {
                 id: "sample",
                 name: "Reading",
                 icon: "book",
+                colorName: "sage",
                 todayTotal: 1200,
                 dailyGoal: 1800,
                 weeklyTotal: 9000,
@@ -161,13 +164,17 @@ struct ScoreboardWidgetView: View {
 // MARK: - Metric Row
 
 extension ScoreboardWidgetView {
+    private func tint(for metric: MetricSnapshot) -> Color {
+        MetricColor.color(named: metric.colorName)
+    }
+
     private func metricRow(
         _ metric: MetricSnapshot
     ) -> some View {
         HStack(spacing: 8) {
             Image(systemName: metric.icon)
                 .font(.body)
-                .foregroundStyle(.orange)
+                .foregroundStyle(tint(for: metric))
                 .frame(width: 20)
             Text(metric.name)
                 .font(.subheadline)
@@ -177,7 +184,7 @@ extension ScoreboardWidgetView {
             if family != .systemSmall {
                 goalRings(metric)
             }
-            streakBadge(metric.streak)
+            streakBadge(metric.streak, tint: tint(for: metric))
         }
     }
 
@@ -189,14 +196,16 @@ extension ScoreboardWidgetView {
             miniRing(
                 current: metric.todayTotal,
                 goal: goal,
-                label: "D"
+                label: "D",
+                tint: tint(for: metric)
             )
         }
         if let goal = metric.weeklyGoal {
             miniRing(
                 current: metric.weeklyTotal,
                 goal: goal,
-                label: "W"
+                label: "W",
+                tint: tint(for: metric)
             )
         }
     }
@@ -204,11 +213,12 @@ extension ScoreboardWidgetView {
     private func miniRing(
         current: TimeInterval,
         goal: TimeInterval,
-        label: String
+        label: String,
+        tint: Color
     ) -> some View {
         let fraction = goal > 0
             ? min(current / goal, 1.0) : 0
-        let color: Color = current >= goal ? .green : .orange
+        let color: Color = current >= goal ? .green : tint
         return ZStack {
             Circle()
                 .stroke(Color(.systemGray5), lineWidth: 3)
@@ -228,7 +238,7 @@ extension ScoreboardWidgetView {
         .frame(width: 26, height: 26)
     }
 
-    private func streakBadge(_ days: Int) -> some View {
+    private func streakBadge(_ days: Int, tint: Color) -> some View {
         HStack(spacing: 2) {
             Image(systemName: "flame.fill")
                 .font(.system(size: streakIconSize))
@@ -236,7 +246,7 @@ extension ScoreboardWidgetView {
                 .font(.caption.bold())
                 .monospacedDigit()
         }
-        .foregroundStyle(days > 0 ? .orange : .secondary)
+        .foregroundStyle(days > 0 ? tint : Color.secondary)
     }
 }
 

@@ -8,6 +8,7 @@ struct DailyGoalItem: View {
     let excludedWeekdays: [Int]
     var measurementType: MeasurementType = .duration
     var unit: String?
+    var tint: Color = .accentColor
 
     private var isRestDay: Bool {
         let weekday = Calendar.current.component(.weekday, from: .now)
@@ -23,7 +24,8 @@ struct DailyGoalItem: View {
                 current: today,
                 goal: goal,
                 measurementType: measurementType,
-                unit: unit
+                unit: unit,
+                tint: tint
             )
         }
     }

@@ -7,15 +7,13 @@ struct DetailedStatisticsView: View {
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
     let excludedWeekdays: [Int]
+    var tint: Color = .accentColor
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List {
                 Section { trends }
-                Section("Activity") {
-                    CalendarHeatmapView(dailyTotals: dailyTotals)
-                }
                 goalsSection
                 Section("Metrics") { durationGrid }
                 Section("Sessions") { sessionsGrid }
@@ -37,7 +35,8 @@ struct DetailedStatisticsView: View {
             measurementType: measurementType,
             unit: unit,
             dailyGoal: dailyGoal,
-            weeklyGoal: weeklyGoal
+            weeklyGoal: weeklyGoal,
+            tint: tint
         )
     }
 }
@@ -74,30 +73,36 @@ extension DetailedStatisticsView {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 if let goal = dailyGoal {
-                    DailyGoalItem(
-                        label: "Today",
-                        today: SessionStatistics.todayTotal(
-                            from: dailyTotals
-                        ),
-                        goal: goal,
-                        excludedWeekdays: excludedWeekdays,
-                        measurementType: measurementType,
-                        unit: unit
-                    )
+                    dailyGoalItem(goal)
                 }
                 if let goal = weeklyGoal {
-                    GoalProgressView(
-                        label: "This Week",
-                        current: SessionStatistics.currentWeekTotal(
-                            from: dailyTotals
-                        ),
-                        goal: goal,
-                        measurementType: measurementType,
-                        unit: unit
-                    )
+                    weeklyGoalItem(goal)
                 }
             }
         }
+    }
+
+    private func dailyGoalItem(_ goal: TimeInterval) -> some View {
+        DailyGoalItem(
+            label: "Today",
+            today: SessionStatistics.todayTotal(from: dailyTotals),
+            goal: goal,
+            excludedWeekdays: excludedWeekdays,
+            measurementType: measurementType,
+            unit: unit,
+            tint: tint
+        )
+    }
+
+    private func weeklyGoalItem(_ goal: TimeInterval) -> some View {
+        GoalProgressView(
+            label: "This Week",
+            current: SessionStatistics.currentWeekTotal(from: dailyTotals),
+            goal: goal,
+            measurementType: measurementType,
+            unit: unit,
+            tint: tint
+        )
     }
 }
 
@@ -219,7 +224,7 @@ extension DetailedStatisticsView {
                     value, type: measurementType
                 )
             )
-            .font(.headline)
+            .font(.system(.headline, design: .rounded))
             .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -234,7 +239,7 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("\(days)d")
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -263,7 +268,7 @@ extension DetailedStatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(text)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)

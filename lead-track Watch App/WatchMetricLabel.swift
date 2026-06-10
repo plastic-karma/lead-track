@@ -31,7 +31,7 @@ struct WatchMetricLabel: View {
         if let since = metric.runningSince {
             Text(since, style: .timer)
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.orange)
+                .foregroundStyle(MetricColor.color(named: metric.colorName))
         } else {
             Text(todayText)
                 .font(.caption2)

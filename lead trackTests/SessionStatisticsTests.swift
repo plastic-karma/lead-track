@@ -366,3 +366,60 @@ struct SessionStatisticsTests {
         #expect(avg[6].duration == 70)
     }
 }
+
+// MARK: - Day Grouping
+
+struct SessionDayGroupingTests {
+    private let calendar = Calendar.current
+
+    private func makeDate(daysAgo: Int, hour: Int = 9) -> Date {
+        let day = calendar.date(
+            byAdding: .day, value: -daysAgo,
+            to: calendar.startOfDay(for: .now)
+        ) ?? .now
+        return day.addingTimeInterval(TimeInterval(hour * 3600))
+    }
+
+    @Test
+    func groupsSessionsByCalendarDay() {
+        let sessions = [
+            Session(startedAt: makeDate(daysAgo: 0, hour: 10)),
+            Session(startedAt: makeDate(daysAgo: 0, hour: 8)),
+            Session(startedAt: makeDate(daysAgo: 2))
+        ]
+        let groups = SessionDayGrouping.group(sessions)
+        #expect(groups.count == 2)
+        #expect(groups.first?.sessions.count == 2)
+        #expect(groups.last?.sessions.count == 1)
+    }
+
+    @Test
+    func groupsAreOrderedNewestFirst() throws {
+        let sessions = [
+            Session(startedAt: makeDate(daysAgo: 3)),
+            Session(startedAt: makeDate(daysAgo: 1))
+        ]
+        let groups = SessionDayGrouping.group(sessions)
+        let first = try #require(groups.first)
+        let last = try #require(groups.last)
+        #expect(first.day > last.day)
+    }
+
+    @Test
+    func labelsTodayAndYesterday() {
+        let now = Date.now
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+        #expect(SessionDayGrouping.label(for: now, relativeTo: now) == "Today")
+        #expect(SessionDayGrouping.label(for: yesterday, relativeTo: now) == "Yesterday")
+    }
+
+    @Test
+    func labelsOlderDaysWithTheirDate() {
+        let now = Date.now
+        let older = calendar.date(byAdding: .day, value: -10, to: now) ?? now
+        let label = SessionDayGrouping.label(for: older, relativeTo: now)
+        #expect(label != "Today")
+        #expect(label != "Yesterday")
+        #expect(label.contains("\(calendar.component(.day, from: older))"))
+    }
+}

@@ -39,6 +39,10 @@ struct ProjectDetailView: View {
             : Array(completedSessions.prefix(SessionStatistics.sessionListPreviewLimit))
     }
 
+    private var metricTint: Color {
+        MetricColor.color(named: project.metric?.colorName)
+    }
+
     var body: some View {
         List {
             timerSection
@@ -49,8 +53,10 @@ struct ProjectDetailView: View {
                 dailyGoal: nil,
                 weeklyGoal: nil,
                 excludedWeekdays: [],
-                showingDetailedStats: $showingDetailedStats
+                showingDetailedStats: $showingDetailedStats,
+                tint: metricTint
             )
+            activitySection
             statusSection
             if !completedSessions.isEmpty {
                 sessionsSection
@@ -65,7 +71,8 @@ struct ProjectDetailView: View {
                 unit: project.metric?.unit,
                 dailyGoal: nil,
                 weeklyGoal: nil,
-                excludedWeekdays: []
+                excludedWeekdays: [],
+                tint: metricTint
             )
         }
         .sheet(isPresented: $showingCountEntry) {
@@ -139,6 +146,16 @@ extension ProjectDetailView {
                         systemImage: "plus.circle"
                     )
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var activitySection: some View {
+        let totals = SessionStatistics.dailyTotals(from: sessions)
+        if !totals.isEmpty {
+            Section("Activity") {
+                CalendarHeatmapView(dailyTotals: totals, tint: metricTint)
             }
         }
     }

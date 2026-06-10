@@ -2,9 +2,21 @@ import SwiftUI
 
 struct SessionRowView: View {
     let session: Session
+    var showsDate = true
 
     var body: some View {
         HStack {
+            timestamp
+            Spacer()
+            valueLabel
+        }
+    }
+
+    /// Day-grouped lists carry the date in their section header, so rows
+    /// only repeat the time of day.
+    @ViewBuilder
+    private var timestamp: some View {
+        if showsDate {
             VStack(alignment: .leading) {
                 Text(session.startedAt, style: .date)
                     .font(.subheadline)
@@ -12,8 +24,9 @@ struct SessionRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
-            valueLabel
+        } else {
+            Text(session.startedAt, style: .time)
+                .font(.subheadline)
         }
     }
 

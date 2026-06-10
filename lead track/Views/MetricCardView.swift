@@ -58,13 +58,17 @@ extension MetricCardView {
         runningSession == nil ? .clear : .red.opacity(0.4)
     }
 
+    private var tint: Color {
+        metric.displayColor
+    }
+
     private var header: some View {
         HStack(spacing: 12) {
             Image(systemName: metric.icon ?? "clock")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(tint)
                 .frame(width: 36, height: 36)
-                .background(Circle().fill(Color.accentColor.opacity(0.12)))
+                .background(Circle().fill(tint.opacity(0.12)))
             Text(metric.name)
                 .font(.headline)
             Spacer()
@@ -75,7 +79,7 @@ extension MetricCardView {
     private func valueRow(_ totals: [DailyTotal]) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 16) {
             todayValue(totals)
-                .font(.system(.title, design: .rounded).weight(.bold))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -83,7 +87,8 @@ extension MetricCardView {
             SparklineView(
                 values: SessionStatistics.trailingDailySeries(
                     days: 7, from: totals
-                )
+                ),
+                tint: tint
             )
             .frame(width: 92, height: 26)
         }
@@ -133,7 +138,7 @@ extension MetricCardView {
         HStack(spacing: 12) {
             ProgressView(value: min(today / max(goal, 1), 1))
                 .progressViewStyle(.linear)
-                .tint(today >= goal ? Color.green : Color.accentColor)
+                .tint(today >= goal ? Color.green : tint)
             Text(
                 "goal \(ValueFormatter.formatShort(goal, type: metric.measurementType))"
             )
@@ -189,7 +194,7 @@ extension MetricCardView {
             .frame(width: 36, height: 36)
             .background(
                 Circle().fill(
-                    runningSession == nil ? Color.accentColor : Color.red
+                    runningSession == nil ? tint : Color.red
                 )
             )
     }
