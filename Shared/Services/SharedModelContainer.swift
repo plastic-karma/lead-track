@@ -2,7 +2,6 @@ import Foundation
 import SwiftData
 
 enum SharedModelContainer {
-    static let groupID = "group.plastickarma.lead-track"
     private static let storeName = "lead-track.store"
 
     static func create(inMemoryOnly: Bool = false) throws -> ModelContainer {
@@ -51,7 +50,7 @@ enum SharedModelContainer {
 
     private static var storeURL: URL {
         let groupURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: groupID
+            forSecurityApplicationGroupIdentifier: AppGroup.id
         )
         let base = groupURL ?? URL.documentsDirectory
         return base.appending(path: storeName)

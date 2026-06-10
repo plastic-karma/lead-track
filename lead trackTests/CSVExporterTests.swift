@@ -64,6 +64,7 @@ struct CSVExporterTests {
 
     // MARK: - Filter by Scope
 
+    #if canImport(SwiftData)
     @Test
     func filterByScopeAllReturnsEverything() {
         let s1 = Session(startedAt: .now, endedAt: .now)
@@ -73,6 +74,7 @@ struct CSVExporterTests {
         )
         #expect(result.count == 2)
     }
+    #endif
 
     // MARK: - Filter by Time
 

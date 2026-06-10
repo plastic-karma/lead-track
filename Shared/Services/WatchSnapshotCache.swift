@@ -19,6 +19,6 @@ enum WatchSnapshotCache {
     }
 
     private static var defaults: UserDefaults {
-        UserDefaults(suiteName: SharedModelContainer.groupID) ?? .standard
+        UserDefaults(suiteName: AppGroup.id) ?? .standard
     }
 }

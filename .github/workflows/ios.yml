@@ -36,3 +36,18 @@ jobs:
 
       - name: Test
         run: xcodebuild test-without-building -scheme "$SCHEME" -project "$PROJECT" -destination "$DESTINATION"
+
+  # The overlay SwiftPM package (Package.swift) compiles the platform-neutral
+  # subset of Shared/ so domain logic builds and tests on Linux dev boxes.
+  # This job keeps that subset from rotting; the Swift version matches the
+  # toolchain used locally and the one bundled with Xcode on macos-latest.
+  linux:
+    name: Build & test (Linux SwiftPM)
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Test
+        run: swift test

@@ -1,7 +1,11 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
+#if canImport(SwiftData)
 @Model
+#endif
 final class Session {
     var metric: Metric?
     var project: Project?

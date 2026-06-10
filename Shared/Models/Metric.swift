@@ -1,9 +1,15 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
+#if canImport(SwiftData)
 @Model
+#endif
 final class Metric {
+    #if canImport(SwiftData)
     #Unique<Metric>([\.stableID])
+    #endif
     var stableID: UUID?
     var name: String
     var measurementType: MeasurementType
@@ -17,10 +23,14 @@ final class Metric {
     var streakAlertTime: Date?
     var excludedWeekdays: [Int] = []
 
+    #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
+    #endif
     var projects: [Project] = []
 
+    #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Session.metric)
+    #endif
     var sessions: [Session] = []
 
     init(

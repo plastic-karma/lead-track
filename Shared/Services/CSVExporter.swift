@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 enum ExportTimeRange: String, CaseIterable {
     case last7Days = "Last 7 Days"
@@ -9,11 +11,13 @@ enum ExportTimeRange: String, CaseIterable {
     case all = "All Time"
 }
 
+#if canImport(SwiftData)
 enum ExportScope: Hashable {
     case all
     case metric(PersistentIdentifier)
     case project(PersistentIdentifier)
 }
+#endif
 
 enum CSVExporter {
     static func exportFile(
@@ -64,6 +68,7 @@ enum CSVExporter {
         }
     }
 
+    #if canImport(SwiftData)
     static func filterByScope(
         _ sessions: [Session],
         scope: ExportScope
@@ -81,6 +86,7 @@ enum CSVExporter {
             }
         }
     }
+    #endif
 
     static func filterByTime(
         _ sessions: [Session],

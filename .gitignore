@@ -1,0 +1,3 @@
+# SwiftPM build artifacts (Linux overlay package)
+.build/
+.swiftpm/
