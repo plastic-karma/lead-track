@@ -42,16 +42,10 @@ extension MetricHeroView {
         }
     }
 
-    /// While a timer runs, the origin is backdated by today's completed
-    /// total so the counting value shows the whole day, not just the
-    /// current session.
     @ViewBuilder
     private var valueText: some View {
         if let session = activeSession {
-            Text(
-                session.startedAt.addingTimeInterval(-todayTotal),
-                style: .timer
-            )
+            Text(session.liveTimerOrigin(backdatedBy: todayTotal), style: .timer)
         } else {
             Text(ValueFormatter.formatShort(todayTotal, type: metric.measurementType))
         }
@@ -115,11 +109,7 @@ extension MetricHeroView {
 
     private func toggleTimer() {
         withAnimation {
-            if let session = activeSession {
-                SessionService.stopSession(session)
-            } else {
-                SessionService.startSession(for: metric, in: modelContext)
-            }
+            SessionService.toggleSession(for: metric, in: modelContext)
         }
     }
 

@@ -20,12 +20,8 @@
 #
 # Reads: API_KEY_PATH (the .p8 file), KEY_ID, ISSUER_ID.
 
-require 'openssl'
-require 'base64'
-require 'json'
-require 'net/http'
+require_relative 'asc_api'
 
-HOST = 'api.appstoreconnect.apple.com'
 DEV_TYPES = %w[DEVELOPMENT IOS_DEVELOPMENT].freeze
 # Apple labels certificates minted through the API (i.e. by CI cloud signing)
 # with this exact name. Only those are safe to reap automatically.
@@ -33,19 +29,6 @@ API_CERT_NAME = 'Created via API'
 
 def warn_gh(message)
   puts "::warning::#{message}"
-end
-
-# Builds a short-lived ES256 JWT for the App Store Connect API.
-def make_token(key, key_id, issuer_id)
-  b64 = ->(bytes) { Base64.urlsafe_encode64(bytes).delete('=') }
-  now = Time.now.to_i
-  header = { alg: 'ES256', kid: key_id, typ: 'JWT' }
-  claims = { iss: issuer_id, iat: now, exp: now + 1140, aud: 'appstoreconnect-v1' }
-  signing_input = "#{b64.call(JSON.generate(header))}.#{b64.call(JSON.generate(claims))}"
-  der = key.sign(OpenSSL::Digest.new('SHA256'), signing_input)
-  parts = OpenSSL::ASN1.decode(der).value
-  raw = parts[0].value.to_s(2).rjust(32, "\x00") + parts[1].value.to_s(2).rjust(32, "\x00")
-  "#{signing_input}.#{b64.call(raw)}"
 end
 
 def client
@@ -87,8 +70,7 @@ def revoke(token, cert)
 end
 
 begin
-  key = OpenSSL::PKey.read(File.read(ENV.fetch('API_KEY_PATH')))
-  token = make_token(key, ENV.fetch('KEY_ID'), ENV.fetch('ISSUER_ID'))
+  token = token_from_env
   certs = development_certificates(token)
   puts "Found #{certs.size} development certificate(s) to revoke."
   certs.each { |cert| revoke(token, cert) }

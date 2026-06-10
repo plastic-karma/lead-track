@@ -80,6 +80,29 @@ enum SessionStatistics {
         return totals.first { $0.date == today }?.duration ?? 0
     }
 
+    /// Today's completed total in one pass over the sessions, without
+    /// building the full per-day history first.
+    static func todayTotal(
+        from sessions: [Session],
+        calendar: Calendar = .current
+    ) -> TimeInterval {
+        sessions
+            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: .now) }
+            .reduce(0) { $0 + $1.trackingValue }
+    }
+
+    /// This calendar week's completed total in one pass over the sessions.
+    static func currentWeekTotal(
+        from sessions: [Session],
+        calendar: Calendar = .current
+    ) -> TimeInterval {
+        guard let week = calendar.dateInterval(of: .weekOfYear, for: .now)
+        else { return 0 }
+        return sessions
+            .filter { !$0.isRunning && $0.startedAt >= week.start && $0.startedAt < week.end }
+            .reduce(0) { $0 + $1.trackingValue }
+    }
+
     static func overallTotal(from totals: [DailyTotal]) -> TimeInterval {
         totals.reduce(0) { $0 + $1.duration }
     }

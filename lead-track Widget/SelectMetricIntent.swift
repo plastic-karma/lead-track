@@ -50,7 +50,7 @@ extension MetricQuery {
                 return MetricEntity(
                     id: id,
                     name: metric.name,
-                    icon: metric.icon ?? "clock"
+                    icon: metric.displayIcon
                 )
             }
     }

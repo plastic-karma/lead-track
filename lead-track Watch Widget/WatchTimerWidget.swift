@@ -84,9 +84,8 @@ struct WatchTimerWidgetView: View {
             }
             .font(.headline)
             Text(since, style: .timer)
-                .font(.system(.title3, design: .rounded).weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(MetricColor.color(named: metric.colorName))
+                .roundedDigits(.title3, weight: .semibold)
+                .foregroundStyle(metric.displayColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

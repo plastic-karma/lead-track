@@ -44,10 +44,10 @@ struct lead_trackApp: App {
 
     private func handle(phase: ScenePhase) {
         lockService.handleScenePhase(phase)
-        guard phase == .active else {
+        if phase == .background {
             PhoneWatchSyncService.shared.pushSnapshot()
-            return
         }
+        guard phase == .active else { return }
         SessionService.syncLiveActivity(
             in: ModelContext(sharedModelContainer)
         )

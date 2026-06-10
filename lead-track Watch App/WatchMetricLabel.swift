@@ -30,13 +30,11 @@ struct WatchMetricLabel: View {
     private var subtitle: some View {
         if let since = metric.runningSince {
             Text(since, style: .timer)
-                .font(.system(.caption, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(MetricColor.color(named: metric.colorName))
+                .roundedDigits(.caption)
+                .foregroundStyle(metric.displayColor)
         } else {
             Text(todayText)
-                .font(.system(.caption2, design: .rounded))
-                .monospacedDigit()
+                .roundedDigits(.caption2)
                 .foregroundStyle(.secondary)
         }
     }

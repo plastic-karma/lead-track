@@ -31,30 +31,18 @@ extension GoalSummary {
         let active = metrics.filter {
             $0.dailyGoal != nil && $0.isGoalDay(on: .now, calendar: calendar)
         }
-        let met = active.filter { todayTotal(for: $0) >= ($0.dailyGoal ?? 0) }
+        let met = active.filter {
+            SessionStatistics.todayTotal(from: $0.sessions, calendar: calendar) >= ($0.dailyGoal ?? 0)
+        }
         return GoalSummary(met: met.count, total: active.count)
     }
 
     /// Weekly goal completion across metrics.
     static func weekly(for metrics: [Metric]) -> GoalSummary {
         let active = metrics.filter { $0.weeklyGoal != nil }
-        let met = active.filter { weekTotal(for: $0) >= ($0.weeklyGoal ?? 0) }
+        let met = active.filter {
+            SessionStatistics.currentWeekTotal(from: $0.sessions) >= ($0.weeklyGoal ?? 0)
+        }
         return GoalSummary(met: met.count, total: active.count)
-    }
-}
-
-// MARK: - Per-Metric Totals
-
-private extension GoalSummary {
-    static func todayTotal(for metric: Metric) -> TimeInterval {
-        SessionStatistics.todayTotal(
-            from: SessionStatistics.dailyTotals(from: metric.sessions)
-        )
-    }
-
-    static func weekTotal(for metric: Metric) -> TimeInterval {
-        SessionStatistics.currentWeekTotal(
-            from: SessionStatistics.dailyTotals(from: metric.sessions)
-        )
     }
 }

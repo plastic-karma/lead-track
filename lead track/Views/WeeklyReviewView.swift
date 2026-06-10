@@ -257,9 +257,7 @@ extension WeeklyReviewView {
         sessions: [Session]
     ) -> MetricSummary {
         let totals = SessionStatistics.dailyTotals(from: sessions)
-        let allTotals = SessionStatistics.dailyTotals(
-            from: metric.sessions.filter { !$0.isRunning }
-        )
+        let allTotals = SessionStatistics.dailyTotals(from: metric.sessions)
         let goalHits = metric.dailyGoal.map { goal in
             totals.filter { $0.duration >= goal }.count
         }
@@ -267,7 +265,7 @@ extension WeeklyReviewView {
             name: metric.name,
             measurementType: metric.measurementType,
             unit: metric.unit,
-            icon: metric.icon ?? "clock",
+            icon: metric.displayIcon,
             duration: totals.reduce(0) { $0 + $1.duration },
             sessionCount: sessions.count,
             streak: SessionStatistics.currentStreak(from: allTotals),

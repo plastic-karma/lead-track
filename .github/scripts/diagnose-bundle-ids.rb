@@ -7,25 +7,9 @@
 #
 # Reads: API_KEY_PATH (the .p8 file), KEY_ID, ISSUER_ID.
 
-require 'openssl'
-require 'base64'
-require 'json'
-require 'net/http'
+require_relative 'asc_api'
 
-HOST = 'api.appstoreconnect.apple.com'
 PREFIX = 'plastickarma.lead-track'
-
-def make_token(key, key_id, issuer_id)
-  b64 = ->(bytes) { Base64.urlsafe_encode64(bytes).delete('=') }
-  now = Time.now.to_i
-  header = { alg: 'ES256', kid: key_id, typ: 'JWT' }
-  claims = { iss: issuer_id, iat: now, exp: now + 1140, aud: 'appstoreconnect-v1' }
-  signing_input = "#{b64.call(JSON.generate(header))}.#{b64.call(JSON.generate(claims))}"
-  der = key.sign(OpenSSL::Digest.new('SHA256'), signing_input)
-  parts = OpenSSL::ASN1.decode(der).value
-  raw = parts[0].value.to_s(2).rjust(32, "\x00") + parts[1].value.to_s(2).rjust(32, "\x00")
-  "#{signing_input}.#{b64.call(raw)}"
-end
 
 def get_json(token, path)
   http = Net::HTTP.new(HOST, 443)
@@ -67,8 +51,7 @@ def describe(token, bundle)
 end
 
 begin
-  key = OpenSSL::PKey.read(File.read(ENV.fetch('API_KEY_PATH')))
-  token = make_token(key, ENV.fetch('KEY_ID'), ENV.fetch('ISSUER_ID'))
+  token = token_from_env
   bundles = paged(token, '/v1/bundleIds?limit=200')
   matching = bundles.select { |b| b.dig('attributes', 'identifier').to_s.start_with?(PREFIX) }
   puts "#{matching.size} bundle ID(s) matching '#{PREFIX}*':"

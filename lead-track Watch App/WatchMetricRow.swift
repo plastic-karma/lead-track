@@ -16,7 +16,7 @@ struct WatchMetricRow: View {
                 WatchMetricLabel(
                     metric: metric,
                     accessory: "plus.circle.fill",
-                    accessoryColor: MetricColor.color(named: metric.colorName)
+                    accessoryColor: metric.displayColor
                 )
             }
         }

@@ -14,9 +14,16 @@ struct TimerMetricState {
     let name: String
     let icon: String
     let colorName: String?
-    let isRunning: Bool
     let runningSince: Date?
     let todayTotal: TimeInterval
+
+    var isRunning: Bool {
+        runningSince != nil
+    }
+
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
 }
 
 struct TimerControlProvider: AppIntentTimelineProvider {
@@ -60,25 +67,20 @@ extension TimerControlProvider {
     }
 
     private func metric(withID id: String) -> Metric? {
-        guard let container = try? SharedModelContainer.create()
+        guard let uuid = UUID(uuidString: id),
+              let container = try? SharedModelContainer.create()
         else { return nil }
-        let context = ModelContext(container)
-        let metrics = (try? context.fetch(FetchDescriptor<Metric>())) ?? []
-        return metrics.first { $0.stableID?.uuidString == id }
+        return try? Metric.find(stableID: uuid, in: ModelContext(container))
     }
 
     private func makeState(for metric: Metric) -> TimerMetricState {
-        let running = metric.sessions.first { $0.isRunning }
-        let completed = metric.sessions.filter { !$0.isRunning }
-        let totals = SessionStatistics.dailyTotals(from: completed)
-        return TimerMetricState(
+        TimerMetricState(
             stableID: metric.stableID?.uuidString ?? "",
             name: metric.name,
-            icon: metric.icon ?? "clock",
+            icon: metric.displayIcon,
             colorName: metric.colorName,
-            isRunning: running != nil,
-            runningSince: running?.startedAt,
-            todayTotal: SessionStatistics.todayTotal(from: totals)
+            runningSince: SessionService.activeSession(for: metric)?.startedAt,
+            todayTotal: SessionStatistics.todayTotal(from: metric.sessions)
         )
     }
 
@@ -88,7 +90,6 @@ extension TimerControlProvider {
             name: "Reading",
             icon: "book",
             colorName: "sage",
-            isRunning: false,
             runningSince: nil,
             todayTotal: 1200
         )
@@ -136,14 +137,10 @@ extension TimerControlWidgetView {
         }
     }
 
-    private func tint(for metric: TimerMetricState) -> Color {
-        MetricColor.color(named: metric.colorName)
-    }
-
     private func header(_ metric: TimerMetricState) -> some View {
         HStack(spacing: 6) {
             Image(systemName: metric.icon)
-                .foregroundStyle(tint(for: metric))
+                .foregroundStyle(metric.displayColor)
             Text(metric.name)
                 .font(.headline)
                 .lineLimit(1)
@@ -154,11 +151,10 @@ extension TimerControlWidgetView {
 
     @ViewBuilder
     private func timeDisplay(_ metric: TimerMetricState) -> some View {
-        if metric.isRunning, let since = metric.runningSince {
+        if let since = metric.runningSince {
             Text(since, style: .timer)
-                .font(.system(.title, design: .rounded).weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(tint(for: metric))
+                .roundedDigits(.title, weight: .semibold)
+                .foregroundStyle(metric.displayColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         } else {
@@ -169,8 +165,7 @@ extension TimerControlWidgetView {
     private func todayTotal(_ total: TimeInterval) -> some View {
         VStack(spacing: 2) {
             Text(DurationFormatter.format(total))
-                .font(.system(.title2, design: .rounded).weight(.semibold))
-                .monospacedDigit()
+                .roundedDigits(.title2, weight: .semibold)
             Text("today")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -187,14 +182,14 @@ extension TimerControlWidgetView {
             Button(intent: StopTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Stop", icon: "stop.fill")
             }
-            .tint(tint(for: metric))
+            .tint(metric.displayColor)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else {
             Button(intent: StartTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Start", icon: "play.fill")
             }
-            .tint(tint(for: metric))
+            .tint(metric.displayColor)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }

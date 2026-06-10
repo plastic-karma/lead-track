@@ -79,4 +79,20 @@ extension Metric {
         MetricColor.color(named: colorName)
     }
 }
+
+extension WatchMetricSnapshot {
+    /// The snapshot's identity color on the watch and in its widgets.
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
+}
+
+#if canImport(ActivityKit)
+extension TimerActivityAttributes {
+    /// The Live Activity's identity color.
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
+}
+#endif
 #endif

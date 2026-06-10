@@ -6,15 +6,9 @@ import SwiftUI
 struct TodayHeaderView: View {
     let metrics: [Metric]
 
-    private var daily: GoalSummary {
-        GoalSummary.daily(for: metrics)
-    }
-
-    private var weekly: GoalSummary {
-        GoalSummary.weekly(for: metrics)
-    }
-
     var body: some View {
+        let daily = GoalSummary.daily(for: metrics)
+        let weekly = GoalSummary.weekly(for: metrics)
         HStack(spacing: 16) {
             Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
                 .font(.subheadline.weight(.semibold))

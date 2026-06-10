@@ -17,17 +17,15 @@ enum WatchSnapshotBuilder {
         for metric: Metric
     ) -> WatchMetricSnapshot? {
         guard let id = metric.stableID else { return nil }
-        let completed = metric.sessions.filter { !$0.isRunning }
-        let totals = SessionStatistics.dailyTotals(from: completed)
         return WatchMetricSnapshot(
             id: id,
             name: metric.name,
             measurementType: metric.measurementType,
             unit: metric.unit,
-            icon: metric.icon,
+            icon: metric.displayIcon,
             colorName: metric.colorName,
             runningSince: SessionService.activeSession(for: metric)?.startedAt,
-            todayTotal: SessionStatistics.todayTotal(from: totals)
+            todayTotal: SessionStatistics.todayTotal(from: metric.sessions)
         )
     }
 }

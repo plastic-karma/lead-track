@@ -28,8 +28,7 @@ struct WatchLogView: View {
     private var amountDisplay: some View {
         VStack(spacing: 0) {
             Text("\(Int(amount))")
-                .font(.system(.title, design: .rounded).weight(.semibold))
-                .monospacedDigit()
+                .roundedDigits(.title, weight: .semibold)
             if let unit = metric.unit, !unit.isEmpty {
                 Text(unit)
                     .font(.caption2)
@@ -70,7 +69,7 @@ struct WatchLogView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(MetricColor.color(named: metric.colorName))
+        .tint(metric.displayColor)
     }
 
     private func log() {
