@@ -1,7 +1,11 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
+#if canImport(SwiftData)
 @Model
+#endif
 final class Project {
     var name: String
     var metric: Metric?
@@ -10,7 +14,9 @@ final class Project {
     var finishedAt: Date?
     var isDefault: Bool = false
 
+    #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Session.project)
+    #endif
     var sessions: [Session] = []
 
     init(

@@ -1,6 +1,7 @@
 # SwiftFormat configuration for lead-track
 
 --swiftversion 5.0
+--exclude .build
 
 # Formatting rules
 --indent 4

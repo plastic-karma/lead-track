@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 enum CSVImporter {
     struct ImportSummary: Equatable {
@@ -26,6 +28,7 @@ enum CSVImporter {
     static let expectedHeader =
         "Metric,Project,Date,Start,End,Duration (s),Value,Type"
 
+    #if canImport(SwiftData)
     @discardableResult
     static func importCSV(
         contents: String,
@@ -51,6 +54,7 @@ enum CSVImporter {
         }
         return summary
     }
+    #endif
 
     static func isValidHeader(_ fields: [String]) -> Bool {
         let trimmed = fields.map {
@@ -72,6 +76,7 @@ enum CSVImporter {
 
     // MARK: - Row Application
 
+    #if canImport(SwiftData)
     private static func applyRow(
         _ fields: [String],
         cache: inout MetricCache,
@@ -106,6 +111,7 @@ enum CSVImporter {
         context.insert(session)
         summary.sessionsCreated += 1
     }
+    #endif
 
     // MARK: - Date Parsing
 
@@ -226,6 +232,7 @@ private struct ParsedRow {
 
 // MARK: - MetricCache
 
+#if canImport(SwiftData)
 private struct MetricCache {
     private var metrics: [String: Metric]
     private var projects: [ProjectKey: Project] = [:]
@@ -278,3 +285,4 @@ private struct MetricCache {
         let project: String
     }
 }
+#endif
