@@ -101,6 +101,7 @@ extension WeeklyReviewView {
         .scrollPosition(id: $currentPage)
         .safeAreaPadding(.horizontal, 16)
         .scrollIndicators(.hidden)
+        .scrollClipDisabled()
     }
 
     private func pageDots(_ review: WeeklyReview) -> some View {

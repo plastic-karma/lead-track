@@ -37,6 +37,11 @@ enum ValueFormatter {
         }
     }
 
+    /// "1 session" / "n sessions" for summary lines.
+    static func sessions(_ count: Int) -> String {
+        count == 1 ? "1 session" : "\(count) sessions"
+    }
+
     static func chartLabel(
         type: MeasurementType,
         unit: String?

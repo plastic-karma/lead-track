@@ -53,14 +53,14 @@ extension WeekOverviewCard {
     private var heroText: String {
         review.totalDuration > 0
             ? DurationFormatter.format(review.totalDuration)
-            : "\(review.sessionCount)"
+            : ValueFormatter.sessions(review.sessionCount)
     }
 
     private var heroCaption: String {
         let days = "\(review.activeDays) of \(WeeklyReview.periodDays) days active"
         return review.totalDuration > 0
-            ? "\(review.sessionCount) sessions · \(days)"
-            : "sessions · \(days)"
+            ? "\(ValueFormatter.sessions(review.sessionCount)) · \(days)"
+            : days
     }
 
     @ViewBuilder
@@ -81,6 +81,6 @@ extension WeekOverviewCard {
         let weekday = review.day(at: offset)
             .formatted(.dateTime.weekday(.wide))
         let sessions = Int(review.sessionSeries[offset])
-        return "Busiest day \(weekday) · \(sessions) sessions"
+        return "Busiest day \(weekday) · \(ValueFormatter.sessions(sessions))"
     }
 }

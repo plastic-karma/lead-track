@@ -157,9 +157,10 @@ extension MetricWeekCard {
     }
 
     private var footerText: String {
+        let days = week.activeDays == 1 ? "1 day" : "\(week.activeDays) days"
         var parts = [
-            "\(week.sessionCount) sessions",
-            "\(week.activeDays) days active"
+            ValueFormatter.sessions(week.sessionCount),
+            "\(days) active"
         ]
         if let hits = week.goalDaysHit {
             parts.append("goal hit \(hits)/\(WeeklyReview.periodDays)")

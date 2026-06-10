@@ -59,4 +59,10 @@ struct ValueFormatterTests {
     func chartLabelForCountWithoutUnit() {
         #expect(ValueFormatter.chartLabel(type: .count, unit: nil) == "count")
     }
+
+    @Test
+    func sessionsLabelInflects() {
+        #expect(ValueFormatter.sessions(1) == "1 session")
+        #expect(ValueFormatter.sessions(3) == "3 sessions")
+    }
 }
