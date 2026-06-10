@@ -14,7 +14,7 @@ enum InsightGenerator {
         let previous = nonRunning.filter {
             $0.startedAt >= previousStart && $0.startedAt < currentStart
         }
-        let raw = collectRaw(metric: metric, current: current, previous: previous, all: nonRunning)
+        let raw = collectRaw(metric: metric, current: current, previous: previous)
         return applyCategoryCaps(raw)
     }
 }
@@ -22,20 +22,22 @@ enum InsightGenerator {
 // MARK: - Collection & Ranking
 
 private extension InsightGenerator {
+    /// Order matters twice: the first insight per category wins the category
+    /// cap, and the surviving order is the display order. Distribution leads
+    /// because the review card already carries volume, goal, and active-day
+    /// numbers in its own chrome; streaks are the card's badge, not an
+    /// insight, for the same reason.
     static func collectRaw(
         metric: Metric,
         current: [Session],
-        previous: [Session],
-        all: [Session]
+        previous: [Session]
     ) -> [Insight] {
         var results: [Insight] = []
-        // Order matters — first insight per category wins the category cap.
-        append(&results, detectStreak(metric: metric, sessions: all))
-        append(&results, detectActiveDaysChange(current: current, previous: previous))
-        append(&results, detectVolumeChange(metric: metric, current: current, previous: previous))
-        append(&results, detectGoalHitRateChange(metric: metric, current: current, previous: previous))
         append(&results, detectDayOfWeekMode(sessions: current))
         append(&results, detectTimeOfDayMode(sessions: current))
+        append(&results, detectVolumeChange(metric: metric, current: current, previous: previous))
+        append(&results, detectGoalHitRateChange(metric: metric, current: current, previous: previous))
+        append(&results, detectActiveDaysChange(current: current, previous: previous))
         return results
     }
 
@@ -63,7 +65,6 @@ private extension InsightGenerator {
     static let minVolumeDelta = 0.2
     static let minStableWeekCount = 2
     static let minActiveDaysDelta = 2
-    static let minStreakDays = 3
     static let minGoalHitsDelta = 2
 }
 
@@ -149,18 +150,6 @@ private extension InsightGenerator {
             currentDays: currentDays,
             previousDays: previousDays
         )
-    }
-
-    static func detectStreak(
-        metric: Metric,
-        sessions: [Session]
-    ) -> Insight? {
-        let totals = SessionStatistics.dailyTotals(from: sessions)
-        let streak = SessionStatistics.currentStreak(
-            from: totals, excludedWeekdays: metric.excludedWeekdaySet
-        )
-        guard streak >= minStreakDays else { return nil }
-        return .currentStreak(days: streak)
     }
 
     static func detectGoalHitRateChange(

@@ -90,17 +90,8 @@ struct WeeklyReviewTests {
 
         #expect(review.metricWeeks.map(\.name) == ["Active"])
         #expect(review.quietMetrics.map(\.name) == ["Stale", "Silent"])
-    }
-
-    @Test
-    func quietMetricCarriesIdentity() {
-        let metric = makeMetric(name: "Silent")
-
-        let review = WeeklyReview.build(metrics: [metric])
-
-        let quiet = review.quietMetrics.first
-        #expect(quiet?.icon == "clock")
-        #expect(quiet?.id == metric.stableID?.uuidString)
+        #expect(review.quietMetrics.last?.icon == "clock")
+        #expect(review.quietMetrics.last?.id == silent.stableID?.uuidString)
     }
 
     @Test
@@ -157,7 +148,7 @@ struct WeeklyReviewTests {
     }
 
     @Test
-    func streakInsightSurfacesOnTheWeek() {
+    func streakRidesTheWeekNotTheInsightList() {
         let metric = makeMetric()
         addDuration(600, to: metric, at: day(0))
         addDuration(600, to: metric, at: day(1))
@@ -166,7 +157,32 @@ struct WeeklyReviewTests {
         let week = WeeklyReview.build(metrics: [metric]).metricWeeks[0]
 
         #expect(week.streak == 3)
-        #expect(week.insights == [.currentStreak(days: 3)])
+        #expect(week.insights.isEmpty)
+    }
+
+    @Test
+    func insightsLeadWithDistribution() {
+        let metric = makeMetric()
+        addDuration(600, to: metric, at: day(1))
+        addDuration(600, to: metric, at: day(1))
+        addDuration(600, to: metric, at: day(2))
+        addDuration(600, to: metric, at: day(3))
+        addDuration(600, to: metric, at: day(8))
+        addDuration(600, to: metric, at: day(8))
+
+        let insights = WeeklyReview.build(metrics: [metric])
+            .metricWeeks[0].insights
+
+        let weekday = Calendar.current.component(.weekday, from: day(1))
+        #expect(insights == [
+            .dayOfWeekMode(weekday: weekday, ratio: 0.5, sessionCount: 2),
+            .volumeChange(
+                measurementType: .duration, unit: nil,
+                currentTotal: 2400, previousTotal: 1200,
+                currentCount: 4, previousCount: 2
+            ),
+            .activeDaysChange(currentDays: 3, previousDays: 1)
+        ])
     }
 
     // MARK: - Week-over-Week Change
@@ -246,7 +262,6 @@ struct InsightCopyTests {
             Insight.timeOfDayMode(bucket: .morning, ratio: 0.6, sessionCount: 6)
                 .headline == "Mostly a morning thing"
         )
-        #expect(Insight.currentStreak(days: 5).headline == "On a streak")
         #expect(
             Insight.activeDaysChange(currentDays: 5, previousDays: 2)
                 .headline == "Active on more days"
@@ -274,7 +289,10 @@ struct InsightCopyTests {
     }
 
     @Test
-    func streakDetailCountsDays() {
-        #expect(Insight.currentStreak(days: 5).detail == "5 days in a row")
+    func activeDaysDetailComparesWeeks() {
+        #expect(
+            Insight.activeDaysChange(currentDays: 5, previousDays: 2)
+                .detail == "5/7 days vs 2/7 last week"
+        )
     }
 }

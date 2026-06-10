@@ -61,9 +61,6 @@ enum Insight: Equatable {
         currentDays: Int,
         previousDays: Int
     )
-    case currentStreak(
-        days: Int
-    )
     case goalHitRateChange(
         currentHits: Int,
         previousHits: Int
@@ -75,7 +72,7 @@ extension Insight {
         switch self {
         case .timeOfDayMode, .dayOfWeekMode: .distribution
         case .volumeChange: .volume
-        case .activeDaysChange, .currentStreak: .consistency
+        case .activeDaysChange: .consistency
         case .goalHitRateChange: .goal
         }
     }
@@ -94,8 +91,6 @@ extension Insight {
             current >= previous
                 ? "calendar.badge.checkmark"
                 : "calendar.badge.exclamationmark"
-        case .currentStreak:
-            "flame.fill"
         case .goalHitRateChange:
             "target"
         }
@@ -113,8 +108,6 @@ extension Insight {
             current >= previous ? "Up this week" : "Down this week"
         case let .activeDaysChange(current, previous):
             current >= previous ? "Active on more days" : "Active on fewer days"
-        case .currentStreak:
-            "On a streak"
         case let .goalHitRateChange(current, previous):
             current >= previous
                 ? "Hitting the goal more often"
@@ -136,8 +129,6 @@ extension Insight {
             )
         case let .activeDaysChange(current, previous):
             return "\(current)/7 days vs \(previous)/7 last week"
-        case let .currentStreak(days):
-            return "\(days) days in a row"
         case let .goalHitRateChange(current, previous):
             return "Hit goal \(current)/7 days vs \(previous)/7"
         }
