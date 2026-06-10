@@ -17,6 +17,7 @@ struct WatchSyncCodecTests {
             measurementType: .duration,
             unit: nil,
             icon: "book",
+            colorName: "sage",
             runningSince: runningSince,
             todayTotal: todayTotal
         )
@@ -76,6 +77,7 @@ struct WatchSnapshotReducerTests {
                 measurementType: .duration,
                 unit: nil,
                 icon: "book",
+                colorName: nil,
                 runningSince: runningSince,
                 todayTotal: todayTotal
             )

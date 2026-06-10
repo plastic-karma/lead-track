@@ -9,6 +9,7 @@ final class Metric {
     var measurementType: MeasurementType
     var unit: String?
     var icon: String?
+    var colorName: String?
     var createdAt: Date
     var dailyGoal: TimeInterval?
     var weeklyGoal: TimeInterval?
@@ -27,6 +28,7 @@ final class Metric {
         measurementType: MeasurementType = .duration,
         unit: String? = nil,
         icon: String? = nil,
+        colorName: String? = nil,
         createdAt: Date = .now
     ) {
         stableID = UUID()
@@ -34,6 +36,7 @@ final class Metric {
         self.measurementType = measurementType
         self.unit = unit
         self.icon = icon
+        self.colorName = colorName
         self.createdAt = createdAt
     }
 }

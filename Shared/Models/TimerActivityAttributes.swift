@@ -10,5 +10,6 @@ struct TimerActivityAttributes: ActivityAttributes {
     var metricName: String
     var projectName: String?
     var icon: String
+    var colorName: String?
 }
 #endif

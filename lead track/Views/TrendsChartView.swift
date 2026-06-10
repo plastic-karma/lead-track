@@ -9,6 +9,7 @@ struct TrendsChartView: View {
     let unit: String?
     let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
+    var tint: Color = .accentColor
     @State private var range: TrendsRange = .twoWeeks
 
     var body: some View {
@@ -20,7 +21,6 @@ struct TrendsChartView: View {
             }
             .pickerStyle(.segmented)
             chart
-            legend
         }
         .padding(.vertical, 4)
     }
@@ -46,10 +46,13 @@ extension TrendsChartView {
                 x: .value("Date", point.date, unit: barUnit),
                 y: .value(chartLabel, plot(point.duration))
             )
-            .foregroundStyle(.orange.gradient)
+            .foregroundStyle(tint.gradient)
+            .cornerRadius(3)
         }
     }
 
+    /// The rolling average is context, not content: it reads in a quiet
+    /// secondary gray next to the tinted bars.
     @ChartContentBuilder
     private var averageMarks: some ChartContent {
         if !range.isWeekly {
@@ -58,7 +61,7 @@ extension TrendsChartView {
                     x: .value("Date", point.date, unit: .day),
                     y: .value(chartLabel, plot(point.duration))
                 )
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.secondary)
                 .interpolationMethod(.catmullRom)
             }
         }
@@ -70,38 +73,16 @@ extension TrendsChartView {
             RuleMark(y: .value("Goal", plot(goal)))
                 .foregroundStyle(.green)
                 .lineStyle(StrokeStyle(dash: [5, 5]))
-        }
-    }
-}
-
-// MARK: - Legend
-
-extension TrendsChartView {
-    private var legend: some View {
-        HStack(spacing: 12) {
-            legendItem(color: .orange, label: barLabel)
-            if !range.isWeekly {
-                legendItem(color: .blue, label: "7-day avg")
-            }
-            if activeGoal != nil {
-                legendItem(color: .green, label: "Goal")
-            }
-        }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    }
-
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
+                .annotation(position: .top, alignment: .trailing) {
+                    Text(goalLabel(goal))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
         }
     }
 
-    private var barLabel: String {
-        range.isWeekly ? "Weekly total" : "Daily total"
+    private func goalLabel(_ goal: TimeInterval) -> String {
+        "goal · \(ValueFormatter.formatShort(goal, type: measurementType))"
     }
 }
 

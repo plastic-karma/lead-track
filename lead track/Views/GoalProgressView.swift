@@ -6,6 +6,7 @@ struct GoalProgressView: View {
     let goal: TimeInterval
     var measurementType: MeasurementType = .duration
     var unit: String?
+    var tint: Color = .accentColor
 
     private var fraction: Double {
         goal > 0 ? min(current / goal, 1.0) : 0
@@ -54,7 +55,7 @@ struct GoalProgressView: View {
     }
 
     private var ringColor: Color {
-        isComplete ? .green : .orange
+        isComplete ? .green : tint
     }
 
     private var percentText: String {

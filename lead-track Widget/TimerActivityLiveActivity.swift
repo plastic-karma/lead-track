@@ -13,7 +13,7 @@ struct TimerActivityLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: context.attributes.icon)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(tint(context.attributes))
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading) {
@@ -30,7 +30,7 @@ struct TimerActivityLiveActivity: Widget {
                     Text(context.state.startedAt, style: .timer)
                         .monospacedDigit()
                         .font(.title3)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(tint(context.attributes))
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     Button(intent: StopTimerIntent()) {
@@ -41,16 +41,20 @@ struct TimerActivityLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: context.attributes.icon)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(tint(context.attributes))
             } compactTrailing: {
                 Text(context.state.startedAt, style: .timer)
                     .monospacedDigit()
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(tint(context.attributes))
             } minimal: {
                 Image(systemName: context.attributes.icon)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(tint(context.attributes))
             }
         }
+    }
+
+    private func tint(_ attributes: TimerActivityAttributes) -> Color {
+        MetricColor.color(named: attributes.colorName)
     }
 
     private func lockScreenView(
@@ -59,7 +63,7 @@ struct TimerActivityLiveActivity: Widget {
         HStack {
             Image(systemName: context.attributes.icon)
                 .font(.title2)
-                .foregroundStyle(.orange)
+                .foregroundStyle(tint(context.attributes))
             VStack(alignment: .leading) {
                 Text(context.attributes.metricName)
                     .font(.headline)
@@ -73,7 +77,7 @@ struct TimerActivityLiveActivity: Widget {
             Text(context.state.startedAt, style: .timer)
                 .monospacedDigit()
                 .font(.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(tint(context.attributes))
             Button(intent: StopTimerIntent()) {
                 Image(systemName: "stop.fill")
                     .font(.title2)

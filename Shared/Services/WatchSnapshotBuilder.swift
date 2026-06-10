@@ -25,6 +25,7 @@ enum WatchSnapshotBuilder {
             measurementType: metric.measurementType,
             unit: metric.unit,
             icon: metric.icon,
+            colorName: metric.colorName,
             runningSince: SessionService.activeSession(for: metric)?.startedAt,
             todayTotal: SessionStatistics.todayTotal(from: totals)
         )

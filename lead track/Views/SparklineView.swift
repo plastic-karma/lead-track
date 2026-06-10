@@ -5,6 +5,7 @@ import SwiftUI
 /// out, and empty days keep a small stub so the window stays readable.
 struct SparklineView: View {
     let values: [Double]
+    var tint: Color = .accentColor
 
     private var peak: Double {
         max(values.max() ?? 0, 1)
@@ -24,7 +25,7 @@ struct SparklineView: View {
     private func bar(at index: Int, fullHeight: CGFloat) -> some View {
         let isToday = index == values.count - 1
         return Capsule()
-            .fill(Color.accentColor.opacity(isToday ? 1 : 0.35))
+            .fill(tint.opacity(isToday ? 1 : 0.35))
             .frame(height: max(fullHeight * values[index] / peak, 3))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }

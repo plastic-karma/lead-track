@@ -8,6 +8,7 @@ struct StatisticsView: View {
     let weeklyGoal: TimeInterval?
     let excludedWeekdays: [Int]
     @Binding var showingDetailedStats: Bool
+    var tint: Color = .accentColor
 
     private var dailyTotals: [DailyTotal] {
         SessionStatistics.dailyTotals(from: sessions)
@@ -75,7 +76,8 @@ extension StatisticsView {
                 goal: goal,
                 excludedWeekdays: excludedWeekdays,
                 measurementType: measurementType,
-                unit: unit
+                unit: unit,
+                tint: tint
             )
         } else {
             statItem("Today", today)
@@ -92,7 +94,8 @@ extension StatisticsView {
                 ),
                 goal: goal,
                 measurementType: measurementType,
-                unit: unit
+                unit: unit,
+                tint: tint
             )
         } else {
             statItem(
@@ -119,7 +122,7 @@ extension StatisticsView {
                     value, type: measurementType
                 )
             )
-            .font(.headline)
+            .font(.system(.headline, design: .rounded))
             .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -134,7 +137,7 @@ extension StatisticsView {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text("\(days)d")
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)

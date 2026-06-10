@@ -2,9 +2,10 @@ import SwiftUI
 
 struct CalendarHeatmapView: View {
     let dailyTotals: [DailyTotal]
+    var tint: Color = .accentColor
 
     private static let weekCount = 16
-    private static let cellSize: CGFloat = 14
+    private static let cellSize: CGFloat = 16
     private static let spacing: CGFloat = 3
 
     private let calendar = Calendar.current
@@ -41,7 +42,7 @@ extension CalendarHeatmapView {
     }
 
     private func cell(for date: Date?) -> some View {
-        RoundedRectangle(cornerRadius: 2)
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
             .fill(color(for: date))
             .frame(width: Self.cellSize, height: Self.cellSize)
     }
@@ -67,7 +68,7 @@ extension CalendarHeatmapView {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             ForEach(legendOpacities, id: \.self) { opacity in
-                RoundedRectangle(cornerRadius: 2)
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(legendFill(opacity))
                     .frame(width: 10, height: 10)
             }
@@ -84,7 +85,7 @@ extension CalendarHeatmapView {
     private func legendFill(_ opacity: Double) -> Color {
         opacity == 0
             ? Color(.systemGray5)
-            : Color.accentColor.opacity(0.25 + 0.75 * opacity)
+            : tint.opacity(0.25 + 0.75 * opacity)
     }
 }
 
@@ -129,7 +130,7 @@ extension CalendarHeatmapView {
             return Color(.systemGray5)
         }
         let intensity = value / maxValue
-        return Color.accentColor.opacity(0.25 + 0.75 * intensity)
+        return tint.opacity(0.25 + 0.75 * intensity)
     }
 
     private func weekdayLabel(_ weekday: Int) -> String {
