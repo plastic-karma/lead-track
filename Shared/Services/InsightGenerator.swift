@@ -1,15 +1,17 @@
 import Foundation
 
 enum InsightGenerator {
+    /// Detects patterns in `[currentStart, end)` against the comparison
+    /// period `[previousStart, currentStart)`.
     static func generate(
         for metric: Metric,
         currentStart: Date,
         previousStart: Date,
-        now: Date = .now
+        end: Date = .now
     ) -> [Insight] {
         let nonRunning = metric.sessions.filter { !$0.isRunning }
         let current = nonRunning.filter {
-            $0.startedAt >= currentStart && $0.startedAt <= now
+            $0.startedAt >= currentStart && $0.startedAt < end
         }
         let previous = nonRunning.filter {
             $0.startedAt >= previousStart && $0.startedAt < currentStart

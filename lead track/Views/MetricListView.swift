@@ -10,7 +10,9 @@ struct MetricListView: View {
     @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
-    @State private var showingWeeklyReview = false
+    /// The review flag lives on the notification responder so a tapped
+    /// weekly notification can raise it, even across a cold launch.
+    @ObservedObject private var notificationResponder = NotificationResponder.shared
     @State private var showingExport = false
     @State private var showingImport = false
     @State private var showingSettings = false
@@ -43,7 +45,7 @@ struct MetricListView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showingWeeklyReview) {
+        .sheet(isPresented: $notificationResponder.showWeeklyReview) {
             WeeklyReviewView()
                 .presentationDragIndicator(.visible)
         }
@@ -82,7 +84,7 @@ extension MetricListView {
             Button { showingSettings = true } label: {
                 Label("Settings", systemImage: "gear")
             }
-            Button { showingWeeklyReview = true } label: {
+            Button { notificationResponder.showWeeklyReview = true } label: {
                 Label("Weekly Review", systemImage: "calendar.badge.clock")
             }
             Button { showingExport = true } label: {

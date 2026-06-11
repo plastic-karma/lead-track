@@ -44,8 +44,11 @@ struct WeeklyReview {
 
     /// Start of the oldest day in the period.
     let start: Date
-    /// The moment the review was built; the period's open end.
+    /// The latest moment the review covers: now for the current week, the
+    /// final day for an earlier one.
     let end: Date
+    /// How many weeks before the current one this review describes.
+    let weeksBack: Int
     let metricWeeks: [MetricWeek]
     let quietMetrics: [QuietMetric]
     /// Completed sessions per day across all metrics, oldest first.
@@ -93,10 +96,11 @@ extension WeeklyReview {
 
     static func build(
         metrics: [Metric],
+        weeksBack: Int = 0,
         now: Date = .now,
         calendar: Calendar = .current
     ) -> WeeklyReview {
-        let bounds = PeriodBounds(now: now, calendar: calendar)
+        let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
         var weeks: [MetricWeek] = []
         var quiet: [QuietMetric] = []
         for metric in metrics {
@@ -108,7 +112,8 @@ extension WeeklyReview {
         }
         return WeeklyReview(
             start: bounds.start,
-            end: now,
+            end: bounds.displayEnd,
+            weeksBack: weeksBack,
             metricWeeks: weeks,
             quietMetrics: quiet,
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
@@ -119,22 +124,34 @@ extension WeeklyReview {
 // MARK: - Assembly Pieces
 
 private extension WeeklyReview {
-    /// The current period, the comparison period before it, and the open end.
+    /// The reviewed period, the comparison period before it, and its end —
+    /// half-open, so a session at the next week's first midnight stays out.
     struct PeriodBounds {
         let start: Date
         let previousStart: Date
-        let now: Date
+        /// Exclusive upper bound for sessions in the period.
+        let end: Date
+        /// The latest moment shown: the open end for the current week, the
+        /// anchor day itself for an earlier one.
+        let displayEnd: Date
+        /// Whether the period is the week ending today.
+        let isCurrentWeek: Bool
 
-        init(now: Date, calendar: Calendar) {
+        init(weeksBack: Int, now: Date, calendar: Calendar) {
             let today = calendar.startOfDay(for: now)
-            start = calendar.date(byAdding: .day, value: -(periodDays - 1), to: today) ?? today
+            let anchor = calendar.date(byAdding: .day, value: -periodDays * weeksBack, to: today) ?? today
+            start = calendar.date(byAdding: .day, value: -(periodDays - 1), to: anchor) ?? anchor
             previousStart = calendar.date(byAdding: .day, value: -periodDays, to: start) ?? start
-            self.now = now
+            isCurrentWeek = weeksBack == 0
+            end = isCurrentWeek
+                ? now
+                : calendar.date(byAdding: .day, value: 1, to: anchor) ?? anchor
+            displayEnd = isCurrentWeek ? now : anchor
         }
 
         func currentSessions(of metric: Metric) -> [Session] {
             metric.sessions.filter {
-                !$0.isRunning && $0.startedAt >= start && $0.startedAt <= now
+                !$0.isRunning && $0.startedAt >= start && $0.startedAt < end
             }
         }
 
@@ -167,13 +184,13 @@ private extension WeeklyReview {
             sessionCount: current.count,
             activeDays: activeDays(in: current, calendar: calendar),
             dailySeries: dailyValues(of: current, from: bounds.start, calendar: calendar) { $0.trackingValue },
-            streak: streak(of: metric),
+            streak: bounds.isCurrentWeek ? streak(of: metric) : 0,
             goalDaysHit: goalDaysHit(of: metric, current: current),
             insights: InsightGenerator.generate(
                 for: metric,
                 currentStart: bounds.start,
                 previousStart: bounds.previousStart,
-                now: bounds.now
+                end: bounds.end
             )
         )
     }

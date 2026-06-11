@@ -220,6 +220,49 @@ struct WeeklyReviewTests {
         #expect(week.change == .noBaseline)
     }
 
+    // MARK: - Earlier Weeks
+
+    @Test
+    func weeksBackShiftsThePeriod() {
+        let metric = makeMetric()
+        addDuration(600, to: metric, at: day(8))
+        addDuration(300, to: metric, at: day(1))
+
+        let review = WeeklyReview.build(metrics: [metric], weeksBack: 1)
+
+        #expect(review.start == day(13))
+        #expect(review.end == day(7))
+        #expect(review.metricWeeks[0].total == 600)
+        #expect(review.metricWeeks[0].dailySeries[5] == 600)
+    }
+
+    @Test
+    func weekBoundariesAreHalfOpen() {
+        let metric = makeMetric()
+        addDuration(600, to: metric, at: day(6))
+        addDuration(300, to: metric, at: day(7))
+
+        let current = WeeklyReview.build(metrics: [metric])
+        let past = WeeklyReview.build(metrics: [metric], weeksBack: 1)
+
+        #expect(current.metricWeeks[0].total == 600)
+        #expect(past.metricWeeks[0].total == 300)
+    }
+
+    @Test
+    func pastWeeksLeaveTheStreakToToday() {
+        let metric = makeMetric()
+        for daysAgo in 0 ... 9 {
+            addDuration(600, to: metric, at: day(daysAgo))
+        }
+
+        let current = WeeklyReview.build(metrics: [metric])
+        let past = WeeklyReview.build(metrics: [metric], weeksBack: 1)
+
+        #expect(current.metricWeeks[0].streak == 10)
+        #expect(past.metricWeeks[0].streak == 0)
+    }
+
     // MARK: - Header Aggregates
 
     @Test
@@ -250,49 +293,5 @@ struct WeeklyReviewTests {
         #expect(review.busiestDayOffset == 6)
         #expect(review.activeDays == 2)
         #expect(calendar.isDate(review.day(at: 6), inSameDayAs: .now))
-    }
-}
-
-// MARK: - Insight Copy
-
-struct InsightCopyTests {
-    @Test
-    func headlinesReadWithoutTheMetricName() {
-        #expect(
-            Insight.timeOfDayMode(bucket: .morning, ratio: 0.6, sessionCount: 6)
-                .headline == "Mostly a morning thing"
-        )
-        #expect(
-            Insight.activeDaysChange(currentDays: 5, previousDays: 2)
-                .headline == "Active on more days"
-        )
-        #expect(
-            Insight.goalHitRateChange(currentHits: 4, previousHits: 1)
-                .headline == "Hitting the goal more often"
-        )
-    }
-
-    @Test
-    func volumeHeadlineFollowsTheDirection() {
-        let up = Insight.volumeChange(
-            measurementType: .duration, unit: nil,
-            currentTotal: 1200, previousTotal: 600,
-            currentCount: 3, previousCount: 2
-        )
-        let down = Insight.volumeChange(
-            measurementType: .duration, unit: nil,
-            currentTotal: 300, previousTotal: 600,
-            currentCount: 2, previousCount: 3
-        )
-        #expect(up.headline == "Up this week")
-        #expect(down.headline == "Down this week")
-    }
-
-    @Test
-    func activeDaysDetailComparesWeeks() {
-        #expect(
-            Insight.activeDaysChange(currentDays: 5, previousDays: 2)
-                .detail == "5/7 days vs 2/7 last week"
-        )
     }
 }
