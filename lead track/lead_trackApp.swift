@@ -19,6 +19,9 @@ struct lead_trackApp: App {
         // Activate in init, not on scene phase: the system may launch the app
         // in the background to deliver a queued watch action.
         PhoneWatchSyncService.shared.activate(container: sharedModelContainer)
+        // Likewise the notification delegate, so a tap that launches the app
+        // still deep-links.
+        NotificationResponder.shared.install()
     }
 
     var body: some Scene {

@@ -87,6 +87,10 @@ extension NotificationService {
 // MARK: - Weekly Review
 
 extension NotificationService {
+    /// Request identifier of the weekly review notification; taps on it
+    /// deep-link into the review sheet.
+    static let weeklyReviewNotificationID = "weekly-review"
+
     private static func scheduleWeeklyReview(
         metrics: [Metric]
     ) {
@@ -103,7 +107,7 @@ extension NotificationService {
         let trigger = weeklyTrigger(
             weekday: day, hour: hour, minute: minute
         )
-        schedule(id: "weekly-review", content: content, trigger: trigger)
+        schedule(id: weeklyReviewNotificationID, content: content, trigger: trigger)
     }
 
     private static func weeklyReviewDay(
