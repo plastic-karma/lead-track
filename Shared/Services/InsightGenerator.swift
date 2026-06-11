@@ -14,40 +14,30 @@ enum InsightGenerator {
         let previous = nonRunning.filter {
             $0.startedAt >= previousStart && $0.startedAt < currentStart
         }
-        let raw = collectRaw(metric: metric, current: current, previous: previous, all: nonRunning)
+        let raw = collectRaw(metric: metric, current: current, previous: previous)
         return applyCategoryCaps(raw)
-    }
-
-    static func cap(perMetric: [[Insight]], to limit: Int) -> [Insight] {
-        var result: [Insight] = []
-        let maxLen = perMetric.map(\.count).max() ?? 0
-        for index in 0 ..< maxLen {
-            for group in perMetric where index < group.count {
-                result.append(group[index])
-                if result.count >= limit { return result }
-            }
-        }
-        return result
     }
 }
 
 // MARK: - Collection & Ranking
 
 private extension InsightGenerator {
+    /// Order matters twice: the first insight per category wins the category
+    /// cap, and the surviving order is the display order. Distribution leads
+    /// because the review card already carries volume, goal, and active-day
+    /// numbers in its own chrome; streaks are the card's badge, not an
+    /// insight, for the same reason.
     static func collectRaw(
         metric: Metric,
         current: [Session],
-        previous: [Session],
-        all: [Session]
+        previous: [Session]
     ) -> [Insight] {
         var results: [Insight] = []
-        // Order matters — first insight per category wins the category cap.
-        append(&results, detectStreak(metric: metric, sessions: all))
-        append(&results, detectActiveDaysChange(metric: metric, current: current, previous: previous))
+        append(&results, detectDayOfWeekMode(sessions: current))
+        append(&results, detectTimeOfDayMode(sessions: current))
         append(&results, detectVolumeChange(metric: metric, current: current, previous: previous))
         append(&results, detectGoalHitRateChange(metric: metric, current: current, previous: previous))
-        append(&results, detectDayOfWeekMode(metric: metric, sessions: current))
-        append(&results, detectTimeOfDayMode(metric: metric, sessions: current))
+        append(&results, detectActiveDaysChange(current: current, previous: previous))
         return results
     }
 
@@ -75,7 +65,6 @@ private extension InsightGenerator {
     static let minVolumeDelta = 0.2
     static let minStableWeekCount = 2
     static let minActiveDaysDelta = 2
-    static let minStreakDays = 3
     static let minGoalHitsDelta = 2
 }
 
@@ -83,7 +72,6 @@ private extension InsightGenerator {
 
 private extension InsightGenerator {
     static func detectTimeOfDayMode(
-        metric: Metric,
         sessions: [Session]
     ) -> Insight? {
         guard sessions.count >= minTimeOfDaySessions else { return nil }
@@ -99,7 +87,6 @@ private extension InsightGenerator {
         let ratio = Double(entry.value.count) / Double(sessions.count)
         guard ratio >= timeOfDayDominance else { return nil }
         return .timeOfDayMode(
-            metricName: metric.name,
             bucket: entry.key,
             ratio: ratio,
             sessionCount: entry.value.count
@@ -107,7 +94,6 @@ private extension InsightGenerator {
     }
 
     static func detectDayOfWeekMode(
-        metric: Metric,
         sessions: [Session]
     ) -> Insight? {
         guard sessions.count >= minDayOfWeekSessions else { return nil }
@@ -121,7 +107,6 @@ private extension InsightGenerator {
         let ratio = Double(entry.value.count) / Double(sessions.count)
         guard ratio >= dayOfWeekDominance else { return nil }
         return .dayOfWeekMode(
-            metricName: metric.name,
             weekday: entry.key,
             ratio: ratio,
             sessionCount: entry.value.count
@@ -144,7 +129,6 @@ private extension InsightGenerator {
         let delta = abs(currentTotal - previousTotal) / previousTotal
         guard delta >= minVolumeDelta else { return nil }
         return .volumeChange(
-            metricName: metric.name,
             measurementType: metric.measurementType,
             unit: metric.unit,
             currentTotal: currentTotal,
@@ -155,7 +139,6 @@ private extension InsightGenerator {
     }
 
     static func detectActiveDaysChange(
-        metric: Metric,
         current: [Session],
         previous: [Session]
     ) -> Insight? {
@@ -164,22 +147,9 @@ private extension InsightGenerator {
         guard currentDays > 0, previousDays > 0 else { return nil }
         guard abs(currentDays - previousDays) >= minActiveDaysDelta else { return nil }
         return .activeDaysChange(
-            metricName: metric.name,
             currentDays: currentDays,
             previousDays: previousDays
         )
-    }
-
-    static func detectStreak(
-        metric: Metric,
-        sessions: [Session]
-    ) -> Insight? {
-        let totals = SessionStatistics.dailyTotals(from: sessions)
-        let streak = SessionStatistics.currentStreak(
-            from: totals, excludedWeekdays: metric.excludedWeekdaySet
-        )
-        guard streak >= minStreakDays else { return nil }
-        return .currentStreak(metricName: metric.name, days: streak)
     }
 
     static func detectGoalHitRateChange(
@@ -192,7 +162,6 @@ private extension InsightGenerator {
         let previousHits = goalHits(in: previous, goal: goal)
         guard abs(currentHits - previousHits) >= minGoalHitsDelta else { return nil }
         return .goalHitRateChange(
-            metricName: metric.name,
             currentHits: currentHits,
             previousHits: previousHits
         )

@@ -23,4 +23,20 @@ enum Theme {
     /// Soft elevation under cards, replacing hairline borders.
     static let cardShadow = Color.black.opacity(0.05)
 }
+
+#if os(iOS)
+extension View {
+    /// The standard elevated card: 16pt padded content on the rounded
+    /// surface with the soft shadow, full width unless constrained.
+    func cardSurface(alignment: Alignment = .topLeading) -> some View {
+        padding(16)
+            .frame(maxWidth: .infinity, alignment: alignment)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Theme.cardBackground)
+                    .shadow(color: Theme.cardShadow, radius: 10, y: 2)
+            )
+    }
+}
+#endif
 #endif

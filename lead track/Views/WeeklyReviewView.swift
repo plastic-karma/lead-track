@@ -1,290 +1,156 @@
 import SwiftData
 import SwiftUI
 
+/// The weekly review: one overview card for the whole week, then a swipeable
+/// page of insights per metric, with the metrics that stayed quiet listed at
+/// the end. Pages snap like the dashboard cards they echo; the dots between
+/// them wear each metric's identity color.
 struct WeeklyReviewView: View {
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @Environment(\.dismiss) private var dismiss
     @State private var showingSettings = false
-
-    private var periodStart: Date {
-        Calendar.current.date(
-            byAdding: .day, value: -6,
-            to: Calendar.current.startOfDay(for: .now)
-        ) ?? .now
-    }
-
-    private var previousPeriodStart: Date {
-        Calendar.current.date(
-            byAdding: .day, value: -13,
-            to: Calendar.current.startOfDay(for: .now)
-        ) ?? .now
-    }
+    @State private var currentPage: String?
 
     var body: some View {
         NavigationStack {
-            List {
-                overviewSection
-                highlightsSection
-                metricsSection
-            }
-            .navigationTitle("Weekly Review")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+            content
+                .background(Theme.screenBackground)
+                .navigationTitle("Weekly Review")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { toolbarItems }
+                .sheet(isPresented: $showingSettings) {
+                    WeeklyReviewSettingsView()
                 }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "bell")
-                    }
-                }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        let review = WeeklyReview.build(metrics: metrics)
+        if review.metricWeeks.isEmpty {
+            emptyState
+        } else {
+            reviewScroll(review)
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            Button("Done") { dismiss() }
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                showingSettings = true
+            } label: {
+                Image(systemName: "bell")
             }
-            .sheet(isPresented: $showingSettings) {
-                WeeklyReviewSettingsView()
-            }
+            .accessibilityLabel("Weekly Review Notification")
         }
     }
 }
 
-// MARK: - Overview
+// MARK: - Layout
 
 extension WeeklyReviewView {
-    private var overviewSection: some View {
-        let sessions = allSessions
-        let totals = SessionStatistics.dailyTotals(from: sessions)
-        return Section {
-            dateRangeRow
-            totalTimeRow(
-                total: totals.reduce(0) { $0 + $1.duration },
-                sessionCount: sessions.count
-            )
-            bestDayRow(from: totals)
+    private func reviewScroll(_ review: WeeklyReview) -> some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                WeekOverviewCard(review: review)
+                    .padding(.horizontal)
+                metricPager(review)
+                if review.metricWeeks.count > 1 {
+                    pageDots(review)
+                }
+                quietCard(review.quietMetrics)
+                    .padding(.horizontal)
+            }
+            .padding(.vertical, 8)
+            .padding(.bottom, 16)
         }
     }
 
-    private var dateRangeRow: some View {
-        HStack {
-            Image(systemName: "calendar")
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label(
+                "No Sessions This Week",
+                systemImage: "calendar.badge.exclamationmark"
+            )
+        } description: {
+            Text("Log a session and your weekly insights will appear here.")
+        }
+    }
+}
+
+// MARK: - Metric Pager
+
+extension WeeklyReviewView {
+    /// One full-width card per metric; swiping snaps from page to page with
+    /// the neighbors peeking in at the edges.
+    private func metricPager(_ review: WeeklyReview) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(review.metricWeeks) { week in
+                    MetricWeekCard(week: week, weekStart: review.start)
+                        .containerRelativeFrame(.horizontal)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $currentPage)
+        .safeAreaPadding(.horizontal, 16)
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
+    }
+
+    private func pageDots(_ review: WeeklyReview) -> some View {
+        HStack(spacing: 6) {
+            ForEach(review.metricWeeks) { week in
+                Circle()
+                    .fill(MetricColor.color(named: week.colorName))
+                    .opacity(week.id == currentPageID(review) ? 1 : 0.25)
+                    .frame(width: 7, height: 7)
+            }
+        }
+        .animation(.snappy, value: currentPage)
+        .accessibilityHidden(true)
+    }
+
+    private func currentPageID(_ review: WeeklyReview) -> String? {
+        currentPage ?? review.metricWeeks.first?.id
+    }
+}
+
+// MARK: - Quiet Metrics
+
+extension WeeklyReviewView {
+    @ViewBuilder
+    private func quietCard(_ quiet: [WeeklyReview.QuietMetric]) -> some View {
+        if !quiet.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Quiet this week")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                ForEach(quiet) { metric in
+                    quietRow(metric)
+                }
+            }
+            .cardSurface()
+        }
+    }
+
+    private func quietRow(_ metric: WeeklyReview.QuietMetric) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: metric.icon)
                 .foregroundStyle(.secondary)
-            Text(formattedRange)
+                .frame(width: 24)
+            Text(metric.name)
                 .font(.subheadline)
-        }
-    }
-
-    private func totalTimeRow(
-        total: TimeInterval,
-        sessionCount: Int
-    ) -> some View {
-        HStack {
-            Image(systemName: "clock")
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading) {
-                Text(DurationFormatter.format(total))
-                    .numeralStyle(.stat)
-                Text("\(sessionCount) sessions")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func bestDayRow(
-        from totals: [DailyTotal]
-    ) -> some View {
-        let best = totals
-            .filter { $0.date >= periodStart }
-            .max(by: { $0.duration < $1.duration })
-        return HStack {
-            Image(systemName: "trophy")
-                .foregroundStyle(.secondary)
-            if let best {
-                VStack(alignment: .leading) {
-                    Text("Best day")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(
-                        "\(best.date.formatted(.dateTime.weekday(.wide))) "
-                            + "— \(DurationFormatter.format(best.duration))"
-                    )
-                    .font(.subheadline)
-                }
-            } else {
-                Text("No sessions this week")
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-// MARK: - Highlights
-
-extension WeeklyReviewView {
-    @ViewBuilder
-    private var highlightsSection: some View {
-        let insights = allInsights
-        if !insights.isEmpty {
-            Section("Highlights") {
-                ForEach(Array(insights.enumerated()), id: \.offset) { _, insight in
-                    insightRow(insight)
-                }
-            }
-        }
-    }
-
-    private func insightRow(_ insight: Insight) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: insight.symbol)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(insight.headline)
-                    .font(.subheadline)
-                Text(insight.detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var allInsights: [Insight] {
-        let perMetric = metrics.map { metric in
-            InsightGenerator.generate(
-                for: metric,
-                currentStart: periodStart,
-                previousStart: previousPeriodStart
-            )
-        }
-        return InsightGenerator.cap(perMetric: perMetric, to: maxHighlights)
-    }
-
-    private var maxHighlights: Int {
-        6
-    }
-}
-
-// MARK: - Per-Metric
-
-extension WeeklyReviewView {
-    @ViewBuilder
-    private var metricsSection: some View {
-        let summaries = metricSummaries
-        if !summaries.isEmpty {
-            Section("By Metric") {
-                ForEach(summaries, id: \.name) { summary in
-                    metricRow(summary)
-                }
-            }
-        }
-    }
-
-    private func metricRow(
-        _ summary: MetricSummary
-    ) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: summary.icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(summary.name).font(.subheadline)
-                metricDetail(summary)
-            }
             Spacer()
-            if summary.streak > 0 {
-                streakBadge(summary.streak)
-            }
+            Text("no sessions")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-    }
-
-    private func metricDetail(
-        _ summary: MetricSummary
-    ) -> some View {
-        HStack(spacing: 8) {
-            Text(ValueFormatter.format(
-                summary.duration,
-                type: summary.measurementType,
-                unit: summary.unit
-            ))
-            Text("·")
-            Text("\(summary.sessionCount) sessions")
-            if let hits = summary.goalDaysHit {
-                Text("·")
-                Text("\(hits)/7 days")
-            }
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-
-    private func streakBadge(_ days: Int) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: "flame.fill")
-                .font(.caption2)
-            Text("\(days)")
-                .font(.caption.bold())
-                .monospacedDigit()
-        }
-        .foregroundStyle(.secondary)
-    }
-}
-
-// MARK: - Data
-
-extension WeeklyReviewView {
-    private var allSessions: [Session] {
-        metrics.flatMap(\.sessions)
-            .filter { !$0.isRunning && $0.startedAt >= periodStart }
-    }
-
-    private var formattedRange: String {
-        let end = Date.now
-        return "\(periodStart.formatted(.dateTime.month().day()))"
-            + " — \(end.formatted(.dateTime.month().day()))"
-    }
-
-    private var metricSummaries: [MetricSummary] {
-        metrics.compactMap { metric in
-            let sessions = metric.sessions
-                .filter { !$0.isRunning && $0.startedAt >= periodStart }
-            guard !sessions.isEmpty else { return nil }
-            return buildSummary(metric: metric, sessions: sessions)
-        }
-    }
-
-    private func buildSummary(
-        metric: Metric,
-        sessions: [Session]
-    ) -> MetricSummary {
-        let totals = SessionStatistics.dailyTotals(from: sessions)
-        let allTotals = SessionStatistics.dailyTotals(from: metric.sessions)
-        let goalHits = metric.dailyGoal.map { goal in
-            totals.filter { $0.duration >= goal }.count
-        }
-        return MetricSummary(
-            name: metric.name,
-            measurementType: metric.measurementType,
-            unit: metric.unit,
-            icon: metric.displayIcon,
-            duration: totals.reduce(0) { $0 + $1.duration },
-            sessionCount: sessions.count,
-            streak: SessionStatistics.currentStreak(from: allTotals),
-            goalDaysHit: goalHits
-        )
-    }
-}
-
-// MARK: - Summary Model
-
-extension WeeklyReviewView {
-    struct MetricSummary {
-        let name: String
-        let measurementType: MeasurementType
-        let unit: String?
-        let icon: String
-        let duration: TimeInterval
-        let sessionCount: Int
-        let streak: Int
-        let goalDaysHit: Int?
     }
 }
