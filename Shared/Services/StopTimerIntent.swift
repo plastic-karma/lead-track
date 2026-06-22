@@ -27,10 +27,10 @@ struct StopTimerIntent: LiveActivityIntent {
         let running = try context.fetch(descriptor)
         var names: Set<String> = []
         for session in running where matches(session) {
-            session.endedAt = .now
             if let name = session.metric?.name {
                 names.insert(name)
             }
+            SessionService.stopSession(session)
         }
         try context.save()
         await endActivities(for: names)

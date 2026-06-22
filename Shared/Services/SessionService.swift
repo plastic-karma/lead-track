@@ -46,6 +46,7 @@ enum SessionService {
             project: project,
             startedAt: session.startedAt
         )
+        scheduleCountdownCompletion(for: metric, session: session)
         return session
     }
 
@@ -63,11 +64,49 @@ enum SessionService {
 
     /// Ends the session at `timestamp`, clamped between its start and now.
     static func stopSession(_ session: Session, at timestamp: Date = .now) {
-        session.endedAt = max(min(timestamp, .now), session.startedAt)
+        let endedAt = max(min(timestamp, .now), session.startedAt)
+        session.endedAt = endedAt
         stopLiveActivity()
         if let metric = session.metric {
+            cancelCountdownIfStoppedEarly(metric, session: session, endedAt: endedAt)
             rescheduleNotifications(for: metric)
         }
+    }
+
+    /// Stops every countdown timer whose target has already elapsed, recording
+    /// it as ending at exactly its countdown length — so a countdown turns
+    /// itself off even if the user never comes back to press stop. Returns
+    /// whether anything changed, so callers can persist and refresh.
+    @discardableResult
+    static func reconcileCountdowns(
+        in context: ModelContext,
+        now: Date = .now
+    ) -> Bool {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        guard let running = try? context.fetch(descriptor) else { return false }
+        var changed = false
+        for session in running {
+            guard let end = session.metric?.countdownInterval(for: session)?.upperBound,
+                  now >= end
+            else { continue }
+            stopSession(session, at: end)
+            changed = true
+        }
+        return changed
+    }
+
+    /// The soonest instant a running countdown will reach zero, or nil if none
+    /// is running — used to schedule the next auto-stop.
+    static func nextCountdownEnd(in context: ModelContext) -> Date? {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        guard let running = try? context.fetch(descriptor) else { return nil }
+        return running
+            .compactMap { $0.metric?.countdownInterval(for: $0)?.upperBound }
+            .min()
     }
 
     @discardableResult
@@ -122,6 +161,33 @@ enum SessionService {
     ) {
         #if canImport(UserNotifications)
         NotificationService.rescheduleMetric(metric)
+        #endif
+    }
+
+    /// Schedules the "time's up" alert for a countdown timer; no-ops for
+    /// count-up metrics, whose `countdownInterval` is nil.
+    private static func scheduleCountdownCompletion(
+        for metric: Metric,
+        session: Session
+    ) {
+        #if canImport(UserNotifications)
+        guard let end = metric.countdownInterval(for: session)?.upperBound else { return }
+        NotificationService.scheduleCountdownCompletion(for: metric, endsAt: end)
+        #endif
+    }
+
+    /// Clears a pending countdown alert when the user stops before it fires;
+    /// a countdown that runs to zero keeps its alert.
+    private static func cancelCountdownIfStoppedEarly(
+        _ metric: Metric,
+        session: Session,
+        endedAt: Date
+    ) {
+        #if canImport(UserNotifications)
+        guard let end = metric.countdownInterval(for: session)?.upperBound,
+              endedAt < end
+        else { return }
+        NotificationService.cancelCountdown(for: metric)
         #endif
     }
 
