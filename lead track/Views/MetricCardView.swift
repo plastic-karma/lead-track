@@ -81,10 +81,10 @@ extension MetricCardView {
     private func todayValue(_ totals: [DailyTotal]) -> some View {
         if let session = runningSession {
             Text(
-                session.liveTimerOrigin(
+                liveTimer: metric.countdownInterval(for: session),
+                countingUpFrom: session.liveTimerOrigin(
                     backdatedBy: SessionStatistics.todayTotal(from: totals)
-                ),
-                style: .timer
+                )
             )
         } else {
             Text(

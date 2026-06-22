@@ -15,7 +15,11 @@ struct ActiveSessionBanner: View {
             Text("Active")
                 .font(.subheadline.bold())
             Spacer()
-            TimerDisplay(startedAt: session.startedAt, tint: tint)
+            TimerDisplay(
+                startedAt: session.startedAt,
+                countdown: session.metric?.countdownInterval(for: session),
+                tint: tint
+            )
         }
         .padding(.vertical, 4)
     }

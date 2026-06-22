@@ -45,7 +45,10 @@ extension MetricHeroView {
     @ViewBuilder
     private var valueText: some View {
         if let session = activeSession {
-            Text(session.liveTimerOrigin(backdatedBy: todayTotal), style: .timer)
+            Text(
+                liveTimer: metric.countdownInterval(for: session),
+                countingUpFrom: session.liveTimerOrigin(backdatedBy: todayTotal)
+            )
         } else {
             Text(ValueFormatter.formatShort(todayTotal, type: metric.measurementType))
         }

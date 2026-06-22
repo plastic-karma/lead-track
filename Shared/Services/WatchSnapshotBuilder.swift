@@ -25,7 +25,8 @@ enum WatchSnapshotBuilder {
             icon: metric.displayIcon,
             colorName: metric.colorName,
             runningSince: SessionService.activeSession(for: metric)?.startedAt,
-            todayTotal: SessionStatistics.todayTotal(from: metric.sessions)
+            todayTotal: SessionStatistics.todayTotal(from: metric.sessions),
+            countdownDuration: metric.countdownDuration
         )
     }
 }

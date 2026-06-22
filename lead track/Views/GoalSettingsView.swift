@@ -13,11 +13,17 @@ struct GoalSettingsView: View {
     @State private var reminderTime: Date
     @State private var hasStreakAlert: Bool
     @State private var streakAlertTime: Date
+    @State private var hasCountdown: Bool
+    @State private var countdownMinutes: Double
     @State private var saveTrigger = false
 
     init(metric: Metric) {
         self.metric = metric
         let isCount = metric.measurementType == .count
+        _hasCountdown = State(initialValue: metric.countdownDuration != nil)
+        _countdownMinutes = State(
+            initialValue: (metric.countdownDuration ?? 1500) / 60
+        )
         _hasDailyGoal = State(initialValue: metric.dailyGoal != nil)
         _excludedWeekdays = State(initialValue: Set(metric.excludedWeekdays))
         _dailyGoalValue = State(
@@ -50,6 +56,9 @@ struct GoalSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if metric.measurementType == .duration {
+                    countdownSection
+                }
                 dailyGoalSection
                 weeklyGoalSection
                 reminderSection
@@ -66,6 +75,26 @@ struct GoalSettingsView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saveTrigger)
+        }
+    }
+}
+
+// MARK: - Countdown Section
+
+extension GoalSettingsView {
+    private var countdownSection: some View {
+        Section(footer: Text(
+            "Counts down from this length instead of up. The session still records the time you actually track."
+        )) {
+            Toggle("Countdown Timer", isOn: $hasCountdown)
+            if hasCountdown {
+                goalField(
+                    value: $countdownMinutes,
+                    unit: "min",
+                    suffix: "countdown",
+                    step: 5
+                )
+            }
         }
     }
 }
@@ -212,6 +241,7 @@ extension GoalSettingsView {
             ? reminderTime : nil
         metric.streakAlertTime = hasStreakAlert
             ? streakAlertTime : nil
+        metric.countdownDuration = hasCountdown ? max(countdownMinutes, 1) * 60 : nil
         NotificationService.rescheduleMetric(metric)
         saveTrigger.toggle()
         dismiss()

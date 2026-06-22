@@ -61,16 +61,20 @@ extension TimerActivityLiveActivity {
     }
 
     private func expandedTimer(_ context: ActivityContext) -> some View {
-        Text(context.state.startedAt, style: .timer)
+        Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
             .roundedDigits(.title3)
             .foregroundStyle(context.attributes.displayColor)
     }
 
     private func compactTimer(_ context: ActivityContext) -> some View {
-        Text(context.state.startedAt, style: .timer)
+        Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
             .monospacedDigit()
             .fontDesign(.rounded)
             .foregroundStyle(context.attributes.displayColor)
+    }
+
+    private func countdown(_ context: ActivityContext) -> ClosedRange<Date>? {
+        context.attributes.countdownInterval(startedAt: context.state.startedAt)
     }
 
     private func stopButton(_ context: ActivityContext) -> some View {
@@ -100,7 +104,7 @@ extension TimerActivityLiveActivity {
                 }
             }
             Spacer()
-            Text(context.state.startedAt, style: .timer)
+            Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
                 .roundedDigits(.title)
                 .foregroundStyle(context.attributes.displayColor)
             Button(intent: StopTimerIntent()) {

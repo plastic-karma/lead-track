@@ -29,7 +29,7 @@ struct WatchMetricLabel: View {
     @ViewBuilder
     private var subtitle: some View {
         if let since = metric.runningSince {
-            Text(since, style: .timer)
+            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
                 .roundedDigits(.caption)
                 .foregroundStyle(metric.displayColor)
         } else {

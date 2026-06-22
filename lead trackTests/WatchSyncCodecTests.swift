@@ -9,7 +9,8 @@ struct WatchSyncCodecTests {
 
     private func sampleMetric(
         runningSince: Date? = nil,
-        todayTotal: Double = 0
+        todayTotal: Double = 0,
+        countdownDuration: TimeInterval? = nil
     ) -> WatchMetricSnapshot {
         WatchMetricSnapshot(
             id: metricID,
@@ -19,7 +20,8 @@ struct WatchSyncCodecTests {
             icon: "book",
             colorName: "sage",
             runningSince: runningSince,
-            todayTotal: todayTotal
+            todayTotal: todayTotal,
+            countdownDuration: countdownDuration
         )
     }
 
@@ -30,6 +32,21 @@ struct WatchSyncCodecTests {
             WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
         )
         #expect(decoded == snapshot)
+    }
+
+    @Test
+    func countdownSurvivesRoundTrip() throws {
+        let snapshot = WatchSnapshot(metrics: [
+            sampleMetric(
+                runningSince: Date(timeIntervalSince1970: 1_750_000_000),
+                countdownDuration: 1500
+            )
+        ])
+        let decoded = try #require(
+            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
+        )
+        #expect(decoded == snapshot)
+        #expect(decoded.metrics.first?.countdownDuration == 1500)
     }
 
     @Test
@@ -79,7 +96,8 @@ struct WatchSnapshotReducerTests {
                 icon: "book",
                 colorName: nil,
                 runningSince: runningSince,
-                todayTotal: todayTotal
+                todayTotal: todayTotal,
+                countdownDuration: nil
             )
         ])
     }
