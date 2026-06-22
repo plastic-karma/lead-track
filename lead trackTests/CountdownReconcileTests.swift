@@ -6,7 +6,7 @@ import Testing
 @MainActor
 struct CountdownReconcileTests {
     private func makeContext() throws -> ModelContext {
-        ModelContext(try SharedModelContainer.create(inMemoryOnly: true))
+        try ModelContext(SharedModelContainer.create(inMemoryOnly: true))
     }
 
     private func makeCountdownMetric(
