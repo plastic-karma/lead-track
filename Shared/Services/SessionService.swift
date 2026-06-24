@@ -11,12 +11,21 @@ enum SessionService {
 
     /// Starts the metric's timer, or stops the one already running — the
     /// single toggle behind every start/stop button.
+    ///
+    /// The caller passes the running session it resolved from its own
+    /// `@Query`, which is the same source of truth that drew the button's
+    /// label. Re-deriving it here from `metric.sessions` instead would risk
+    /// disagreeing with the label: that relationship can lag a sibling
+    /// context's save (e.g. an auto-stop), so a stale-running array would turn
+    /// a "play" tap into a stop (timer never starts) and a stale-empty one
+    /// would turn a "stop" tap into a start.
     static func toggleSession(
         for metric: Metric,
+        runningSession: Session?,
         in context: ModelContext
     ) {
-        if let running = activeSession(for: metric) {
-            stopSession(running)
+        if let runningSession {
+            stopSession(runningSession)
         } else {
             startSession(for: metric, in: context)
         }

@@ -35,7 +35,7 @@ extension MetricHeroView {
                 .foregroundStyle(metric.displayColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .contentTransition(.numericText())
+                .contentTransition(.numericText(countsDown: metric.countsDown))
             Text(caption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -112,7 +112,11 @@ extension MetricHeroView {
 
     private func toggleTimer() {
         withAnimation {
-            SessionService.toggleSession(for: metric, in: modelContext)
+            SessionService.toggleSession(
+                for: metric,
+                runningSession: activeSession,
+                in: modelContext
+            )
         }
     }
 

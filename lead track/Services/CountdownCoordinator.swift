@@ -7,6 +7,12 @@ import WidgetKit
 /// so this is the one place a countdown turns itself off on screen; the local
 /// notification scheduled when it started covers the case where the app never
 /// comes back.
+///
+/// It works through the container's `mainContext` — the same context the UI's
+/// `@Query`s and views read — so an auto-stop is reflected everywhere at once.
+/// Finalizing on a private context instead would leave the on-screen metric's
+/// `sessions` relationship stale, desyncing the start/stop button from what it
+/// shows. Safe here because the coordinator is `@MainActor` and app-only.
 @MainActor
 final class CountdownCoordinator {
     static let shared = CountdownCoordinator()
@@ -23,8 +29,7 @@ final class CountdownCoordinator {
 
     /// Finalizes elapsed countdowns now, then arms a wake for the next one.
     func reconcile() {
-        guard let container else { return }
-        let context = ModelContext(container)
+        guard let context = container?.mainContext else { return }
         if SessionService.reconcileCountdowns(in: context) {
             try? context.save()
             WidgetCenter.shared.reloadAllTimelines()
@@ -59,7 +64,7 @@ final class CountdownCoordinator {
     /// A save may have started or stopped a timer; recompute the wake without
     /// reconciling, which would re-enter through its own save.
     private func rearm() {
-        guard let container else { return }
-        arm(using: ModelContext(container))
+        guard let context = container?.mainContext else { return }
+        arm(using: context)
     }
 }

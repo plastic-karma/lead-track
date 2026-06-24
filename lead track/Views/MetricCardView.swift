@@ -175,7 +175,11 @@ extension MetricCardView {
 
     private func toggleTimer() {
         withAnimation {
-            SessionService.toggleSession(for: metric, in: modelContext)
+            SessionService.toggleSession(
+                for: metric,
+                runningSession: runningSession,
+                in: modelContext
+            )
         }
     }
 
