@@ -12,7 +12,10 @@ on:
 jobs:
   build:
     name: Lint, build & test (iOS)
-    runs-on: macos-latest
+    # Pinned to macos-15: macos-latest migrated to macOS 26 (June 2026), whose
+    # image dropped the iPhone 16 simulator this workflow targets. macos-15
+    # keeps the known-good Xcode 16.4 + iOS 18 simulator set.
+    runs-on: macos-15
     env:
       SCHEME: "lead track"
       PROJECT: "lead track.xcodeproj"
