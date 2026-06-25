@@ -17,7 +17,7 @@ struct ActiveSessionBanner: View {
             Spacer()
             TimerDisplay(
                 startedAt: session.startedAt,
-                countdown: session.metric?.countdownInterval(for: session),
+                countdown: session.countdownInterval,
                 tint: tint
             )
         }

@@ -22,10 +22,6 @@ final class Metric {
     var reminderTime: Date?
     var streakAlertTime: Date?
     var excludedWeekdays: [Int] = []
-    /// When set on a duration metric, its timer counts down from this many
-    /// seconds instead of up. Display-only: the recorded session length is
-    /// still the real elapsed time.
-    var countdownDuration: TimeInterval?
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -62,22 +58,6 @@ extension Metric {
     /// At most one active project per metric can be the default.
     var defaultProject: Project? {
         projects.first { $0.isDefault && $0.status == .active }
-    }
-}
-
-// MARK: - Countdown
-
-extension Metric {
-    /// Whether this metric's timer counts down from a fixed target.
-    var countsDown: Bool {
-        (countdownDuration ?? 0) > 0
-    }
-
-    /// The range a running countdown session animates across — start to the
-    /// instant it reaches zero — or nil for a count-up metric.
-    func countdownInterval(for session: Session) -> ClosedRange<Date>? {
-        guard let target = countdownDuration, target > 0 else { return nil }
-        return session.startedAt ... session.startedAt.addingTimeInterval(target)
     }
 }
 

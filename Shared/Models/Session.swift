@@ -12,6 +12,10 @@ final class Session {
     var startedAt: Date
     var endedAt: Date?
     var value: Double?
+    /// When set on a running timer, the readout counts down from this many
+    /// seconds instead of up — chosen per session when the user starts a
+    /// countdown. Display-only: the recorded length is still real elapsed time.
+    var countdownDuration: TimeInterval?
 
     var isRunning: Bool {
         endedAt == nil && value == nil
@@ -31,13 +35,15 @@ final class Session {
         project: Project? = nil,
         startedAt: Date = .now,
         endedAt: Date? = nil,
-        value: Double? = nil
+        value: Double? = nil,
+        countdownDuration: TimeInterval? = nil
     ) {
         self.metric = metric
         self.project = project
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.value = value
+        self.countdownDuration = countdownDuration
     }
 }
 
@@ -47,6 +53,18 @@ extension Session {
     /// already-completed total.
     func liveTimerOrigin(backdatedBy completedTotal: TimeInterval) -> Date {
         startedAt.addingTimeInterval(-completedTotal)
+    }
+
+    /// Whether this session's timer counts down from a fixed target.
+    var countsDown: Bool {
+        (countdownDuration ?? 0) > 0
+    }
+
+    /// The range a running countdown animates across — start to the instant it
+    /// reaches zero — or nil for a count-up session.
+    var countdownInterval: ClosedRange<Date>? {
+        guard let target = countdownDuration, target > 0 else { return nil }
+        return startedAt ... startedAt.addingTimeInterval(target)
     }
 }
 

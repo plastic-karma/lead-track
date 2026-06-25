@@ -17,6 +17,7 @@ enum WatchSnapshotBuilder {
         for metric: Metric
     ) -> WatchMetricSnapshot? {
         guard let id = metric.stableID else { return nil }
+        let running = SessionService.activeSession(for: metric)
         return WatchMetricSnapshot(
             id: id,
             name: metric.name,
@@ -24,9 +25,9 @@ enum WatchSnapshotBuilder {
             unit: metric.unit,
             icon: metric.displayIcon,
             colorName: metric.colorName,
-            runningSince: SessionService.activeSession(for: metric)?.startedAt,
+            runningSince: running?.startedAt,
             todayTotal: SessionStatistics.todayTotal(from: metric.sessions),
-            countdownDuration: metric.countdownDuration
+            countdownDuration: running?.countdownDuration
         )
     }
 }

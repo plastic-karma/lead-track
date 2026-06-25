@@ -6,30 +6,25 @@ struct CountdownTimerTests {
     private let start = Date(timeIntervalSince1970: 1_750_000_000)
 
     @Test
-    func metricWithoutDurationCountsUp() {
-        let metric = Metric(name: "Reading")
-        #expect(!metric.countsDown)
-        let session = Session(metric: metric, startedAt: start)
-        #expect(metric.countdownInterval(for: session) == nil)
+    func sessionWithoutDurationCountsUp() {
+        let session = Session(startedAt: start)
+        #expect(!session.countsDown)
+        #expect(session.countdownInterval == nil)
     }
 
     @Test
     func zeroDurationDoesNotCountDown() {
-        let metric = Metric(name: "Reading")
-        metric.countdownDuration = 0
-        #expect(!metric.countsDown)
-        let session = Session(metric: metric, startedAt: start)
-        #expect(metric.countdownInterval(for: session) == nil)
+        let session = Session(startedAt: start, countdownDuration: 0)
+        #expect(!session.countsDown)
+        #expect(session.countdownInterval == nil)
     }
 
     @Test
     func countdownIntervalSpansTheTargetFromSessionStart() throws {
-        let metric = Metric(name: "Focus")
-        metric.countdownDuration = 1500
-        #expect(metric.countsDown)
-        let session = Session(metric: metric, startedAt: start)
+        let session = Session(startedAt: start, countdownDuration: 1500)
+        #expect(session.countsDown)
 
-        let interval = try #require(metric.countdownInterval(for: session))
+        let interval = try #require(session.countdownInterval)
         #expect(interval.lowerBound == start)
         #expect(interval.upperBound == start.addingTimeInterval(1500))
     }

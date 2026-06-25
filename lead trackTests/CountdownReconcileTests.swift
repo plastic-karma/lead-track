@@ -9,12 +9,8 @@ struct CountdownReconcileTests {
         try ModelContext(SharedModelContainer.create(inMemoryOnly: true))
     }
 
-    private func makeCountdownMetric(
-        _ seconds: TimeInterval,
-        in context: ModelContext
-    ) -> Metric {
+    private func makeMetric(in context: ModelContext) -> Metric {
         let metric = Metric(name: "Focus")
-        metric.countdownDuration = seconds
         context.insert(metric)
         return metric
     }
@@ -22,9 +18,11 @@ struct CountdownReconcileTests {
     @Test
     func elapsedCountdownStopsAtItsEnd() throws {
         let context = try makeContext()
-        let metric = makeCountdownMetric(60, in: context)
+        let metric = makeMetric(in: context)
         let start = Date.now.addingTimeInterval(-120)
-        let session = Session(metric: metric, startedAt: start)
+        let session = Session(
+            metric: metric, startedAt: start, countdownDuration: 60
+        )
         context.insert(session)
 
         let changed = SessionService.reconcileCountdowns(in: context)
@@ -37,9 +35,11 @@ struct CountdownReconcileTests {
     @Test
     func runningCountdownBeforeEndKeepsGoing() throws {
         let context = try makeContext()
-        let metric = makeCountdownMetric(600, in: context)
+        let metric = makeMetric(in: context)
         let session = Session(
-            metric: metric, startedAt: .now.addingTimeInterval(-60)
+            metric: metric,
+            startedAt: .now.addingTimeInterval(-60),
+            countdownDuration: 600
         )
         context.insert(session)
 
@@ -68,11 +68,15 @@ struct CountdownReconcileTests {
     @Test
     func nextCountdownEndReturnsSoonest() throws {
         let context = try makeContext()
-        let soon = makeCountdownMetric(60, in: context)
-        let later = makeCountdownMetric(600, in: context)
+        let soon = makeMetric(in: context)
+        let later = makeMetric(in: context)
         let now = Date.now
-        context.insert(Session(metric: soon, startedAt: now))
-        context.insert(Session(metric: later, startedAt: now))
+        context.insert(
+            Session(metric: soon, startedAt: now, countdownDuration: 60)
+        )
+        context.insert(
+            Session(metric: later, startedAt: now, countdownDuration: 600)
+        )
 
         let next = try #require(SessionService.nextCountdownEnd(in: context))
 

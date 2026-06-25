@@ -12,12 +12,16 @@ struct MetricCardView: View {
     let metric: Metric
     let runningSession: Session?
     @State private var showingCountEntry = false
+    @State private var showingCountdownPicker = false
     @State private var quickLogTrigger = false
 
     var body: some View {
         content(SessionStatistics.dailyTotals(from: metric.sessions))
             .sheet(isPresented: $showingCountEntry) {
                 CountEntryView(metric: metric, project: nil)
+            }
+            .sheet(isPresented: $showingCountdownPicker) {
+                CountdownStartView(metric: metric)
             }
             .sensoryFeedback(.increase, trigger: quickLogTrigger)
             .recordingFeedback(isActive: runningSession != nil)
@@ -81,7 +85,7 @@ extension MetricCardView {
     private func todayValue(_ totals: [DailyTotal]) -> some View {
         if let session = runningSession {
             Text(
-                liveTimer: metric.countdownInterval(for: session),
+                liveTimer: session.countdownInterval,
                 countingUpFrom: session.liveTimerOrigin(
                     backdatedBy: SessionStatistics.todayTotal(from: totals)
                 )
@@ -138,14 +142,29 @@ extension MetricCardView {
         }
     }
 
+    /// Tap starts (or stops) a count-up timer; the menu offers count-down
+    /// lengths instead — the same start-time choice the hero shows.
+    @ViewBuilder
     private var timerButton: some View {
-        Button(action: toggleTimer) {
-            actionIcon(runningSession == nil ? "play.fill" : "stop.fill")
+        if runningSession == nil {
+            Menu {
+                CountdownOptionsMenu(
+                    onPreset: startCountdown,
+                    onCustom: { showingCountdownPicker = true }
+                )
+            } label: {
+                actionIcon("play.fill")
+            } primaryAction: {
+                toggleTimer()
+            }
+            .accessibilityLabel("Start Timer")
+        } else {
+            Button(action: toggleTimer) {
+                actionIcon("stop.fill")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Stop Timer")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(
-            runningSession == nil ? "Start Timer" : "Stop Timer"
-        )
     }
 
     /// Tap logs one unit instantly; long-press offers the custom-amount sheet.
@@ -179,6 +198,16 @@ extension MetricCardView {
                 for: metric,
                 runningSession: runningSession,
                 in: modelContext
+            )
+        }
+    }
+
+    private func startCountdown(_ duration: TimeInterval) {
+        withAnimation {
+            SessionService.startSession(
+                for: metric,
+                in: modelContext,
+                countdownDuration: duration
             )
         }
     }

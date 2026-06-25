@@ -72,7 +72,7 @@ extension NotificationService {
 
     private static func scheduleRunningCountdown(for metric: Metric) {
         guard let session = SessionService.activeSession(for: metric),
-              let end = metric.countdownInterval(for: session)?.upperBound
+              let end = session.countdownInterval?.upperBound
         else { return }
         scheduleCountdownCompletion(for: metric, endsAt: end)
     }

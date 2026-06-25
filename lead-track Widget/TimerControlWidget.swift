@@ -81,14 +81,15 @@ extension TimerControlProvider {
     }
 
     private func makeState(for metric: Metric) -> TimerMetricState {
-        TimerMetricState(
+        let running = SessionService.activeSession(for: metric)
+        return TimerMetricState(
             stableID: metric.stableID?.uuidString ?? "",
             name: metric.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
-            runningSince: SessionService.activeSession(for: metric)?.startedAt,
+            runningSince: running?.startedAt,
             todayTotal: SessionStatistics.todayTotal(from: metric.sessions),
-            countdownDuration: metric.countdownDuration
+            countdownDuration: running?.countdownDuration
         )
     }
 

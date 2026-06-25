@@ -33,12 +33,15 @@ enum SessionService {
 
     /// `at` records when the session actually began (clamped to now), so
     /// actions queued offline — e.g. from the watch — are backdated.
+    /// `countdownDuration` (seconds) makes this one session count down instead
+    /// of up; nil counts up. The choice is per-start, not a metric setting.
     @discardableResult
     static func startSession(
         for metric: Metric,
         project: Project? = nil,
         in context: ModelContext,
-        at timestamp: Date = .now
+        at timestamp: Date = .now,
+        countdownDuration: TimeInterval? = nil
     ) -> Session {
         if let running = activeSession(for: metric) {
             return running
@@ -47,13 +50,14 @@ enum SessionService {
         let session = Session(
             metric: metric,
             project: project,
-            startedAt: min(timestamp, .now)
+            startedAt: min(timestamp, .now),
+            countdownDuration: countdownDuration
         )
         context.insert(session)
         startLiveActivity(
             metric: metric,
             project: project,
-            startedAt: session.startedAt
+            session: session
         )
         scheduleCountdownCompletion(for: metric, session: session)
         return session
@@ -97,7 +101,7 @@ enum SessionService {
         guard let running = try? context.fetch(descriptor) else { return false }
         var changed = false
         for session in running {
-            guard let end = session.metric?.countdownInterval(for: session)?.upperBound,
+            guard let end = session.countdownInterval?.upperBound,
                   now >= end
             else { continue }
             stopSession(session, at: end)
@@ -114,7 +118,7 @@ enum SessionService {
         )
         guard let running = try? context.fetch(descriptor) else { return nil }
         return running
-            .compactMap { $0.metric?.countdownInterval(for: $0)?.upperBound }
+            .compactMap { $0.countdownInterval?.upperBound }
             .min()
     }
 
@@ -173,14 +177,14 @@ enum SessionService {
         #endif
     }
 
-    /// Schedules the "time's up" alert for a countdown timer; no-ops for
-    /// count-up metrics, whose `countdownInterval` is nil.
+    /// Schedules the "time's up" alert for a countdown session; no-ops for a
+    /// count-up session, whose `countdownInterval` is nil.
     private static func scheduleCountdownCompletion(
         for metric: Metric,
         session: Session
     ) {
         #if canImport(UserNotifications)
-        guard let end = metric.countdownInterval(for: session)?.upperBound else { return }
+        guard let end = session.countdownInterval?.upperBound else { return }
         NotificationService.scheduleCountdownCompletion(for: metric, endsAt: end)
         #endif
     }
@@ -193,7 +197,7 @@ enum SessionService {
         endedAt: Date
     ) {
         #if canImport(UserNotifications)
-        guard let end = metric.countdownInterval(for: session)?.upperBound,
+        guard let end = session.countdownInterval?.upperBound,
               endedAt < end
         else { return }
         NotificationService.cancelCountdown(for: metric)
@@ -222,7 +226,7 @@ enum SessionService {
         startLiveActivity(
             metric: metric,
             project: running.project,
-            startedAt: running.startedAt
+            session: running
         )
         #endif
     }
@@ -230,7 +234,7 @@ enum SessionService {
     private static func startLiveActivity(
         metric: Metric,
         project: Project?,
-        startedAt: Date
+        session: Session
     ) {
         #if canImport(ActivityKit)
         let attributes = TimerActivityAttributes(
@@ -238,10 +242,10 @@ enum SessionService {
             projectName: project?.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
-            countdownDuration: metric.countdownDuration
+            countdownDuration: session.countdownDuration
         )
         let state = TimerActivityAttributes.ContentState(
-            startedAt: startedAt
+            startedAt: session.startedAt
         )
         let content = ActivityContent(
             state: state,
