@@ -87,7 +87,8 @@ extension NotificationService {
         let content = UNMutableNotificationContent()
         content.title = "\(metric.name) timer finished"
         content.body = "Your countdown reached zero."
-        content.sound = .default
+        // Honors the user's sound toggle; the banner still shows when muted.
+        content.sound = CompletionAlertSettings.soundEnabled ? .default : nil
         return content
     }
 }
