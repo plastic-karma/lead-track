@@ -24,6 +24,7 @@ enum WatchActionHandler {
                 at: action.timestamp
             )
         }
+        SessionService.reconcileCountdowns(in: context)
         try context.save()
     }
 }

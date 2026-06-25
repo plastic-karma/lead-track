@@ -12,16 +12,29 @@ struct MetricHeroView: View {
     let todayTotal: TimeInterval
     let onLogManually: () -> Void
     @State private var quickLogTrigger = false
+    @State private var showingCountdownPicker = false
 
     var body: some View {
         VStack(spacing: 20) {
             heroValue
             primaryButton
+            if showsCountdownStart {
+                countdownButton
+            }
             manualLogButton
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .sensoryFeedback(.increase, trigger: quickLogTrigger)
+        .sheet(isPresented: $showingCountdownPicker) {
+            CountdownStartView(metric: metric)
+        }
+    }
+
+    /// Counting down is only offered before a timer is running, and only for
+    /// duration metrics — count metrics have no timer.
+    private var showsCountdownStart: Bool {
+        metric.measurementType == .duration && activeSession == nil
     }
 }
 
@@ -35,7 +48,7 @@ extension MetricHeroView {
                 .foregroundStyle(metric.displayColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .contentTransition(.numericText())
+                .contentTransition(.numericText(countsDown: activeSession?.countsDown ?? false))
             Text(caption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -45,7 +58,10 @@ extension MetricHeroView {
     @ViewBuilder
     private var valueText: some View {
         if let session = activeSession {
-            Text(session.liveTimerOrigin(backdatedBy: todayTotal), style: .timer)
+            Text(
+                liveTimer: session.countdownInterval,
+                countingUpFrom: session.liveTimerOrigin(backdatedBy: todayTotal)
+            )
         } else {
             Text(ValueFormatter.formatShort(todayTotal, type: metric.measurementType))
         }
@@ -96,6 +112,21 @@ extension MetricHeroView {
         .tint(metric.displayColor)
     }
 
+    /// The visible alternative to the count-up "Start": pick a length and the
+    /// timer counts down from it.
+    private var countdownButton: some View {
+        Menu {
+            CountdownOptionsMenu(
+                onPreset: startCountdown,
+                onCustom: { showingCountdownPicker = true }
+            )
+        } label: {
+            Label("Start Countdown", systemImage: "timer")
+                .font(.subheadline)
+        }
+        .tint(metric.displayColor)
+    }
+
     private var manualLogButton: some View {
         Button(manualLogTitle, action: onLogManually)
             .font(.subheadline)
@@ -109,7 +140,21 @@ extension MetricHeroView {
 
     private func toggleTimer() {
         withAnimation {
-            SessionService.toggleSession(for: metric, in: modelContext)
+            SessionService.toggleSession(
+                for: metric,
+                runningSession: activeSession,
+                in: modelContext
+            )
+        }
+    }
+
+    private func startCountdown(_ duration: TimeInterval) {
+        withAnimation {
+            SessionService.startSession(
+                for: metric,
+                in: modelContext,
+                countdownDuration: duration
+            )
         }
     }
 

@@ -65,7 +65,7 @@ struct WatchTimerWidgetView: View {
         since: Date
     ) -> some View {
         if family == .accessoryInline {
-            Text("\(metric.name) \(Text(since, style: .timer))")
+            Text("\(metric.name) \(Text(liveTimer: metric.countdownInterval, countingUpFrom: since))")
         } else {
             rectangularView(metric, since: since)
         }
@@ -83,7 +83,7 @@ struct WatchTimerWidgetView: View {
                     .minimumScaleFactor(0.8)
             }
             .font(.headline)
-            Text(since, style: .timer)
+            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
                 .roundedDigits(.title3, weight: .semibold)
                 .foregroundStyle(metric.displayColor)
         }

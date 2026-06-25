@@ -29,6 +29,7 @@ let package = Package(
             dependencies: ["lead_track"],
             path: "lead trackTests",
             exclude: [
+                "CountdownReconcileTests.swift",
                 "DefaultProjectTests.swift",
                 "SessionMoveTests.swift",
                 "WatchActionHandlerTests.swift"

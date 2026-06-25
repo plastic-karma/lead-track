@@ -11,12 +11,21 @@ enum SessionService {
 
     /// Starts the metric's timer, or stops the one already running — the
     /// single toggle behind every start/stop button.
+    ///
+    /// The caller passes the running session it resolved from its own
+    /// `@Query`, which is the same source of truth that drew the button's
+    /// label. Re-deriving it here from `metric.sessions` instead would risk
+    /// disagreeing with the label: that relationship can lag a sibling
+    /// context's save (e.g. an auto-stop), so a stale-running array would turn
+    /// a "play" tap into a stop (timer never starts) and a stale-empty one
+    /// would turn a "stop" tap into a start.
     static func toggleSession(
         for metric: Metric,
+        runningSession: Session?,
         in context: ModelContext
     ) {
-        if let running = activeSession(for: metric) {
-            stopSession(running)
+        if let runningSession {
+            stopSession(runningSession)
         } else {
             startSession(for: metric, in: context)
         }
@@ -24,12 +33,15 @@ enum SessionService {
 
     /// `at` records when the session actually began (clamped to now), so
     /// actions queued offline — e.g. from the watch — are backdated.
+    /// `countdownDuration` (seconds) makes this one session count down instead
+    /// of up; nil counts up. The choice is per-start, not a metric setting.
     @discardableResult
     static func startSession(
         for metric: Metric,
         project: Project? = nil,
         in context: ModelContext,
-        at timestamp: Date = .now
+        at timestamp: Date = .now,
+        countdownDuration: TimeInterval? = nil
     ) -> Session {
         if let running = activeSession(for: metric) {
             return running
@@ -38,14 +50,16 @@ enum SessionService {
         let session = Session(
             metric: metric,
             project: project,
-            startedAt: min(timestamp, .now)
+            startedAt: min(timestamp, .now),
+            countdownDuration: countdownDuration
         )
         context.insert(session)
         startLiveActivity(
             metric: metric,
             project: project,
-            startedAt: session.startedAt
+            session: session
         )
+        scheduleCountdownCompletion(for: metric, session: session)
         return session
     }
 
@@ -63,11 +77,49 @@ enum SessionService {
 
     /// Ends the session at `timestamp`, clamped between its start and now.
     static func stopSession(_ session: Session, at timestamp: Date = .now) {
-        session.endedAt = max(min(timestamp, .now), session.startedAt)
+        let endedAt = max(min(timestamp, .now), session.startedAt)
+        session.endedAt = endedAt
         stopLiveActivity()
         if let metric = session.metric {
+            cancelCountdownIfStoppedEarly(metric, session: session, endedAt: endedAt)
             rescheduleNotifications(for: metric)
         }
+    }
+
+    /// Stops every countdown timer whose target has already elapsed, recording
+    /// it as ending at exactly its countdown length — so a countdown turns
+    /// itself off even if the user never comes back to press stop. Returns
+    /// whether anything changed, so callers can persist and refresh.
+    @discardableResult
+    static func reconcileCountdowns(
+        in context: ModelContext,
+        now: Date = .now
+    ) -> Bool {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        guard let running = try? context.fetch(descriptor) else { return false }
+        var changed = false
+        for session in running {
+            guard let end = session.countdownInterval?.upperBound,
+                  now >= end
+            else { continue }
+            stopSession(session, at: end)
+            changed = true
+        }
+        return changed
+    }
+
+    /// The soonest instant a running countdown will reach zero, or nil if none
+    /// is running — used to schedule the next auto-stop.
+    static func nextCountdownEnd(in context: ModelContext) -> Date? {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        guard let running = try? context.fetch(descriptor) else { return nil }
+        return running
+            .compactMap { $0.countdownInterval?.upperBound }
+            .min()
     }
 
     @discardableResult
@@ -125,6 +177,33 @@ enum SessionService {
         #endif
     }
 
+    /// Schedules the "time's up" alert for a countdown session; no-ops for a
+    /// count-up session, whose `countdownInterval` is nil.
+    private static func scheduleCountdownCompletion(
+        for metric: Metric,
+        session: Session
+    ) {
+        #if canImport(UserNotifications)
+        guard let end = session.countdownInterval?.upperBound else { return }
+        NotificationService.scheduleCountdownCompletion(for: metric, endsAt: end)
+        #endif
+    }
+
+    /// Clears a pending countdown alert when the user stops before it fires;
+    /// a countdown that runs to zero keeps its alert.
+    private static func cancelCountdownIfStoppedEarly(
+        _ metric: Metric,
+        session: Session,
+        endedAt: Date
+    ) {
+        #if canImport(UserNotifications)
+        guard let end = session.countdownInterval?.upperBound,
+              endedAt < end
+        else { return }
+        NotificationService.cancelCountdown(for: metric)
+        #endif
+    }
+
     // MARK: - Live Activity
 
     /// Aligns the Live Activity with the store. Sessions started from the
@@ -147,7 +226,7 @@ enum SessionService {
         startLiveActivity(
             metric: metric,
             project: running.project,
-            startedAt: running.startedAt
+            session: running
         )
         #endif
     }
@@ -155,17 +234,18 @@ enum SessionService {
     private static func startLiveActivity(
         metric: Metric,
         project: Project?,
-        startedAt: Date
+        session: Session
     ) {
         #if canImport(ActivityKit)
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
             projectName: project?.name,
             icon: metric.displayIcon,
-            colorName: metric.colorName
+            colorName: metric.colorName,
+            countdownDuration: session.countdownDuration
         )
         let state = TimerActivityAttributes.ContentState(
-            startedAt: startedAt
+            startedAt: session.startedAt
         )
         let content = ActivityContent(
             state: state,

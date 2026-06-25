@@ -16,6 +16,7 @@ struct TimerMetricState {
     let colorName: String?
     let runningSince: Date?
     let todayTotal: TimeInterval
+    let countdownDuration: TimeInterval?
 
     var isRunning: Bool {
         runningSince != nil
@@ -23,6 +24,12 @@ struct TimerMetricState {
 
     var displayColor: Color {
         MetricColor.color(named: colorName)
+    }
+
+    /// The range a running countdown animates across, or nil when counting up.
+    var countdownInterval: ClosedRange<Date>? {
+        guard let since = runningSince, let target = countdownDuration, target > 0 else { return nil }
+        return since ... since.addingTimeInterval(target)
     }
 }
 
@@ -74,13 +81,15 @@ extension TimerControlProvider {
     }
 
     private func makeState(for metric: Metric) -> TimerMetricState {
-        TimerMetricState(
+        let running = SessionService.activeSession(for: metric)
+        return TimerMetricState(
             stableID: metric.stableID?.uuidString ?? "",
             name: metric.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
-            runningSince: SessionService.activeSession(for: metric)?.startedAt,
-            todayTotal: SessionStatistics.todayTotal(from: metric.sessions)
+            runningSince: running?.startedAt,
+            todayTotal: SessionStatistics.todayTotal(from: metric.sessions),
+            countdownDuration: running?.countdownDuration
         )
     }
 
@@ -91,7 +100,8 @@ extension TimerControlProvider {
             icon: "book",
             colorName: "sage",
             runningSince: nil,
-            todayTotal: 1200
+            todayTotal: 1200,
+            countdownDuration: nil
         )
     }
 }
@@ -152,7 +162,7 @@ extension TimerControlWidgetView {
     @ViewBuilder
     private func timeDisplay(_ metric: TimerMetricState) -> some View {
         if let since = metric.runningSince {
-            Text(since, style: .timer)
+            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
                 .roundedDigits(.title, weight: .semibold)
                 .foregroundStyle(metric.displayColor)
                 .lineLimit(1)

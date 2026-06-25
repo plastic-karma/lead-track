@@ -6,10 +6,12 @@ import SwiftUI
 /// numeric scale.
 struct TimerDisplay: View {
     let startedAt: Date
+    /// When set, the readout counts down across this range instead of up.
+    var countdown: ClosedRange<Date>?
     var tint: Color = .accentColor
 
     var body: some View {
-        Text(startedAt, style: .timer)
+        Text(liveTimer: countdown, countingUpFrom: startedAt)
             .numeralStyle(.stat)
             .foregroundStyle(tint)
     }

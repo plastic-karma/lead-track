@@ -23,6 +23,7 @@ enum NotificationService {
         for metric in metrics {
             scheduleReminder(for: metric)
             scheduleStreakAlert(for: metric)
+            scheduleRunningCountdown(for: metric)
         }
         scheduleWeeklyReview(metrics: metrics)
     }
@@ -33,6 +34,61 @@ enum NotificationService {
         cancelForMetric(metric)
         scheduleReminder(for: metric)
         scheduleStreakAlert(for: metric)
+    }
+}
+
+// MARK: - Countdown Completion
+
+extension NotificationService {
+    private static let countdownPrefix = "countdown-"
+
+    /// Whether a delivered notification is a countdown's "time's up" alert,
+    /// so the responder can show it even while the app is in the foreground.
+    static func isCountdownNotification(id: String) -> Bool {
+        id.hasPrefix(countdownPrefix)
+    }
+
+    /// Fires an alert when a running countdown reaches zero. Skipped if the
+    /// target is already in the past (the timer is reconciled instead).
+    static func scheduleCountdownCompletion(for metric: Metric, endsAt: Date) {
+        guard let stableID = metric.stableID else { return }
+        let remaining = endsAt.timeIntervalSinceNow
+        guard remaining > 0 else { return }
+        let request = UNNotificationRequest(
+            identifier: countdownID(stableID),
+            content: countdownContent(for: metric),
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: remaining, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    static func cancelCountdown(for metric: Metric) {
+        guard let stableID = metric.stableID else { return }
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(
+                withIdentifiers: [countdownID(stableID)]
+            )
+    }
+
+    private static func scheduleRunningCountdown(for metric: Metric) {
+        guard let session = SessionService.activeSession(for: metric),
+              let end = session.countdownInterval?.upperBound
+        else { return }
+        scheduleCountdownCompletion(for: metric, endsAt: end)
+    }
+
+    private static func countdownID(_ stableID: UUID) -> String {
+        "\(countdownPrefix)\(stableID.uuidString)"
+    }
+
+    private static func countdownContent(
+        for metric: Metric
+    ) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = "\(metric.name) timer finished"
+        content.body = "Your countdown reached zero."
+        content.sound = .default
+        return content
     }
 }
 

@@ -16,7 +16,6 @@ jobs:
     env:
       SCHEME: "lead track"
       PROJECT: "lead track.xcodeproj"
-      DESTINATION: "platform=iOS Simulator,name=iPhone 16"
 
     steps:
       - name: Checkout
@@ -31,10 +30,43 @@ jobs:
       - name: SwiftLint
         run: swiftlint
 
+      - name: Select newest Xcode
+        # Runner images now ship iOS simulators only for their newest Xcode, so
+        # pick it (also keeps the test SDK current with the iOS 26.2 target).
+        run: |
+          set -euo pipefail
+          newest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)"
+          [ -n "$newest" ] && sudo xcode-select -s "$newest/Contents/Developer"
+          xcodebuild -version
+
+      - name: Select simulator
+        id: sim
+        # Hardcoding a device name (e.g. "iPhone 16") breaks whenever the image
+        # changes its preinstalled simulators. Ask xcodebuild itself which
+        # simulators it can target (its own source of truth) and take the first
+        # — any iOS device works for a compile + unit-test run. If the image
+        # ships none, fall back to a generic simulator so compilation is still
+        # validated (the test run is then skipped).
+        run: |
+          set -euo pipefail
+          id="$(xcodebuild -showdestinations -scheme "$SCHEME" -project "$PROJECT" 2>/dev/null \
+            | grep 'platform:iOS Simulator' | grep -v placeholder \
+            | grep -oE 'id:[0-9A-Fa-f-]{36}' | head -1 | cut -d: -f2 || true)"
+          if [ -n "$id" ]; then
+            echo "Using simulator $id"
+            echo "DESTINATION=platform=iOS Simulator,id=$id" >> "$GITHUB_ENV"
+            echo "have_sim=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No bootable iOS simulator on the runner; compiling for a generic simulator and skipping the test run."
+            echo "DESTINATION=generic/platform=iOS Simulator" >> "$GITHUB_ENV"
+            echo "have_sim=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build for testing
         run: xcodebuild build-for-testing -scheme "$SCHEME" -project "$PROJECT" -destination "$DESTINATION"
 
       - name: Test
+        if: steps.sim.outputs.have_sim == 'true'
         run: xcodebuild test-without-building -scheme "$SCHEME" -project "$PROJECT" -destination "$DESTINATION"
 
   # The overlay SwiftPM package (Package.swift) compiles the platform-neutral

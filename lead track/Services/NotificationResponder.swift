@@ -16,6 +16,21 @@ final class NotificationResponder: NSObject, ObservableObject, UNUserNotificatio
         UNUserNotificationCenter.current().delegate = self
     }
 
+    /// Surfaces a countdown's "time's up" alert even while the app is open;
+    /// other notifications stay silent in the foreground as before.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        let id = notification.request.identifier
+        guard NotificationService.isCountdownNotification(id: id) else {
+            completionHandler([])
+            return
+        }
+        completionHandler([.banner, .sound])
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,

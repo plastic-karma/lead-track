@@ -22,6 +22,9 @@ struct lead_trackApp: App {
         // Likewise the notification delegate, so a tap that launches the app
         // still deep-links.
         NotificationResponder.shared.install()
+        // Stop any countdown that ran out while the app was closed, and watch
+        // for ones that reach zero while it's open.
+        CountdownCoordinator.shared.activate(container: sharedModelContainer)
     }
 
     var body: some Scene {
@@ -51,6 +54,7 @@ struct lead_trackApp: App {
             PhoneWatchSyncService.shared.pushSnapshot()
         }
         guard phase == .active else { return }
+        CountdownCoordinator.shared.reconcile()
         SessionService.syncLiveActivity(
             in: ModelContext(sharedModelContainer)
         )
