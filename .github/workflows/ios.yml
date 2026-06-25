@@ -12,14 +12,10 @@ on:
 jobs:
   build:
     name: Lint, build & test (iOS)
-    # Pinned to macos-15: macos-latest migrated to macOS 26 (June 2026), whose
-    # image dropped the iPhone 16 simulator this workflow targets. macos-15
-    # keeps the known-good Xcode 16.4 + iOS 18 simulator set.
-    runs-on: macos-15
+    runs-on: macos-latest
     env:
       SCHEME: "lead track"
       PROJECT: "lead track.xcodeproj"
-      DESTINATION: "platform=iOS Simulator,name=iPhone 16"
 
     steps:
       - name: Checkout
@@ -33,6 +29,32 @@ jobs:
 
       - name: SwiftLint
         run: swiftlint
+
+      - name: Select newest Xcode
+        # Runner images now ship iOS simulators only for their newest Xcode, so
+        # pick it (also keeps the test SDK current with the iOS 26.2 target).
+        run: |
+          set -euo pipefail
+          newest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)"
+          [ -n "$newest" ] && sudo xcode-select -s "$newest/Contents/Developer"
+          xcodebuild -version
+
+      - name: Select simulator
+        # Hardcoding a device name (e.g. "iPhone 16") breaks whenever the image
+        # changes its preinstalled simulators. Pick whatever iPhone exists, and
+        # create one from the newest iOS runtime if none are preinstalled.
+        run: |
+          set -euo pipefail
+          pick='import json,sys; d=json.load(sys.stdin)["devices"]; c=[x for rt,l in d.items() if "iOS" in rt for x in l if "iPhone" in x["name"]]; print(c[0]["udid"] if c else "")'
+          udid="$(xcrun simctl list devices available -j | python3 -c "$pick")"
+          if [ -z "$udid" ]; then
+            rt="$(xcrun simctl list runtimes -j | python3 -c 'import json,sys; r=[x["identifier"] for x in json.load(sys.stdin)["runtimes"] if x.get("isAvailable") and "iOS" in x["identifier"]]; print(r[-1] if r else "")')"
+            dt="$(xcrun simctl list devicetypes -j | python3 -c 'import json,sys; t=[x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPhone" in x["name"]]; print(t[-1] if t else "")')"
+            [ -n "$rt" ] && [ -n "$dt" ] || { echo "::error::No iOS simulator runtime available on this runner"; exit 1; }
+            udid="$(xcrun simctl create ci-iphone "$dt" "$rt")"
+          fi
+          echo "Using simulator $udid"
+          echo "DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
 
       - name: Build for testing
         run: xcodebuild build-for-testing -scheme "$SCHEME" -project "$PROJECT" -destination "$DESTINATION"
