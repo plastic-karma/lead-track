@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 import UserNotifications
 
 /// Routes notification taps into the app. Tapping the weekly review
@@ -16,8 +17,9 @@ final class NotificationResponder: NSObject, ObservableObject, UNUserNotificatio
         UNUserNotificationCenter.current().delegate = self
     }
 
-    /// Surfaces a countdown's "time's up" alert even while the app is open;
-    /// other notifications stay silent in the foreground as before.
+    /// Surfaces a countdown's "time's up" alert even while the app is open,
+    /// pinging and/or vibrating per the user's toggles; other notifications
+    /// stay silent in the foreground as before.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -28,7 +30,16 @@ final class NotificationResponder: NSObject, ObservableObject, UNUserNotificatio
             completionHandler([])
             return
         }
-        completionHandler([.banner, .sound])
+        var options: UNNotificationPresentationOptions = [.banner]
+        if CompletionAlertSettings.soundEnabled {
+            options.insert(.sound)
+        }
+        completionHandler(options)
+        if CompletionAlertSettings.hapticEnabled {
+            Task { @MainActor in
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
     }
 
     func userNotificationCenter(
