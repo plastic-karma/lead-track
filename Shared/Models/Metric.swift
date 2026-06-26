@@ -33,6 +33,11 @@ final class Metric {
     #endif
     var sessions: [Session] = []
 
+    // Back-array for the many-to-many with `Aspiration`. Plain (no macro): the
+    // `inverse:` is declared on `Aspiration` only. Defaults empty, so every
+    // existing metric reads as "no aspirations" with no migration.
+    var aspirations: [Aspiration] = []
+
     init(
         name: String,
         measurementType: MeasurementType = .duration,

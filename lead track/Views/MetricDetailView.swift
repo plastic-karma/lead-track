@@ -60,6 +60,7 @@ struct MetricDetailView: View {
         let totals = dailyTotals
         List {
             heroSection(totals)
+            aspirationsSection
             statisticsSection
             ActivitySection(dailyTotals: totals, tint: metric.displayColor)
             if !activeProjects.isEmpty {
@@ -130,6 +131,18 @@ extension MetricDetailView {
             .listRowSeparator(.hidden)
         } footer: {
             defaultProjectFooter
+        }
+    }
+
+    @ViewBuilder
+    private var aspirationsSection: some View {
+        if !metric.aspirations.isEmpty {
+            Section("Part of") {
+                AspirationChipsRow(
+                    aspirations: metric.aspirations.sorted { $0.createdAt < $1.createdAt }
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            }
         }
     }
 

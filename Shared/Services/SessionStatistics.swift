@@ -110,13 +110,46 @@ enum SessionStatistics {
     static func lastSevenDaysTotal(
         from totals: [DailyTotal]
     ) -> TimeInterval {
-        guard let cutoff = Calendar.current.date(
-            byAdding: .day, value: -6,
-            to: Calendar.current.startOfDay(for: .now)
-        ) else { return 0 }
+        windowedTotal(days: 7, from: totals)
+    }
+
+    /// Summed magnitude over the trailing `days` calendar days (today plus the
+    /// `days - 1` prior days), the generic form of `lastSevenDaysTotal`. The
+    /// cutoff is day-aligned, so today is never a partial day — matching the
+    /// `recentAverage` convention. Feeds an aspiration's recent rollup figure.
+    static func windowedTotal(
+        days: Int,
+        from totals: [DailyTotal]
+    ) -> TimeInterval {
+        guard let cutoff = windowCutoff(days: days) else { return 0 }
         return totals
             .filter { $0.date >= cutoff }
             .reduce(0) { $0 + $1.duration }
+    }
+
+    /// Sessions recorded over the same trailing `days` calendar window — the
+    /// count companion to `windowedTotal`, used by the no-unit "entries" rollup
+    /// bucket whose magnitude is the number of recordings, not their sum.
+    static func windowedSessionCount(
+        days: Int,
+        from totals: [DailyTotal]
+    ) -> Int {
+        guard let cutoff = windowCutoff(days: days) else { return 0 }
+        return totals
+            .filter { $0.date >= cutoff }
+            .reduce(0) { $0 + $1.sessionCount }
+    }
+
+    /// First instant of the day `days - 1` days before today — the inclusive
+    /// lower bound shared by every trailing-window total.
+    private static func windowCutoff(
+        days: Int,
+        calendar: Calendar = .current
+    ) -> Date? {
+        calendar.date(
+            byAdding: .day, value: -(days - 1),
+            to: calendar.startOfDay(for: .now)
+        )
     }
 
     static func currentWeekTotal(

@@ -89,69 +89,14 @@ struct MetricFormView: View {
 
     private var iconPicker: some View {
         Section("Icon") {
-            iconGrid
+            IconGridPicker(options: iconOptions, selection: $icon)
         }
-    }
-
-    private var iconGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 44))],
-            spacing: 12
-        ) {
-            ForEach(iconOptions, id: \.self) { option in
-                iconButton(option)
-            }
-        }
-    }
-
-    private func iconButton(_ option: String) -> some View {
-        Button {
-            icon = option
-        } label: {
-            Image(systemName: option)
-                .font(.title2)
-                .frame(width: 44, height: 44)
-                .background(
-                    icon == option
-                        ? Color.accentColor.opacity(0.2)
-                        : Color.clear
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
     }
 
     private var colorPicker: some View {
         Section("Color") {
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 44))],
-                spacing: 12
-            ) {
-                ForEach(MetricColor.allCases) { option in
-                    colorButton(option)
-                }
-            }
+            ColorGridPicker(selection: $color)
         }
-    }
-
-    private func colorButton(_ option: MetricColor) -> some View {
-        Button {
-            color = option
-        } label: {
-            Circle()
-                .fill(option.color)
-                .frame(width: 26, height: 26)
-                .frame(width: 44, height: 44)
-                .background(
-                    color == option
-                        ? option.color.opacity(0.2)
-                        : Color.clear
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(option.label)
-        .accessibilityAddTraits(color == option ? .isSelected : [])
     }
 
     private func save() {

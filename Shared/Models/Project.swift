@@ -19,6 +19,10 @@ final class Project {
     #endif
     var sessions: [Session] = []
 
+    /// Back-array for the many-to-many with `Aspiration` (the `inverse:` lives on
+    /// `Aspiration`). Plain, defaults empty — additive, no migration.
+    var aspirations: [Aspiration] = []
+
     init(
         name: String,
         metric: Metric? = nil,

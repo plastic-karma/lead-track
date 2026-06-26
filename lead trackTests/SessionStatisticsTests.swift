@@ -121,6 +121,42 @@ struct SessionStatisticsTests {
         #expect(SessionStatistics.todayTotal(from: totals) == 0)
     }
 
+    // MARK: - Windowed Totals
+
+    @Test
+    func windowedTotalMatchesLastSevenDays() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 6, duration: 50),
+            makeTotal(daysAgo: 7, duration: 25)
+        ]
+        #expect(
+            SessionStatistics.windowedTotal(days: 7, from: totals)
+                == SessionStatistics.lastSevenDaysTotal(from: totals)
+        )
+        #expect(SessionStatistics.windowedTotal(days: 7, from: totals) == 150)
+    }
+
+    @Test
+    func windowedTotalCoversTodayPlusPriorDays() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100),
+            makeTotal(daysAgo: 29, duration: 50),
+            makeTotal(daysAgo: 30, duration: 25)
+        ]
+        #expect(SessionStatistics.windowedTotal(days: 30, from: totals) == 150)
+    }
+
+    @Test
+    func windowedSessionCountSumsWithinWindow() {
+        let totals = [
+            makeTotal(daysAgo: 0, duration: 100, sessionCount: 2),
+            makeTotal(daysAgo: 29, duration: 50, sessionCount: 1),
+            makeTotal(daysAgo: 35, duration: 25, sessionCount: 5)
+        ]
+        #expect(SessionStatistics.windowedSessionCount(days: 30, from: totals) == 3)
+    }
+
     // MARK: - Trailing Daily Series
 
     @Test

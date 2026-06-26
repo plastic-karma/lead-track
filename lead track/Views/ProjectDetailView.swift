@@ -46,6 +46,7 @@ struct ProjectDetailView: View {
     var body: some View {
         List {
             timerSection
+            aspirationsSection
             StatisticsView(
                 sessions: sessions,
                 measurementType: project.metric?.measurementType ?? .duration,
@@ -146,6 +147,18 @@ extension ProjectDetailView {
                         systemImage: "plus.circle"
                     )
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var aspirationsSection: some View {
+        if !project.aspirations.isEmpty {
+            Section("Part of") {
+                AspirationChipsRow(
+                    aspirations: project.aspirations.sorted { $0.createdAt < $1.createdAt }
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
         }
     }

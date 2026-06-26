@@ -8,7 +8,8 @@ enum SharedModelContainer {
         let schema = Schema([
             Metric.self,
             Project.self,
-            Session.self
+            Session.self,
+            Aspiration.self
         ])
         let config: ModelConfiguration
         if inMemoryOnly {
