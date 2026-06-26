@@ -3,9 +3,10 @@ import SwiftData
 import SwiftUI
 import UIKit
 
-/// Create or edit an aspiration: title, why-text, icon, color, cover photo, and
-/// the attach picker. Passing an existing aspiration switches to edit; `nil`
-/// creates a new one. Membership is fully editable here.
+/// Create or edit an aspiration as it will read: a full-bleed cover, the icon and
+/// title inline beneath it, the "why", the color row, and the card-based "what
+/// feeds this" picker — all editable in place. Passing an existing aspiration
+/// switches to edit; `nil` creates a new one.
 struct AspirationFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -19,6 +20,7 @@ struct AspirationFormView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var selectedMetrics: Set<Metric>
     @State private var selectedProjects: Set<Project>
+    @State private var showingPhotoPicker = false
     @State private var saveTrigger = false
 
     private let iconOptions = [
@@ -39,65 +41,125 @@ struct AspirationFormView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                detailsSection
-                appearanceSection
-                coverSection
-                AspirationAttachPicker(
-                    selectedMetrics: $selectedMetrics,
-                    selectedProjects: $selectedProjects
-                )
+            editor
+        }
+    }
+
+    private var editor: some View {
+        ZStack {
+            Theme.screenBackground.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    cover
+                    content
+                }
             }
-            .navigationTitle(editing == nil ? "New Aspiration" : "Edit Aspiration")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbar }
-            .sensoryFeedback(.success, trigger: saveTrigger)
-            .onChange(of: photoItem) { _, item in
-                Task { await loadPhoto(item) }
-            }
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbar }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .photosPicker(isPresented: $showingPhotoPicker, selection: $photoItem, matching: .images)
+        .sensoryFeedback(.success, trigger: saveTrigger)
+        .onChange(of: photoItem) { _, item in
+            Task { await loadPhoto(item) }
         }
     }
 }
 
-// MARK: - Sections
+// MARK: - Layout
 
 extension AspirationFormView {
-    private var detailsSection: some View {
-        Section {
-            TextField("Title", text: $title)
-            TextField("Why this matters", text: $detail, axis: .vertical)
-                .lineLimit(3 ... 6)
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            headerBlock
+            whySection
+            colorSection
+            AspirationFeedPicker(
+                selectedMetrics: $selectedMetrics,
+                selectedProjects: $selectedProjects,
+                tint: color.color
+            )
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 40)
     }
 
-    private var appearanceSection: some View {
-        Section("Appearance") {
-            IconGridPicker(options: iconOptions, selection: $icon)
-            ColorGridPicker(selection: $color)
-        }
-    }
-
-    private var coverSection: some View {
-        Section("Cover") {
-            if let image = currentCover {
-                image
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 140)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .listRowInsets(EdgeInsets())
-            }
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                Label(
-                    imageData == nil ? "Choose Photo" : "Change Photo",
-                    systemImage: "photo"
+    private var cover: some View {
+        coverBackground
+            .frame(height: 230)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .overlay(alignment: .bottom) {
+                LinearGradient(
+                    colors: [.clear, Theme.screenBackground],
+                    startPoint: UnitPoint(x: 0.5, y: 0.55),
+                    endPoint: .bottom
                 )
             }
-            if imageData != nil {
-                Button("Remove Photo", role: .destructive, action: removePhoto)
+    }
+
+    @ViewBuilder
+    private var coverBackground: some View {
+        if let image = currentCover {
+            image.resizable().scaledToFill()
+        } else {
+            LinearGradient(
+                colors: [color.color, color.color.opacity(0.5)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var headerBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            iconBadge
+            VStack(alignment: .leading, spacing: 4) {
+                FormEyebrow(text: "Aspiration", tint: color.color)
+                TextField("Name your aspiration", text: $title, axis: .vertical)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1 ... 3)
             }
+        }
+    }
+
+    private var iconBadge: some View {
+        Menu {
+            Picker("Icon", selection: $icon) {
+                ForEach(iconOptions, id: \.self) { option in
+                    Image(systemName: option).tag(option)
+                }
+            }
+        } label: {
+            Image(systemName: icon)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 46, height: 46)
+                .background(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(color.color)
+                )
+        }
+    }
+
+    private var whySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FormEyebrow(text: "Why this matters", tint: color.color)
+            TextField("What makes this matter to you?", text: $detail, axis: .vertical)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .lineLimit(2 ... 8)
+        }
+    }
+
+    private var colorSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            FormEyebrow(text: "Color", tint: color.color)
+            ColorSwatchRow(selection: $color)
         }
     }
 
@@ -117,9 +179,31 @@ extension AspirationFormView {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { dismiss() }
         }
+        ToolbarItem(placement: .principal) {
+            coverButton
+        }
         ToolbarItem(placement: .confirmationAction) {
-            Button("Save", action: save)
+            Button(editing == nil ? "Create" : "Save", action: save)
+                .buttonStyle(.borderedProminent)
+                .tint(color.color)
                 .disabled(trimmedTitle.isEmpty)
+        }
+    }
+
+    private var coverButton: some View {
+        Menu {
+            Button {
+                showingPhotoPicker = true
+            } label: {
+                Label(imageData == nil ? "Choose Photo" : "Change Photo", systemImage: "photo")
+            }
+            if imageData != nil {
+                Button(role: .destructive, action: removePhoto) {
+                    Label("Remove Cover", systemImage: "trash")
+                }
+            }
+        } label: {
+            Label("Cover", systemImage: "photo")
         }
     }
 
