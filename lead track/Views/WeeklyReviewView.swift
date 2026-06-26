@@ -9,13 +9,18 @@ import SwiftUI
 /// identity color.
 struct WeeklyReviewView: View {
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    /// Internal (not private) so the aspiration section in its own file can read
+    /// it to map a card back to its aspiration for navigation.
+    @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
     @Environment(\.dismiss) private var dismiss
     @State private var showingSettings = false
     @State private var currentPage: String?
     @State private var weeksBack = 0
 
     var body: some View {
-        let review = WeeklyReview.build(metrics: metrics, weeksBack: weeksBack)
+        let review = WeeklyReview.build(
+            metrics: metrics, aspirations: aspirations, weeksBack: weeksBack
+        )
         return NavigationStack {
             content(review)
                 .background(Theme.screenBackground)
@@ -30,6 +35,9 @@ struct WeeklyReviewView: View {
                 }
                 .navigationDestination(for: Project.self) { project in
                     ProjectDetailView(project: project)
+                }
+                .navigationDestination(for: Aspiration.self) { aspiration in
+                    AspirationDetailView(aspiration: aspiration)
                 }
         }
     }
@@ -75,6 +83,7 @@ extension WeeklyReviewView {
             VStack(spacing: 16) {
                 WeekOverviewCard(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
+                aspirationSection(review)
                 if review.metricWeeks.isEmpty {
                     emptyWeekCard
                         .padding(.horizontal)

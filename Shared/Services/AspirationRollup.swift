@@ -1,96 +1,14 @@
 import Foundation
 
-/// One unit's worth of an aspiration's effort, shown two ways: the cumulative
-/// `lifetime` figure and the trailing-30-day `recent` figure. Buckets never mix
-/// units — duration, each distinct count unit, and unitless "entries" are kept
-/// apart (see `Kind`).
-struct RollupBucket: Identifiable, Equatable {
-    enum Kind: Equatable {
-        /// All `.duration` effort, formatted as time.
-        case duration
-        /// One distinct `.count` unit, carrying its display spelling.
-        case count(unit: String)
-        /// Unitless count contributions, whose magnitude is the number of
-        /// sessions rather than their summed value.
-        case entries
-    }
-
-    let kind: Kind
-    let lifetime: Double
-    let recent: Double
-
-    var id: String {
-        kind.mergeKey
-    }
-}
-
-extension RollupBucket {
-    /// Lifetime figure formatted for display ("12h 40m", "340 pages",
-    /// "18 entries").
-    var lifetimeText: String {
-        format(lifetime)
-    }
-
-    /// Recent (30-day) figure formatted the same way.
-    var recentText: String {
-        format(recent)
-    }
-
-    /// Merges another bucket of the same `kind` into this one, summing both
-    /// figures and keeping this bucket's display spelling.
-    func adding(_ other: RollupBucket) -> RollupBucket {
-        RollupBucket(
-            kind: kind,
-            lifetime: lifetime + other.lifetime,
-            recent: recent + other.recent
-        )
-    }
-
-    private func format(_ value: Double) -> String {
-        switch kind {
-        case .duration:
-            return DurationFormatter.format(value)
-        case let .count(unit):
-            return ValueFormatter.format(value, type: .count, unit: unit)
-        case .entries:
-            return Self.entriesText(Int(value))
-        }
-    }
-
-    private static func entriesText(_ count: Int) -> String {
-        count == 1 ? "1 entry" : "\(count) entries"
-    }
-}
-
-extension RollupBucket.Kind {
-    /// Headline ordering: time first, then count units, then unitless entries.
-    var sortRank: Int {
-        switch self {
-        case .duration: 0
-        case .count: 1
-        case .entries: 2
-        }
-    }
-
-    /// The case-folded, trimmed key buckets merge on, so "Pages" and "pages "
-    /// collapse into one headline figure. The first spelling encountered is the
-    /// one displayed.
-    var mergeKey: String {
-        switch self {
-        case .duration: "duration"
-        case let .count(unit): "count:" + unit.lowercased()
-        case .entries: "entries"
-        }
-    }
-}
-
-/// One attachment's share of the rollup — a metric (all its sessions, including
-/// its projects') or a standalone project (only its own).
-struct Contribution: Identifiable {
-    let id: String
+/// One attached metric or standalone project after de-dup: its display
+/// identity, the unit bucket it falls in, and the sessions that count toward
+/// it. The shared primitive behind both the lifetime rollup and the weekly
+/// review's windowed totals, so the de-dup and unit rules live in one place.
+struct ContributionSource {
     let name: String
     let isProject: Bool
-    let buckets: [RollupBucket]
+    let kind: RollupBucket.Kind
+    let sessions: [Session]
 }
 
 /// The live, recomputed aggregate of an aspiration's effort across its current
@@ -147,7 +65,7 @@ extension AspirationRollup {
         for metric: Metric,
         recentDays: Int = recentWindowDays
     ) -> String? {
-        summary(of: contribution(of: metric, index: 0, days: recentDays))
+        summary(of: source(of: metric), days: recentDays)
     }
 
     /// One-line lifetime summary for a single attached project, or `nil` when
@@ -156,12 +74,12 @@ extension AspirationRollup {
         for project: Project,
         recentDays: Int = recentWindowDays
     ) -> String? {
-        summary(of: contribution(of: project, index: 0, days: recentDays))
+        summary(of: source(of: project), days: recentDays)
     }
 
-    private static func summary(of contribution: Contribution) -> String? {
-        guard let bucket = contribution.buckets.first, bucket.lifetime > 0
-        else { return nil }
+    private static func summary(of source: ContributionSource, days: Int) -> String? {
+        let bucket = bucket(over: source.sessions, kind: source.kind, days: days)
+        guard bucket.lifetime > 0 else { return nil }
         return bucket.lifetimeText
     }
 }
@@ -173,67 +91,99 @@ extension AspirationRollup {
         for aspiration: Aspiration,
         recentDays: Int = recentWindowDays
     ) -> AspirationRollup {
-        let metrics = aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
-        let projects = standaloneProjects(of: aspiration, attachedMetrics: metrics)
-        var contributions: [Contribution] = []
-        for (index, metric) in metrics.enumerated() {
-            contributions.append(contribution(of: metric, index: index, days: recentDays))
-        }
-        for (offset, project) in projects.enumerated() {
-            contributions.append(
-                contribution(of: project, index: metrics.count + offset, days: recentDays)
-            )
-        }
+        let contributions = contributionSources(of: aspiration)
+            .enumerated()
+            .map { index, source in
+                Contribution(
+                    id: "\(source.isProject ? "project" : "metric")-\(index)",
+                    name: source.name,
+                    isProject: source.isProject,
+                    buckets: [bucket(over: source.sessions, kind: source.kind, days: recentDays)]
+                )
+            }
         return AspirationRollup(
-            headline: mergeHeadline(from: contributions),
+            headline: merge(contributions.flatMap(\.buckets)),
             contributions: contributions
         )
     }
 
-    /// Projects whose effort isn't already pulled in by an attached metric. A
-    /// project sharing an aspiration with its own parent metric is dropped — the
-    /// metric already contains its sessions, so counting both double-counts.
-    private static func standaloneProjects(
-        of aspiration: Aspiration,
-        attachedMetrics: [Metric]
-    ) -> [Project] {
-        let attached = Set(attachedMetrics.map(ObjectIdentifier.init))
-        return aspiration.projects
+    /// The de-duped, unit-classified contributions of an aspiration: attached
+    /// metrics first (each pulling in its own projects' sessions), then
+    /// standalone projects. A project sharing an aspiration with its own parent
+    /// metric is dropped — the metric already contains its sessions, so counting
+    /// both would double-count.
+    static func contributionSources(of aspiration: Aspiration) -> [ContributionSource] {
+        let metrics = aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
+        let attached = Set(metrics.map(ObjectIdentifier.init))
+        let projects = aspiration.projects
             .filter { project in
                 guard let parent = project.metric else { return true }
                 return !attached.contains(ObjectIdentifier(parent))
             }
             .sorted { $0.startedAt < $1.startedAt }
+        return metrics.map(source(of:)) + projects.map(source(of:))
     }
 
-    private static func contribution(
-        of metric: Metric,
-        index: Int,
-        days: Int
-    ) -> Contribution {
-        let kind = bucketKind(type: metric.measurementType, unit: metric.unit)
-        let bucket = bucket(sessions: metric.sessions, kind: kind, days: days)
-        return Contribution(
-            id: "metric-\(index)", name: metric.name, isProject: false, buckets: [bucket]
+    /// Magnitude of a unit bucket over `sessions`: summed tracking value, or the
+    /// session count for the unitless `entries` bucket. Running sessions never
+    /// count. The per-window primitive the weekly review totals with.
+    static func magnitude(
+        of kind: RollupBucket.Kind,
+        over sessions: [Session]
+    ) -> Double {
+        let completed = sessions.filter { !$0.isRunning }
+        if case .entries = kind {
+            return Double(completed.count)
+        }
+        return completed.reduce(0) { $0 + $1.trackingValue }
+    }
+
+    /// Merges kinded items by their unit (case-folded, first spelling wins),
+    /// preserving first-seen order, then orders time → counts → entries. Shared
+    /// by the lifetime headline and the weekly review's windowed totals.
+    static func mergeByUnit<T>(
+        _ items: [T],
+        kind: (T) -> RollupBucket.Kind,
+        combine: (T, T) -> T
+    ) -> [T] {
+        var order: [String] = []
+        var merged: [String: T] = [:]
+        for item in items {
+            let key = kind(item).mergeKey
+            if let existing = merged[key] {
+                merged[key] = combine(existing, item)
+            } else {
+                order.append(key)
+                merged[key] = item
+            }
+        }
+        let result = order.compactMap { merged[$0] }
+        return (0 ... 2).flatMap { rank in result.filter { kind($0).sortRank == rank } }
+    }
+}
+
+// MARK: - Bucketing Primitives
+
+private extension AspirationRollup {
+    static func source(of metric: Metric) -> ContributionSource {
+        ContributionSource(
+            name: metric.name,
+            isProject: false,
+            kind: bucketKind(type: metric.measurementType, unit: metric.unit),
+            sessions: metric.sessions
         )
     }
 
-    private static func contribution(
-        of project: Project,
-        index: Int,
-        days: Int
-    ) -> Contribution {
-        let kind = bucketKind(
-            type: project.metric?.measurementType ?? .duration,
-            unit: project.metric?.unit
-        )
-        let bucket = bucket(sessions: project.sessions, kind: kind, days: days)
-        return Contribution(
-            id: "project-\(index)", name: project.name, isProject: true, buckets: [bucket]
+    static func source(of project: Project) -> ContributionSource {
+        ContributionSource(
+            name: project.name,
+            isProject: true,
+            kind: bucketKind(type: project.metric?.measurementType ?? .duration, unit: project.metric?.unit),
+            sessions: project.sessions
         )
     }
 
-    private static func bucketKind(
+    static func bucketKind(
         type: MeasurementType,
         unit: String?
     ) -> RollupBucket.Kind {
@@ -246,8 +196,8 @@ extension AspirationRollup {
         }
     }
 
-    private static func bucket(
-        sessions: [Session],
+    static func bucket(
+        over sessions: [Session],
         kind: RollupBucket.Kind,
         days: Int
     ) -> RollupBucket {
@@ -266,26 +216,7 @@ extension AspirationRollup {
         )
     }
 
-    /// Folds every contribution's buckets into the aspiration-wide headline,
-    /// merging by unit and ordering time → counts → entries while preserving
-    /// each count unit's first-seen order.
-    private static func mergeHeadline(
-        from contributions: [Contribution]
-    ) -> [RollupBucket] {
-        var order: [String] = []
-        var merged: [String: RollupBucket] = [:]
-        for bucket in contributions.flatMap(\.buckets) {
-            let key = bucket.kind.mergeKey
-            if let existing = merged[key] {
-                merged[key] = existing.adding(bucket)
-            } else {
-                order.append(key)
-                merged[key] = bucket
-            }
-        }
-        let buckets = order.compactMap { merged[$0] }
-        return buckets.filter { $0.kind.sortRank == 0 }
-            + buckets.filter { $0.kind.sortRank == 1 }
-            + buckets.filter { $0.kind.sortRank == 2 }
+    static func merge(_ buckets: [RollupBucket]) -> [RollupBucket] {
+        mergeByUnit(buckets, kind: \.kind) { $0.adding($1) }
     }
 }

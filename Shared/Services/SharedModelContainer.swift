@@ -29,24 +29,32 @@ enum SharedModelContainer {
             for: schema, configurations: [config]
         )
         if !inMemoryOnly {
-            try backfillMetricStableIDs(in: container)
+            try backfillStableIDs(in: container)
         }
         return container
     }
 
-    private static func backfillMetricStableIDs(
+    /// Mints stable IDs for any metric or aspiration saved before the field
+    /// existed, so identity-keyed surfaces never see a nil ID.
+    private static func backfillStableIDs(
         in container: ModelContainer
     ) throws {
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<Metric>(
-            predicate: #Predicate { $0.stableID == nil }
+        let metrics = try context.fetch(
+            FetchDescriptor<Metric>(predicate: #Predicate { $0.stableID == nil })
         )
-        let metrics = try context.fetch(descriptor)
-        guard !metrics.isEmpty else { return }
-        for metric in metrics {
+        for metric in metrics where metric.stableID == nil {
             metric.stableID = UUID()
         }
-        try context.save()
+        let aspirations = try context.fetch(
+            FetchDescriptor<Aspiration>(predicate: #Predicate { $0.stableID == nil })
+        )
+        for aspiration in aspirations where aspiration.stableID == nil {
+            aspiration.stableID = UUID()
+        }
+        if !metrics.isEmpty || !aspirations.isEmpty {
+            try context.save()
+        }
     }
 
     private static var storeURL: URL {

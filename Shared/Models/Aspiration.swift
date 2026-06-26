@@ -16,6 +16,13 @@ import SwiftData
 @Model
 #endif
 final class Aspiration {
+    #if canImport(SwiftData)
+    #Unique<Aspiration>([\.stableID])
+    #endif
+    /// Stable identity (mirrors `Metric.stableID`) so surfaces that key off an
+    /// aspiration across renders — the weekly review pager and its scroll
+    /// position — survive reorders and deletions.
+    var stableID: UUID?
     var title: String
     var detail: String = ""
     var icon: String?
@@ -51,6 +58,7 @@ final class Aspiration {
         imageData: Data? = nil,
         createdAt: Date = .now
     ) {
+        stableID = UUID()
         self.title = title
         self.detail = detail
         self.icon = icon

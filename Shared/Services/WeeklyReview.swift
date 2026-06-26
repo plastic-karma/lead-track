@@ -1,47 +1,12 @@
 import Foundation
 
-/// Everything the weekly review screen shows, assembled once from the
-/// metrics: one swipeable page of insights per active metric, the metrics
-/// that stayed quiet, and the combined pulse for the header. Pure data, so
-/// the assembly is unit-testable (including on Linux).
+/// Everything the weekly review screen shows, assembled once from the metrics
+/// and aspirations: the aspiration lens (lifetime poured in + what landed this
+/// week), one swipeable page of insights per active metric, the ones that
+/// stayed quiet, and the combined pulse for the header. Aspirations are
+/// additive — with none attached the review is exactly the metric review it
+/// always was. Pure data, so the assembly is unit-testable (including on Linux).
 struct WeeklyReview {
-    /// How a metric's week compares to the week before it.
-    enum WeekChange: Equatable {
-        case up(ratio: Double)
-        case down(ratio: Double)
-        case flat
-        /// Nothing was logged the week before, so there is no comparison.
-        case noBaseline
-    }
-
-    /// One metric's week, ready to render as a review page.
-    struct MetricWeek: Identifiable {
-        let id: String
-        let name: String
-        let icon: String
-        let colorName: String?
-        let measurementType: MeasurementType
-        let unit: String?
-        /// Sum of tracking values over the period.
-        let total: Double
-        let change: WeekChange
-        let sessionCount: Int
-        let activeDays: Int
-        /// Per-day tracking-value totals, oldest first, zero-filled.
-        let dailySeries: [Double]
-        let streak: Int
-        /// Days the daily goal was met, nil when no goal is set.
-        let goalDaysHit: Int?
-        let insights: [Insight]
-    }
-
-    /// A metric with no completed sessions in the period.
-    struct QuietMetric: Identifiable {
-        let id: String
-        let name: String
-        let icon: String
-    }
-
     /// Start of the oldest day in the period.
     let start: Date
     /// The latest moment the review covers: now for the current week, the
@@ -51,6 +16,10 @@ struct WeeklyReview {
     let weeksBack: Int
     let metricWeeks: [MetricWeek]
     let quietMetrics: [QuietMetric]
+    /// Active aspirations this week — the review's centerpiece when any exist.
+    let aspirationWeeks: [AspirationWeek]
+    /// Aspirations that logged nothing this week.
+    let quietAspirations: [QuietAspiration]
     /// Completed sessions per day across all metrics, oldest first.
     let sessionSeries: [Double]
 }
@@ -96,26 +65,22 @@ extension WeeklyReview {
 
     static func build(
         metrics: [Metric],
+        aspirations: [Aspiration] = [],
         weeksBack: Int = 0,
         now: Date = .now,
         calendar: Calendar = .current
     ) -> WeeklyReview {
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
-        var weeks: [MetricWeek] = []
-        var quiet: [QuietMetric] = []
-        for metric in metrics {
-            if let week = metricWeek(for: metric, bounds: bounds, calendar: calendar) {
-                weeks.append(week)
-            } else {
-                quiet.append(QuietMetric(id: stableID(of: metric), name: metric.name, icon: metric.displayIcon))
-            }
-        }
+        let metricSplit = partitionMetrics(metrics, bounds: bounds, calendar: calendar)
+        let aspirationSplit = partitionAspirations(aspirations, bounds: bounds, calendar: calendar)
         return WeeklyReview(
             start: bounds.start,
             end: bounds.displayEnd,
             weeksBack: weeksBack,
-            metricWeeks: weeks,
-            quietMetrics: quiet,
+            metricWeeks: metricSplit.weeks,
+            quietMetrics: metricSplit.quiet,
+            aspirationWeeks: aspirationSplit.weeks,
+            quietAspirations: aspirationSplit.quiet,
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
         )
     }
@@ -150,16 +115,99 @@ private extension WeeklyReview {
         }
 
         func currentSessions(of metric: Metric) -> [Session] {
-            metric.sessions.filter {
+            current(in: metric.sessions)
+        }
+
+        /// Completed sessions of `sessions` inside the reviewed period.
+        func current(in sessions: [Session]) -> [Session] {
+            sessions.filter {
                 !$0.isRunning && $0.startedAt >= start && $0.startedAt < end
             }
         }
 
-        func previousSessions(of metric: Metric) -> [Session] {
-            metric.sessions.filter {
+        /// Completed sessions of `sessions` inside the comparison period before it.
+        func previous(in sessions: [Session]) -> [Session] {
+            sessions.filter {
                 !$0.isRunning && $0.startedAt >= previousStart && $0.startedAt < start
             }
         }
+    }
+
+    static func partitionMetrics(
+        _ metrics: [Metric],
+        bounds: PeriodBounds,
+        calendar: Calendar
+    ) -> (weeks: [MetricWeek], quiet: [QuietMetric]) {
+        var weeks: [MetricWeek] = []
+        var quiet: [QuietMetric] = []
+        for metric in metrics {
+            if let week = metricWeek(for: metric, bounds: bounds, calendar: calendar) {
+                weeks.append(week)
+            } else {
+                quiet.append(QuietMetric(
+                    id: stableID(of: metric), name: metric.name, icon: metric.displayIcon
+                ))
+            }
+        }
+        return (weeks, quiet)
+    }
+
+    static func partitionAspirations(
+        _ aspirations: [Aspiration],
+        bounds: PeriodBounds,
+        calendar: Calendar
+    ) -> (weeks: [AspirationWeek], quiet: [QuietAspiration]) {
+        var weeks: [AspirationWeek] = []
+        var quiet: [QuietAspiration] = []
+        for aspiration in aspirations {
+            let lifetime = AspirationRollup.compute(for: aspiration).lifetimeSummary
+            if let week = aspirationWeek(aspiration, lifetime: lifetime, bounds: bounds, calendar: calendar) {
+                weeks.append(week)
+            } else {
+                quiet.append(QuietAspiration(
+                    id: stableID(of: aspiration), title: aspiration.title,
+                    icon: aspiration.displayIcon, lifetimeSummary: lifetime
+                ))
+            }
+        }
+        return (weeks, quiet)
+    }
+
+    /// One aspiration's week from its de-duped contributions, windowed to the
+    /// period. `nil` when nothing was logged — it then falls to the quiet list.
+    static func aspirationWeek(
+        _ aspiration: Aspiration,
+        lifetime: String,
+        bounds: PeriodBounds,
+        calendar: Calendar
+    ) -> AspirationWeek? {
+        let perSource = AspirationRollup.contributionSources(of: aspiration)
+            .map { (kind: $0.kind, sessions: bounds.current(in: $0.sessions)) }
+        let sessions = perSource.flatMap(\.sessions)
+        guard !sessions.isEmpty else { return nil }
+        return AspirationWeek(
+            id: stableID(of: aspiration),
+            title: aspiration.title,
+            icon: aspiration.displayIcon,
+            colorName: aspiration.colorName,
+            lifetimeSummary: lifetime,
+            totals: aspirationTotals(perSource),
+            sessionCount: sessions.count,
+            activeDays: activeDays(in: sessions, calendar: calendar),
+            dailySeries: dailyValues(of: sessions, from: bounds.start, calendar: calendar) { _ in 1 }
+        )
+    }
+
+    /// This week's effort merged into one total per unit, zero units dropped.
+    static func aspirationTotals(
+        _ perSource: [(kind: RollupBucket.Kind, sessions: [Session])]
+    ) -> [UnitTotal] {
+        let totals = perSource.map {
+            UnitTotal(kind: $0.kind, value: AspirationRollup.magnitude(of: $0.kind, over: $0.sessions))
+        }
+        return AspirationRollup
+            .mergeByUnit(totals, kind: \.kind) { UnitTotal(kind: $0.kind, value: $0.value + $1.value) }
+            .filter { $0.value > 0 }
     }
 
     static func metricWeek(
@@ -170,7 +218,7 @@ private extension WeeklyReview {
         let current = bounds.currentSessions(of: metric)
         guard !current.isEmpty else { return nil }
         let total = current.reduce(0) { $0 + $1.trackingValue }
-        let previousTotal = bounds.previousSessions(of: metric)
+        let previousTotal = bounds.previous(in: metric.sessions)
             .reduce(0) { $0 + $1.trackingValue }
         return MetricWeek(
             id: stableID(of: metric),
@@ -249,5 +297,9 @@ private extension WeeklyReview {
 
     static func stableID(of metric: Metric) -> String {
         metric.stableID?.uuidString ?? metric.name
+    }
+
+    static func stableID(of aspiration: Aspiration) -> String {
+        aspiration.stableID?.uuidString ?? aspiration.title
     }
 }
