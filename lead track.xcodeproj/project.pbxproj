@@ -15,6 +15,7 @@
 		D1F00100000000000000C002 /* GoalPaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000C001 /* GoalPaceTests.swift */; };
 		D1F00100000000000000D002 /* WeeklyReviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000D001 /* WeeklyReviewTests.swift */; };
 		D1F00100000000000000E002 /* InsightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000E001 /* InsightTests.swift */; };
+		D1F00100000000000000F002 /* AspirationRollupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000F001 /* AspirationRollupTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -109,6 +110,7 @@
 		D1F00100000000000000C001 /* GoalPaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalPaceTests.swift; sourceTree = "<group>"; };
 		D1F00100000000000000D001 /* WeeklyReviewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeeklyReviewTests.swift; sourceTree = "<group>"; };
 		D1F00100000000000000E001 /* InsightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightTests.swift; sourceTree = "<group>"; };
+		D1F00100000000000000F001 /* AspirationRollupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationRollupTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -247,6 +249,7 @@
 				D1F00100000000000000C001 /* GoalPaceTests.swift */,
 				D1F00100000000000000D001 /* WeeklyReviewTests.swift */,
 				D1F00100000000000000E001 /* InsightTests.swift */,
+				D1F00100000000000000F001 /* AspirationRollupTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
 			);
@@ -607,6 +610,7 @@
 				D1F00100000000000000C002 /* GoalPaceTests.swift in Sources */,
 				D1F00100000000000000D002 /* WeeklyReviewTests.swift in Sources */,
 				D1F00100000000000000E002 /* InsightTests.swift in Sources */,
+				D1F00100000000000000F002 /* AspirationRollupTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
 			);

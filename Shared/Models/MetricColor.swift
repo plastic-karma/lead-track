@@ -87,6 +87,14 @@ extension WatchMetricSnapshot {
     }
 }
 
+extension Aspiration {
+    /// The aspiration's identity color, reusing the metric palette for its
+    /// cover band, icon, and back-link chips.
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
+}
+
 #if canImport(ActivityKit)
 extension TimerActivityAttributes {
     /// The Live Activity's identity color.
