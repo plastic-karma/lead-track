@@ -28,7 +28,7 @@ struct MetricListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .background(Theme.screenBackground)
+        .background(dashboardBackground)
         .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -67,12 +67,25 @@ struct MetricListView: View {
         .overlay {
             if metrics.isEmpty {
                 ContentUnavailableView(
-                    "No Metrics",
-                    systemImage: "chart.bar",
-                    description: Text("Tap + to add a metric.")
+                    "Begin Something",
+                    systemImage: "mountain.2",
+                    description: Text(
+                        "Add something you want to pour yourself into. Tap + to start."
+                    )
                 )
             }
         }
+    }
+
+    /// The dashboard's warm base with a soft copper atmosphere washing the top,
+    /// echoing the aspiration create sheet so the whole app feels lit alike.
+    private var dashboardBackground: some View {
+        Theme.screenBackground
+            .overlay(alignment: .top) {
+                Theme.wash(Color.accentColor)
+                    .frame(height: 280)
+            }
+            .ignoresSafeArea()
     }
 }
 

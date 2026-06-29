@@ -1,23 +1,55 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Semantic chrome colors — the single source of truth for surfaces and
 /// neutral fills, so a restyle is a one-file change shared by the app and
 /// the widget extension. Metric identity colors live in `MetricColor`;
 /// red is reserved for destructive actions and errors.
+///
+/// The neutrals are not pure gray: each carries a faint copper warmth so the
+/// whole app reads as lit by the same light as the aspiration create sheet
+/// rather than by a generic system gray. The warmth is resolved per
+/// light/dark trait so surfaces stay legible in both.
 enum Theme {
     #if os(iOS)
     /// Scrolling dashboard background behind the cards.
-    static let screenBackground = Color(.systemGroupedBackground)
+    static let screenBackground = warmNeutral(dark: 0.055, light: 0.96)
 
-    /// Elevated card surface.
-    static let cardBackground = Color(.secondarySystemGroupedBackground)
+    /// Elevated card surface, a warm charcoal lifted off the background.
+    static let cardBackground = warmNeutral(dark: 0.12, light: 0.995)
 
     /// Track behind progress rings and other inactive fills.
-    static let inactive = Color(.systemGray5)
+    static let inactive = warmNeutral(dark: 0.24, light: 0.87)
 
-    /// Quiet monochrome chip behind card icons.
-    static let chipFill = Color(.systemGray6)
+    /// Quiet warm chip behind card icons.
+    static let chipFill = warmNeutral(dark: 0.16, light: 0.93)
+
+    /// A soft copper atmosphere washing the top of a screen, echoing the
+    /// aspiration create sheet. Fades to clear so cards sit on the base.
+    static func wash(_ tint: Color) -> LinearGradient {
+        LinearGradient(
+            colors: [tint.opacity(0.16), .clear],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    /// A warm neutral built from a gray level plus a touch of red/green
+    /// warmth, resolved per light/dark so surfaces stay legible in both.
+    private static func warmNeutral(dark: Double, light: Double) -> Color {
+        Color(uiColor: UIColor { traits in
+            let base = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(
+                red: min(base + 0.018, 1),
+                green: min(base + 0.008, 1),
+                blue: base,
+                alpha: 1
+            )
+        })
+    }
     #endif
 
     /// Soft elevation under cards, replacing hairline borders.

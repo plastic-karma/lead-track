@@ -38,11 +38,7 @@ struct AspirationWeekCard: View {
 extension AspirationWeekCard {
     private var header: some View {
         HStack(spacing: 12) {
-            Image(systemName: week.icon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(Theme.chipFill))
+            MetricIcon(systemName: week.icon, tint: tint)
             Text(week.title)
                 .font(.headline)
             Spacer()

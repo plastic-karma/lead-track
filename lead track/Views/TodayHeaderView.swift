@@ -9,19 +9,43 @@ struct TodayHeaderView: View {
     var body: some View {
         let daily = GoalSummary.daily(for: metrics)
         let weekly = GoalSummary.weekly(for: metrics)
-        HStack(spacing: 16) {
-            Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Spacer()
-            if daily.hasGoals {
-                CompactGoalRing(label: "Daily", summary: daily)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 16) {
+                Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if daily.hasGoals {
+                    CompactGoalRing(label: "Daily", summary: daily)
+                }
+                if weekly.hasGoals {
+                    CompactGoalRing(label: "Weekly", summary: weekly)
+                }
             }
-            if weekly.hasGoals {
-                CompactGoalRing(label: "Weekly", summary: weekly)
-            }
+            Text(intention)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
         }
         .padding(.vertical, 4)
+    }
+
+    /// A warm one-line anchor under the date: lead with the best streak the
+    /// user has going, otherwise a gentle invitation to begin.
+    private var intention: String {
+        let streak = bestStreak
+        if streak >= 2 {
+            return "\(streak) days of showing up."
+        }
+        return "A fresh day to begin."
+    }
+
+    private var bestStreak: Int {
+        metrics.map { metric in
+            SessionStatistics.currentStreak(
+                from: SessionStatistics.dailyTotals(from: metric.sessions),
+                excludedWeekdays: metric.excludedWeekdaySet
+            )
+        }.max() ?? 0
     }
 }
 

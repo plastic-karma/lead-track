@@ -20,6 +20,16 @@ enum NumeralSize {
         case .stat: .system(.headline, design: .rounded)
         }
     }
+
+    /// Tightened tracking on the larger sizes, so the hero numbers read as a
+    /// deliberate display treatment rather than default body digits.
+    fileprivate var tracking: CGFloat {
+        switch self {
+        case .hero: -1
+        case .value: -0.5
+        case .stat: 0
+        }
+    }
 }
 
 extension View {
@@ -28,5 +38,6 @@ extension View {
     func numeralStyle(_ size: NumeralSize) -> some View {
         font(size.font)
             .monospacedDigit()
+            .tracking(size.tracking)
     }
 }
