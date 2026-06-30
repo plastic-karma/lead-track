@@ -19,10 +19,20 @@ struct MetricListView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 16) {
                 TodayHeaderView(metrics: metrics)
-                ForEach(metrics) { metric in
-                    metricCard(metric)
+                if !leftMetrics.isEmpty {
+                    sectionHeader(leftTitle)
+                    ForEach(leftMetrics) { metricCard($0) }
+                }
+                if !doneMetrics.isEmpty {
+                    sectionHeader("Done Today")
+                    ForEach(doneMetrics) { metric in
+                        DoneMetricRow(
+                            metric: metric,
+                            runningSession: runningSession(for: metric)
+                        )
+                    }
                 }
             }
             .padding(.horizontal)
@@ -92,6 +102,39 @@ struct MetricListView: View {
 // MARK: - Pieces
 
 extension MetricListView {
+    /// Metrics still open today — anything without a met daily goal, so a card
+    /// stays in reach until its goal is done (or always, for goal-less metrics).
+    private var leftMetrics: [Metric] {
+        metrics.filter { !isDone($0) }
+    }
+
+    /// Metrics that have met today's goal, collapsed into the "Done" section.
+    private var doneMetrics: [Metric] {
+        metrics.filter(isDone)
+    }
+
+    private func isDone(_ metric: Metric) -> Bool {
+        GoalSummary.isDailyComplete(metric)
+    }
+
+    private var leftTitle: String {
+        let count = leftMetrics.count
+        let number = count == 1 ? "One" : "\(count)"
+        return "\(number) Left Today"
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Divider()
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .kerning(0.5)
+        }
+        .padding(.top, 4)
+    }
+
     private var appMenu: some View {
         Menu {
             Button { showingSettings = true } label: {
