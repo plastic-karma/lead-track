@@ -1,12 +1,11 @@
 import SwiftData
 import SwiftUI
 
-/// One dashboard card per metric: identity, today's value with a seven-day
-/// sparkline, streak, optional goal progress, and the primary action
-/// (start/stop timer or +1) right where the status is shown. While a timer
-/// runs the value counts live and the stop symbol pulses in the metric's
-/// color. The metric color is reserved for the action and the data ink;
-/// the rest of the card stays monochrome.
+/// One dashboard card per active metric: identity, today's value against its
+/// goal with a progress bar, and a full-width primary action (start/resume/stop
+/// the timer, or log a count). While a timer runs the value counts live and the
+/// action pulses in the metric's color. The metric color is reserved for the
+/// action and the data ink; the rest of the card stays monochrome.
 struct MetricCardView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
@@ -28,16 +27,15 @@ struct MetricCardView: View {
     }
 
     private func content(_ totals: [DailyTotal]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let today = SessionStatistics.todayTotal(from: totals)
+        return VStack(alignment: .leading, spacing: 14) {
             header
             valueRow(totals)
-            streakLine(totals)
             if let goal = metric.dailyGoal {
-                goalBar(
-                    today: SessionStatistics.todayTotal(from: totals),
-                    goal: goal
-                )
+                ProgressTrack(fraction: min(today / max(goal, 1), 1), tint: tint)
+                    .frame(height: 6)
             }
+            actionButton(today: today)
         }
         .cardSurface()
     }
@@ -54,26 +52,27 @@ extension MetricCardView {
         HStack(spacing: 12) {
             MetricIcon(systemName: metric.displayIcon, tint: tint)
             Text(metric.name)
-                .font(.headline)
+                .font(.title3.weight(.bold))
             Spacer()
-            actionButton
         }
     }
 
     private func valueRow(_ totals: [DailyTotal]) -> some View {
-        HStack(alignment: .lastTextBaseline, spacing: 16) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             todayValue(totals)
                 .numeralStyle(.value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+            if let goal = metric.dailyGoal {
+                Text("of")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(ValueFormatter.format(goal, type: metric.measurementType, unit: metric.unit))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
             Spacer()
-            SparklineView(
-                values: SessionStatistics.trailingDailySeries(
-                    days: 7, from: totals
-                ),
-                tint: tint
-            )
-            .frame(width: 92, height: 26)
         }
     }
 
@@ -98,50 +97,16 @@ extension MetricCardView {
             )
         }
     }
-
-    private func streakLine(_ totals: [DailyTotal]) -> some View {
-        let streak = SessionStatistics.currentStreak(
-            from: totals,
-            excludedWeekdays: metric.excludedWeekdaySet
-        )
-        let suffix = streak > 1 ? " · \(streak) day streak" : ""
-        return Text("today\(suffix)")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-    }
-
-    private func goalBar(
-        today: TimeInterval,
-        goal: TimeInterval
-    ) -> some View {
-        let fraction = min(today / max(goal, 1), 1)
-        return HStack(spacing: 12) {
-            ProgressTrack(fraction: fraction, tint: tint)
-                .frame(height: 6)
-            Text(goalLabel(goal, reached: fraction >= 1))
-                .font(.caption)
-                .foregroundStyle(fraction >= 1 ? tint : .secondary)
-                .layoutPriority(1)
-        }
-    }
-
-    private func goalLabel(_ goal: TimeInterval, reached: Bool) -> String {
-        if reached {
-            return "goal reached"
-        }
-        let amount = ValueFormatter.formatShort(goal, type: metric.measurementType)
-        return "goal \(amount)"
-    }
 }
 
 // MARK: - Actions
 
 extension MetricCardView {
     @ViewBuilder
-    private var actionButton: some View {
+    private func actionButton(today: TimeInterval) -> some View {
         switch metric.measurementType {
         case .duration:
-            timerButton
+            timerButton(today: today)
         case .count:
             countButton
         case .binary:
@@ -153,7 +118,10 @@ extension MetricCardView {
     /// most one entry per day.
     private var binaryButton: some View {
         Button(action: toggleDone) {
-            actionIcon(isDoneToday ? "checkmark" : "circle")
+            actionLabel(
+                isDoneToday ? "checkmark" : "circle",
+                isDoneToday ? "Done" : "Mark Done"
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isDoneToday ? "Mark not done today" : "Mark done today")
@@ -163,10 +131,11 @@ extension MetricCardView {
         SessionStatistics.todayTotal(from: metric.sessions) > 0
     }
 
-    /// Tap starts (or stops) a count-up timer; the menu offers count-down
-    /// lengths instead — the same start-time choice the hero shows.
+    /// Tap starts (count-up) or stops the timer; the menu offers count-down
+    /// lengths instead. The verb reflects the day's progress: Start from zero,
+    /// Resume once there's time on the clock.
     @ViewBuilder
-    private var timerButton: some View {
+    private func timerButton(today: TimeInterval) -> some View {
         if runningSession == nil {
             Menu {
                 CountdownOptionsMenu(
@@ -174,21 +143,21 @@ extension MetricCardView {
                     onCustom: { showingCountdownPicker = true }
                 )
             } label: {
-                actionIcon("play.fill")
+                actionLabel("play.fill", today > 0 ? "Resume" : "Start")
             } primaryAction: {
                 toggleTimer()
             }
             .accessibilityLabel("Start Timer")
         } else {
             Button(action: toggleTimer) {
-                actionIcon("stop.fill")
+                actionLabel("stop.fill", "Stop")
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Stop Timer")
         }
     }
 
-    /// Tap logs one unit instantly; long-press offers the custom-amount sheet.
+    /// Tap logs one unit instantly; the menu offers the custom-amount sheet.
     private var countButton: some View {
         Menu {
             Button {
@@ -197,20 +166,28 @@ extension MetricCardView {
                 Label("Log Custom Amount", systemImage: "square.and.pencil")
             }
         } label: {
-            actionIcon("plus")
+            actionLabel("plus", "Log")
         } primaryAction: {
             logOne()
         }
         .accessibilityLabel("Log one \(metric.unit ?? "entry")")
     }
 
-    private func actionIcon(_ systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(.white)
-            .symbolEffect(.pulse, isActive: runningSession != nil)
-            .frame(width: 36, height: 36)
-            .background(Circle().fill(tint))
+    private func actionLabel(_ systemName: String, _ title: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemName)
+            Text(title)
+        }
+        .font(.headline)
+        .foregroundStyle(.white)
+        .symbolEffect(.pulse, isActive: runningSession != nil)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(tint)
+                .shadow(color: tint.opacity(0.5), radius: 8)
+        )
     }
 
     private func toggleTimer() {

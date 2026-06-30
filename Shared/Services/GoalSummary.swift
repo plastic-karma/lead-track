@@ -35,6 +35,22 @@ extension GoalSummary {
         return GoalSummary(met: met.count, total: active.count)
     }
 
+    /// Whether the metric's daily target is met today — the same rule the
+    /// daily ring counts by, so the Today screen can sort cards into "left"
+    /// and "done" sections that agree with the summary. Metrics without a
+    /// target today (no goal, or resting) are never "complete".
+    static func isDailyComplete(
+        _ metric: Metric,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard hasDailyTarget(metric),
+              metric.isGoalDay(on: .now, calendar: calendar)
+        else {
+            return false
+        }
+        return isDailyMet(metric, calendar: calendar)
+    }
+
     /// Binary metrics always carry an implicit "do it today" goal; the others
     /// only count toward the summary once an amount goal is set.
     private static func hasDailyTarget(_ metric: Metric) -> Bool {
