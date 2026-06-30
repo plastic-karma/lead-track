@@ -8,6 +8,9 @@ struct WatchAction: Codable, Equatable {
         case startTimer
         case stopTimer
         case logValue
+        /// Marks the day done for a binary metric, or clears it if already
+        /// done — the toggle behind the watch's check-off row.
+        case toggleDay
     }
 
     let kind: Kind

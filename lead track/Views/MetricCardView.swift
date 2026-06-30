@@ -79,7 +79,9 @@ extension MetricCardView {
 
     @ViewBuilder
     private func todayValue(_ totals: [DailyTotal]) -> some View {
-        if let session = runningSession {
+        if metric.measurementType == .binary {
+            Text(SessionStatistics.todayTotal(from: totals) > 0 ? "Done" : "Not yet")
+        } else if let session = runningSession {
             Text(
                 liveTimer: session.countdownInterval,
                 countingUpFrom: session.liveTimerOrigin(
@@ -137,11 +139,28 @@ extension MetricCardView {
 extension MetricCardView {
     @ViewBuilder
     private var actionButton: some View {
-        if metric.measurementType == .duration {
+        switch metric.measurementType {
+        case .duration:
             timerButton
-        } else {
+        case .count:
             countButton
+        case .binary:
+            binaryButton
         }
+    }
+
+    /// Tap toggles today between done and not done; binary metrics hold at
+    /// most one entry per day.
+    private var binaryButton: some View {
+        Button(action: toggleDone) {
+            actionIcon(isDoneToday ? "checkmark" : "circle")
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isDoneToday ? "Mark not done today" : "Mark done today")
+    }
+
+    private var isDoneToday: Bool {
+        SessionStatistics.todayTotal(from: metric.sessions) > 0
     }
 
     /// Tap starts (or stops) a count-up timer; the menu offers count-down
@@ -217,6 +236,13 @@ extension MetricCardView {
     private func logOne() {
         withAnimation {
             SessionService.logCount(1, for: metric, in: modelContext)
+        }
+        quickLogTrigger.toggle()
+    }
+
+    private func toggleDone() {
+        withAnimation {
+            SessionService.toggleBinaryDay(for: metric, in: modelContext)
         }
         quickLogTrigger.toggle()
     }

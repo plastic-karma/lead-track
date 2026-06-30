@@ -138,6 +138,44 @@ struct WatchActionHandlerTests {
         #expect(!session.isRunning)
     }
 
+    // MARK: - Toggle (binary)
+
+    @Test
+    func toggleDayMarksBinaryDayDone() throws {
+        let context = try makeContext()
+        let metric = makeMetric(type: .binary, in: context)
+        let id = try #require(metric.stableID)
+        let timestamp = Date.now.addingTimeInterval(-120)
+
+        try WatchActionHandler.apply(
+            WatchAction(kind: .toggleDay, metricID: id, timestamp: timestamp),
+            in: context
+        )
+
+        let session = try #require(metric.sessions.first)
+        #expect(session.value == 1)
+        #expect(session.startedAt == timestamp)
+        #expect(!session.isRunning)
+    }
+
+    @Test
+    func toggleDayClearsAnAlreadyDoneDay() throws {
+        let context = try makeContext()
+        let metric = makeMetric(type: .binary, in: context)
+        let id = try #require(metric.stableID)
+
+        try WatchActionHandler.apply(
+            WatchAction(kind: .toggleDay, metricID: id),
+            in: context
+        )
+        try WatchActionHandler.apply(
+            WatchAction(kind: .toggleDay, metricID: id),
+            in: context
+        )
+
+        #expect(metric.sessions.isEmpty)
+    }
+
     @Test
     func unknownMetricIsIgnored() throws {
         let context = try makeContext()

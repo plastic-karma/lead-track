@@ -21,7 +21,9 @@ struct MetricHeroView: View {
             if showsCountdownStart {
                 countdownButton
             }
-            manualLogButton
+            if metric.measurementType.tracksQuantity {
+                manualLogButton
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -57,7 +59,9 @@ extension MetricHeroView {
 
     @ViewBuilder
     private var valueText: some View {
-        if let session = activeSession {
+        if metric.measurementType == .binary {
+            Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
+        } else if let session = activeSession {
             Text(
                 liveTimer: session.countdownInterval,
                 countingUpFrom: session.liveTimerOrigin(backdatedBy: todayTotal)
@@ -68,10 +72,18 @@ extension MetricHeroView {
     }
 
     private var caption: String {
+        if metric.measurementType == .binary {
+            return isDoneToday ? "done today" : "not done yet"
+        }
         guard metric.measurementType == .count,
               let unit = metric.unit, !unit.isEmpty
         else { return "today" }
         return "\(unit) today"
+    }
+
+    /// Whether today already counts as done for a binary metric.
+    private var isDoneToday: Bool {
+        todayTotal > 0
     }
 }
 
@@ -80,11 +92,28 @@ extension MetricHeroView {
 extension MetricHeroView {
     @ViewBuilder
     private var primaryButton: some View {
-        if metric.measurementType == .duration {
+        switch metric.measurementType {
+        case .duration:
             timerButton
-        } else {
+        case .count:
             countButton
+        case .binary:
+            binaryButton
         }
+    }
+
+    private var binaryButton: some View {
+        Button(action: toggleDone) {
+            Label(
+                isDoneToday ? "Done" : "Mark Done",
+                systemImage: isDoneToday ? "checkmark.circle.fill" : "circle"
+            )
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+        .prominentCapsuleButtonStyle()
+        .tint(metric.displayColor)
     }
 
     private var timerButton: some View {
@@ -161,6 +190,13 @@ extension MetricHeroView {
     private func logOne() {
         withAnimation {
             SessionService.logCount(1, for: metric, in: modelContext)
+        }
+        quickLogTrigger.toggle()
+    }
+
+    private func toggleDone() {
+        withAnimation {
+            SessionService.toggleBinaryDay(for: metric, in: modelContext)
         }
         quickLogTrigger.toggle()
     }

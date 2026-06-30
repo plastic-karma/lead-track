@@ -29,12 +29,29 @@ extension GoalSummary {
         calendar: Calendar = .current
     ) -> GoalSummary {
         let active = metrics.filter {
-            $0.dailyGoal != nil && $0.isGoalDay(on: .now, calendar: calendar)
+            hasDailyTarget($0) && $0.isGoalDay(on: .now, calendar: calendar)
         }
-        let met = active.filter {
-            SessionStatistics.todayTotal(from: $0.sessions, calendar: calendar) >= ($0.dailyGoal ?? 0)
-        }
+        let met = active.filter { isDailyMet($0, calendar: calendar) }
         return GoalSummary(met: met.count, total: active.count)
+    }
+
+    /// Binary metrics always carry an implicit "do it today" goal; the others
+    /// only count toward the summary once an amount goal is set.
+    private static func hasDailyTarget(_ metric: Metric) -> Bool {
+        metric.measurementType == .binary || metric.dailyGoal != nil
+    }
+
+    private static func isDailyMet(
+        _ metric: Metric,
+        calendar: Calendar
+    ) -> Bool {
+        let today = SessionStatistics.todayTotal(
+            from: metric.sessions, calendar: calendar
+        )
+        if metric.measurementType == .binary {
+            return today > 0
+        }
+        return today >= (metric.dailyGoal ?? 0)
     }
 
     /// Weekly goal completion across metrics.

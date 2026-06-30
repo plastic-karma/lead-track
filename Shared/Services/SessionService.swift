@@ -144,6 +144,40 @@ enum SessionService {
         return session
     }
 
+    /// Marks today done for a binary metric, or clears it when the day was
+    /// already done — the toggle behind the check-off button. Binary metrics
+    /// keep at most one completed session per day; `at` lets watch actions
+    /// backdate to when the user tapped. Returns the resulting done state.
+    @discardableResult
+    static func toggleBinaryDay(
+        for metric: Metric,
+        in context: ModelContext,
+        at timestamp: Date = .now
+    ) -> Bool {
+        let logged = min(timestamp, .now)
+        let calendar = Calendar.current
+        let today = metric.sessions.filter {
+            !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: logged)
+        }
+        guard today.isEmpty else {
+            for session in today {
+                context.delete(session)
+            }
+            rescheduleNotifications(for: metric)
+            return false
+        }
+        let session = Session(
+            metric: metric,
+            project: metric.defaultProject,
+            startedAt: logged,
+            endedAt: logged,
+            value: 1
+        )
+        context.insert(session)
+        rescheduleNotifications(for: metric)
+        return true
+    }
+
     @discardableResult
     static func logDuration(
         _ duration: TimeInterval,

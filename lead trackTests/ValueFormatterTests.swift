@@ -36,6 +36,29 @@ struct ValueFormatterTests {
     }
 
     @Test
+    func formatBinaryShowsDayCount() {
+        #expect(ValueFormatter.format(0, type: .binary) == "0 days")
+        #expect(ValueFormatter.format(1, type: .binary) == "1 day")
+        #expect(ValueFormatter.format(3, type: .binary) == "3 days")
+    }
+
+    @Test
+    func formatShortBinaryIsInteger() {
+        #expect(ValueFormatter.formatShort(1, type: .binary) == "1")
+        #expect(ValueFormatter.formatShort(4, type: .binary) == "4")
+    }
+
+    @Test
+    func chartLabelForBinary() {
+        #expect(ValueFormatter.chartLabel(type: .binary, unit: nil) == "days")
+    }
+
+    @Test
+    func chartValuePassesThroughBinary() {
+        #expect(ValueFormatter.chartValue(1, type: .binary) == 1)
+    }
+
+    @Test
     func chartValueConvertsDurationToMinutes() {
         #expect(ValueFormatter.chartValue(120, type: .duration) == 2.0)
     }

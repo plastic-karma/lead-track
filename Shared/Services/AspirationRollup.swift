@@ -193,6 +193,10 @@ private extension AspirationRollup {
         case .count:
             let trimmed = (unit ?? "").trimmingCharacters(in: .whitespaces)
             return trimmed.isEmpty ? .entries : .count(unit: trimmed)
+        case .binary:
+            // Each done day is one session, so the unitless "entries" bucket
+            // already totals binary effort as a day count.
+            return .entries
         }
     }
 
