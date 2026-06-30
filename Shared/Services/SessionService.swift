@@ -160,7 +160,9 @@ enum SessionService {
             !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: logged)
         }
         guard today.isEmpty else {
-            for session in today { context.delete(session) }
+            for session in today {
+                context.delete(session)
+            }
             rescheduleNotifications(for: metric)
             return false
         }
