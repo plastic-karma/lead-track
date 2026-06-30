@@ -52,11 +52,7 @@ extension MetricCardView {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Image(systemName: metric.displayIcon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(Theme.chipFill))
+            MetricIcon(systemName: metric.displayIcon, tint: tint)
             Text(metric.name)
                 .font(.headline)
             Spacer()
@@ -116,17 +112,23 @@ extension MetricCardView {
         today: TimeInterval,
         goal: TimeInterval
     ) -> some View {
-        HStack(spacing: 12) {
-            ProgressView(value: min(today / max(goal, 1), 1))
-                .progressViewStyle(.linear)
-                .tint(tint)
-            Text(
-                "goal \(ValueFormatter.formatShort(goal, type: metric.measurementType))"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .layoutPriority(1)
+        let fraction = min(today / max(goal, 1), 1)
+        return HStack(spacing: 12) {
+            ProgressTrack(fraction: fraction, tint: tint)
+                .frame(height: 6)
+            Text(goalLabel(goal, reached: fraction >= 1))
+                .font(.caption)
+                .foregroundStyle(fraction >= 1 ? tint : .secondary)
+                .layoutPriority(1)
         }
+    }
+
+    private func goalLabel(_ goal: TimeInterval, reached: Bool) -> String {
+        if reached {
+            return "goal reached"
+        }
+        let amount = ValueFormatter.formatShort(goal, type: metric.measurementType)
+        return "goal \(amount)"
     }
 }
 

@@ -130,16 +130,16 @@ extension CalendarHeatmapView {
         return rampColor(value / maxValue)
     }
 
-    /// A whisper of the tint instead of a gray grid, so empty days recede.
+    /// A whisper of the tint instead of a gray grid, so empty days recede
+    /// while staying just visible enough to read as the grid's floor.
     private var emptyCellColor: Color {
-        tint.opacity(0.08)
+        tint.opacity(0.12)
     }
 
-    /// Opacity carries the low end while the hue deepens toward the top, so
-    /// heavy days read rich instead of washed out.
+    /// A clean opacity ramp with a lifted floor, so even the lightest logged
+    /// day separates clearly from empty and the steps read as distinct.
     private func rampColor(_ intensity: Double) -> Color {
-        tint.mix(with: .black, by: 0.25 * intensity)
-            .opacity(0.25 + 0.75 * intensity)
+        tint.opacity(0.32 + 0.68 * intensity)
     }
 
     private func weekdayLabel(_ weekday: Int) -> String {
