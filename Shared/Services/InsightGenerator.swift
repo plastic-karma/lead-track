@@ -120,6 +120,9 @@ private extension InsightGenerator {
         current: [Session],
         previous: [Session]
     ) -> Insight? {
+        // Binary metrics have no magnitude to compare; their "showed up more/
+        // fewer days" story is the active-days insight instead.
+        guard metric.measurementType.tracksQuantity else { return nil }
         guard current.count >= minStableWeekCount,
               previous.count >= minStableWeekCount
         else {

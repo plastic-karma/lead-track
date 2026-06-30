@@ -50,8 +50,12 @@ struct GoalSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                dailyGoalSection
-                weeklyGoalSection
+                if metric.measurementType.tracksQuantity {
+                    dailyGoalSection
+                    weeklyGoalSection
+                } else {
+                    restDaysSection
+                }
                 reminderSection
                 streakAlertSection
             }
@@ -96,6 +100,16 @@ extension GoalSettingsView {
     @ViewBuilder
     private var restDaysFooter: some View {
         if hasDailyGoal {
+            Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
+        }
+    }
+
+    /// Binary metrics have no amount to set, so their "goal" is simply showing
+    /// up each non-rest day — this section configures just that.
+    private var restDaysSection: some View {
+        Section {
+            restDaysRow
+        } footer: {
             Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
         }
     }
@@ -200,6 +214,21 @@ extension GoalSettingsView {
     }
 
     private func save() {
+        if metric.measurementType.tracksQuantity {
+            saveAmountGoals()
+        } else {
+            metric.dailyGoal = nil
+            metric.weeklyGoal = nil
+            metric.excludedWeekdays = excludedWeekdays.sorted()
+        }
+        metric.reminderTime = hasReminder ? reminderTime : nil
+        metric.streakAlertTime = hasStreakAlert ? streakAlertTime : nil
+        NotificationService.rescheduleMetric(metric)
+        saveTrigger.toggle()
+        dismiss()
+    }
+
+    private func saveAmountGoals() {
         let isCount = metric.measurementType == .count
         metric.dailyGoal = hasDailyGoal
             ? (isCount ? dailyGoalValue : dailyGoalValue * 60)
@@ -208,13 +237,6 @@ extension GoalSettingsView {
         metric.weeklyGoal = hasWeeklyGoal
             ? (isCount ? weeklyGoalValue : weeklyGoalValue * 3600)
             : nil
-        metric.reminderTime = hasReminder
-            ? reminderTime : nil
-        metric.streakAlertTime = hasStreakAlert
-            ? streakAlertTime : nil
-        NotificationService.rescheduleMetric(metric)
-        saveTrigger.toggle()
-        dismiss()
     }
 
     private static func defaultTime(hour: Int) -> Date {

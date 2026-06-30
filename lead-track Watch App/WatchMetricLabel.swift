@@ -40,6 +40,9 @@ struct WatchMetricLabel: View {
     }
 
     private var todayText: String {
+        if metric.measurementType == .binary {
+            return metric.todayTotal > 0 ? "Done today" : "Not done yet"
+        }
         let total = ValueFormatter.format(
             metric.todayTotal,
             type: metric.measurementType,
@@ -49,6 +52,10 @@ struct WatchMetricLabel: View {
     }
 
     private var defaultIcon: String {
-        metric.measurementType == .duration ? "timer" : "number"
+        switch metric.measurementType {
+        case .duration: "timer"
+        case .count: "number"
+        case .binary: "checkmark.circle"
+        }
     }
 }

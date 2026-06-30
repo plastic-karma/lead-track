@@ -72,10 +72,11 @@ struct MetricFormView: View {
     }
 
     private var typePicker: some View {
-        Section("Type") {
+        Section {
             Picker("Measurement", selection: $measurementType) {
                 Text("Duration").tag(MeasurementType.duration)
                 Text("Count").tag(MeasurementType.count)
+                Text("Yes/No").tag(MeasurementType.binary)
             }
             .pickerStyle(.segmented)
             if measurementType == .count {
@@ -83,6 +84,12 @@ struct MetricFormView: View {
                     "Unit (e.g. pages, calls)",
                     text: $unit
                 )
+            }
+        } header: {
+            Text("Type")
+        } footer: {
+            if measurementType == .binary {
+                Text("Tracks whether you did it each day — done or not, no amount.")
             }
         }
     }

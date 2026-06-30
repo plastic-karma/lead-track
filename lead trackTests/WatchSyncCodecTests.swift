@@ -64,6 +64,19 @@ struct WatchSyncCodecTests {
     }
 
     @Test
+    func toggleActionRoundTripsThroughMessage() throws {
+        let action = WatchAction(
+            kind: .toggleDay,
+            metricID: metricID,
+            timestamp: Date(timeIntervalSince1970: 1_750_000_000)
+        )
+        let decoded = try #require(
+            WatchSyncCodec.action(from: WatchSyncCodec.message(for: action))
+        )
+        #expect(decoded == action)
+    }
+
+    @Test
     func decodingRejectsForeignPayloads() {
         #expect(WatchSyncCodec.snapshot(from: [:]) == nil)
         #expect(WatchSyncCodec.action(from: ["action": "junk"]) == nil)
@@ -160,6 +173,28 @@ struct WatchSnapshotReducerTests {
         )
 
         #expect(result.metrics.first?.todayTotal == 7)
+    }
+
+    @Test
+    func toggleDayMarksDoneFromZero() {
+        let action = WatchAction(kind: .toggleDay, metricID: metricID)
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(todayTotal: 0)
+        )
+
+        #expect(result.metrics.first?.todayTotal == 1)
+    }
+
+    @Test
+    func toggleDayClearsWhenAlreadyDone() {
+        let action = WatchAction(kind: .toggleDay, metricID: metricID)
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(todayTotal: 1)
+        )
+
+        #expect(result.metrics.first?.todayTotal == 0)
     }
 
     @Test

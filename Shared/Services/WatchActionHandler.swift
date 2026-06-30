@@ -23,6 +23,10 @@ enum WatchActionHandler {
                 in: context,
                 at: action.timestamp
             )
+        case .toggleDay:
+            SessionService.toggleBinaryDay(
+                for: metric, in: context, at: action.timestamp
+            )
         }
         SessionService.reconcileCountdowns(in: context)
         try context.save()

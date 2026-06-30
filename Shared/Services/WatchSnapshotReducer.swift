@@ -29,6 +29,8 @@ enum WatchSnapshotReducer {
             metric.runningSince = nil
         case .logValue:
             metric.todayTotal += action.value ?? 1
+        case .toggleDay:
+            metric.todayTotal = metric.todayTotal > 0 ? 0 : 1
         }
         return metric
     }

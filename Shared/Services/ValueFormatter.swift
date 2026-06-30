@@ -11,6 +11,8 @@ enum ValueFormatter {
             return DurationFormatter.format(value)
         case .count:
             return formatCount(value, unit: unit)
+        case .binary:
+            return formatDays(value)
         }
     }
 
@@ -25,6 +27,13 @@ enum ValueFormatter {
         return "\(intValue)"
     }
 
+    /// Binary magnitudes are counts of done days, so an aggregate reads as
+    /// "3 days"; a single day's 0/1 reads as "0 days" / "1 day".
+    private static func formatDays(_ value: Double) -> String {
+        let days = Int(value)
+        return days == 1 ? "1 day" : "\(days) days"
+    }
+
     static func formatShort(
         _ value: Double,
         type: MeasurementType
@@ -32,7 +41,7 @@ enum ValueFormatter {
         switch type {
         case .duration:
             return DurationFormatter.format(value)
-        case .count:
+        case .count, .binary:
             return "\(Int(value))"
         }
     }
@@ -51,6 +60,8 @@ enum ValueFormatter {
             return "min"
         case .count:
             return unit ?? "count"
+        case .binary:
+            return "days"
         }
     }
 
@@ -61,7 +72,7 @@ enum ValueFormatter {
         switch type {
         case .duration:
             return value / 60
-        case .count:
+        case .count, .binary:
             return value
         }
     }

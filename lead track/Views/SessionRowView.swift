@@ -37,6 +37,10 @@ struct SessionRowView: View {
                 startedAt: session.startedAt,
                 tint: session.metric?.displayColor ?? .accentColor
             )
+        } else if session.metric?.measurementType == .binary {
+            Text("Done")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         } else if let count = session.value {
             Text(countText(count))
                 .numeralStyle(.stat)
