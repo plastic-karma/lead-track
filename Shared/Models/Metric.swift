@@ -12,6 +12,7 @@ final class Metric {
     #endif
     var stableID: UUID?
     var name: String
+    var metricDescription: String?
     var measurementType: MeasurementType
     var unit: String?
     var icon: String?
@@ -44,10 +45,12 @@ final class Metric {
         unit: String? = nil,
         icon: String? = nil,
         colorName: String? = nil,
+        metricDescription: String? = nil,
         createdAt: Date = .now
     ) {
         stableID = UUID()
         self.name = name
+        self.metricDescription = metricDescription
         self.measurementType = measurementType
         self.unit = unit
         self.icon = icon
@@ -73,6 +76,18 @@ extension Metric {
     /// fallback for metrics saved before icons existed.
     var displayIcon: String {
         icon ?? "clock"
+    }
+}
+
+// MARK: - Description
+
+extension Metric {
+    /// Normalizes free-text description input: trims surrounding whitespace and
+    /// collapses an all-whitespace string to nil, so a blank description is
+    /// stored as "no description" rather than an empty string.
+    static func normalizedDescription(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

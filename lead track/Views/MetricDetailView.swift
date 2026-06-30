@@ -11,6 +11,7 @@ struct MetricDetailView: View {
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
     @State private var showingAllSessions = false
+    @State private var showingEdit = false
     @State private var sessionToMove: Session?
 
     init(metric: Metric) {
@@ -85,6 +86,11 @@ struct MetricDetailView: View {
                     Label("Goals", systemImage: "target")
                 }
             }
+            ToolbarItem {
+                Button { showingEdit = true } label: {
+                    Label("Edit Metric", systemImage: "pencil")
+                }
+            }
         }
         .sheet(isPresented: $showingProjectForm) {
             ProjectFormView(metric: metric)
@@ -102,6 +108,11 @@ struct MetricDetailView: View {
         }
         .sheet(isPresented: $showingGoalSettings) {
             GoalSettingsView(metric: metric)
+        }
+        .sheet(isPresented: $showingEdit) {
+            MetricFormView(metric: metric)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingCountEntry) {
             CountEntryView(metric: metric, project: nil)
@@ -129,8 +140,22 @@ extension MetricDetailView {
             )
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+            descriptionRow
         } footer: {
             defaultProjectFooter
+        }
+    }
+
+    @ViewBuilder
+    private var descriptionRow: some View {
+        if let text = metric.metricDescription, !text.isEmpty {
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         }
     }
 
