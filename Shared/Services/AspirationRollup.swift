@@ -84,6 +84,28 @@ extension AspirationRollup {
     }
 }
 
+// MARK: - Touched today
+
+extension AspirationRollup {
+    /// Whether any of the aspiration's attachments received effort today — the
+    /// signal the Today screen uses to surface which aspirations the day poured
+    /// into. A session counts the moment it starts (a running timer is effort in
+    /// progress), so the chip appears as soon as the day's work begins, not only
+    /// once it's logged.
+    static func receivedEffortToday(
+        _ aspiration: Aspiration,
+        calendar: Calendar = .current,
+        now: Date = .now
+    ) -> Bool {
+        let today = calendar.startOfDay(for: now)
+        return contributionSources(of: aspiration).contains { source in
+            source.sessions.contains {
+                calendar.startOfDay(for: $0.startedAt) == today
+            }
+        }
+    }
+}
+
 // MARK: - Computation
 
 extension AspirationRollup {

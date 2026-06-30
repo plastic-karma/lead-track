@@ -257,3 +257,43 @@ extension AspirationRollupTests {
         #expect(rollup.hasData == false)
     }
 }
+
+// MARK: - Poured into today
+
+extension AspirationRollupTests {
+    @Test
+    func receivedEffortTodayWhenAnAttachmentLoggedToday() {
+        let aspiration = makeAspiration()
+        let metric = makeMetric(type: .duration)
+        addDuration(600, to: metric, at: day(0))
+        aspiration.metrics.append(metric)
+
+        #expect(AspirationRollup.receivedEffortToday(aspiration))
+    }
+
+    @Test
+    func noEffortTodayWhenOnlyOlderSessions() {
+        let aspiration = makeAspiration()
+        let metric = makeMetric(type: .duration)
+        addDuration(600, to: metric, at: day(1))
+        aspiration.metrics.append(metric)
+
+        #expect(!AspirationRollup.receivedEffortToday(aspiration))
+    }
+
+    @Test
+    func receivedEffortTodayThroughAStandaloneProject() {
+        let aspiration = makeAspiration()
+        let metric = makeMetric(type: .duration)
+        let project = makeProject("Sapiens", of: metric)
+        addDuration(900, to: metric, project: project, at: day(0))
+        aspiration.projects.append(project)
+
+        #expect(AspirationRollup.receivedEffortToday(aspiration))
+    }
+
+    @Test
+    func noEffortTodayWhenNothingAttached() {
+        #expect(!AspirationRollup.receivedEffortToday(makeAspiration()))
+    }
+}
