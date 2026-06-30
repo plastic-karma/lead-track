@@ -7,6 +7,7 @@ import SwiftUI
 struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
@@ -34,6 +35,7 @@ struct MetricListView: View {
                         )
                     }
                 }
+                TodayAspirationsFooter(aspirations: aspirations)
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
