@@ -31,10 +31,13 @@ private extension AppTabBar {
             VStack(spacing: 2) {
                 Image(systemName: systemImage)
                     .font(.system(size: 21))
+                    .frame(maxWidth: .infinity)
                 Text(label)
                     .font(.caption2.weight(isSelected ? .semibold : .regular))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
