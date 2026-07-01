@@ -93,6 +93,13 @@ enum CSVImporter {
             summary: &summary,
             context: context
         )
+        // A health-linked metric's sessions belong to the HealthKit mirror;
+        // imported rows would be overwritten on the next sync and could
+        // double real data, so they are skipped instead.
+        guard !metric.isHealthLinked else {
+            summary.rowsSkipped += 1
+            return
+        }
         let project = parsed.projectName.flatMap { name in
             cache.findOrCreate(
                 projectNamed: name,

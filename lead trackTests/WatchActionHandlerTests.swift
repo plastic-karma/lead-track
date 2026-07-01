@@ -188,6 +188,33 @@ struct WatchActionHandlerTests {
 
         #expect(metric.sessions.isEmpty)
     }
+
+    // MARK: - Health-Linked
+
+    @Test
+    func healthLinkedMetricRejectsEveryAction() throws {
+        let context = try makeContext()
+        let metric = Metric(
+            name: "Move",
+            measurementType: .count,
+            unit: "kcal",
+            healthSource: .activeCalories
+        )
+        context.insert(metric)
+        let id = try #require(metric.stableID)
+        let kinds: [WatchAction.Kind] = [
+            .startTimer, .stopTimer, .logValue, .toggleDay
+        ]
+
+        for kind in kinds {
+            try WatchActionHandler.apply(
+                WatchAction(kind: kind, metricID: id, value: 2),
+                in: context
+            )
+        }
+
+        #expect(metric.sessions.isEmpty)
+    }
 }
 
 // MARK: - Snapshot Builder
@@ -255,5 +282,22 @@ struct WatchSnapshotBuilderTests {
         let snapshot = WatchSnapshotBuilder.snapshot(from: [newer, older])
 
         #expect(snapshot.metrics.map(\.name) == ["Older", "Newer"])
+    }
+
+    @Test
+    func snapshotCarriesHealthLink() throws {
+        let container = try SharedModelContainer.create(inMemoryOnly: true)
+        let context = ModelContext(container)
+        let metric = Metric(
+            name: "Move",
+            measurementType: .count,
+            unit: "kcal",
+            healthSource: .activeCalories
+        )
+        context.insert(metric)
+
+        let snapshot = WatchSnapshotBuilder.snapshot(from: [metric])
+
+        #expect(snapshot.metrics.first?.isHealthLinked == true)
     }
 }

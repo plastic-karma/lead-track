@@ -67,7 +67,9 @@ struct MetricDetailView: View {
             if !activeProjects.isEmpty {
                 projectsSection("Active Projects", activeProjects)
             }
-            if !directSessions.isEmpty {
+            if metric.isHealthLinked {
+                healthSections(totals)
+            } else if !directSessions.isEmpty {
                 directSessionsSections
             }
             if !finishedProjects.isEmpty {
@@ -76,9 +78,11 @@ struct MetricDetailView: View {
         }
         .navigationTitle(metric.name)
         .toolbar {
-            ToolbarItem {
-                Button { showingProjectForm = true } label: {
-                    Label("Add Project", systemImage: "folder.badge.plus")
+            if !metric.isHealthLinked {
+                ToolbarItem {
+                    Button { showingProjectForm = true } label: {
+                        Label("Add Project", systemImage: "folder.badge.plus")
+                    }
                 }
             }
             ToolbarItem {
@@ -124,6 +128,9 @@ struct MetricDetailView: View {
             MoveSessionView(session: session)
         }
         .recordingFeedback(isActive: activeSession != nil)
+        .task(id: metric.stableID) {
+            await refreshHealth()
+        }
     }
 }
 
@@ -209,6 +216,17 @@ extension MetricDetailView {
         }
     }
 
+    /// A health metric's history is read-only: mirrored day rows instead of
+    /// editable sessions, plus where the numbers come from.
+    @ViewBuilder
+    private func healthSections(_ totals: [DailyTotal]) -> some View {
+        HealthHistorySection(metric: metric, dailyTotals: totals)
+        HealthLinkSection(
+            metric: metric,
+            hasRecentData: SessionStatistics.windowedTotal(days: 30, from: totals) > 0
+        )
+    }
+
     @ViewBuilder
     private var directSessionsSections: some View {
         ForEach(SessionDayGrouping.group(visibleDirectSessions)) { group in
@@ -283,6 +301,15 @@ extension MetricDetailView {
         } else {
             showingCountEntry = true
         }
+    }
+
+    /// Freshens the mirror whenever a health metric's detail opens; silent,
+    /// so it never surfaces a permission prompt on navigation.
+    private func refreshHealth() async {
+        guard metric.isHealthLinked, let id = metric.stableID else { return }
+        await HealthMetricSyncService.shared.refreshMetric(
+            metricID: id, container: modelContext.container
+        )
     }
 
     private func deleteProjects(

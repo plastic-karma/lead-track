@@ -11,6 +11,10 @@ enum WatchActionHandler {
     ) throws {
         guard let metric = try Metric.find(stableID: action.metricID, in: context)
         else { return }
+        // A watch running an older app version may still offer recording
+        // buttons on a health-linked metric; its sessions belong to the
+        // HealthKit mirror, so such actions are dropped.
+        guard !metric.isHealthLinked else { return }
         switch action.kind {
         case .startTimer:
             SessionService.startSession(for: metric, in: context, at: action.timestamp)

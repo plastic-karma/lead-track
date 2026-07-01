@@ -62,5 +62,11 @@ struct lead_trackApp: App {
         NotificationService.rescheduleAll(
             container: sharedModelContainer
         )
+        // No-op until the user has created a health-linked metric; only then
+        // does the app talk to HealthKit at all.
+        let container = sharedModelContainer
+        Task {
+            await HealthMetricSyncService.shared.refreshAll(container: container)
+        }
     }
 }

@@ -23,6 +23,13 @@ final class Metric {
     var reminderTime: Date?
     var streakAlertTime: Date?
     var excludedWeekdays: [Int] = []
+    /// Raw `HealthDataSource` this metric mirrors, or nil for a hand-recorded
+    /// metric. Stored as the raw string (not the enum) so a store written by a
+    /// newer app version with an unknown source still opens. Optional and
+    /// defaulting to nil, so existing stores migrate untouched.
+    var healthSourceRaw: String?
+    /// When the mirror last finished refreshing this metric from HealthKit.
+    var lastHealthSyncAt: Date?
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -46,7 +53,8 @@ final class Metric {
         icon: String? = nil,
         colorName: String? = nil,
         metricDescription: String? = nil,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        healthSource: HealthDataSource? = nil
     ) {
         stableID = UUID()
         self.name = name
@@ -56,6 +64,26 @@ final class Metric {
         self.icon = icon
         self.colorName = colorName
         self.createdAt = createdAt
+        healthSourceRaw = healthSource?.rawValue
+    }
+}
+
+// MARK: - Health Link
+
+extension Metric {
+    /// The Apple Health figure this metric mirrors, or nil for a
+    /// hand-recorded metric.
+    var healthSource: HealthDataSource? {
+        healthSourceRaw.flatMap(HealthDataSource.init(rawValue:))
+    }
+
+    /// Whether sessions are filled from Apple Health instead of recorded by
+    /// hand. True even when the stored source string is unknown to this app
+    /// version, so manual logging never contaminates a mirrored metric.
+    /// Every recording surface — cards, detail, watch actions, widgets,
+    /// intents, CSV import — checks this before writing a session.
+    var isHealthLinked: Bool {
+        healthSourceRaw != nil
     }
 }
 

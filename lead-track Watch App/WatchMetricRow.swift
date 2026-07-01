@@ -2,11 +2,21 @@ import SwiftUI
 import WatchKit
 
 /// One list row per metric: duration metrics toggle their timer on tap, count
-/// metrics open a quick-log screen, and binary metrics check today off.
+/// metrics open a quick-log screen, binary metrics check today off, and
+/// health-linked metrics just show today's figure.
 struct WatchMetricRow: View {
     let metric: WatchMetricSnapshot
 
     var body: some View {
+        if metric.isHealthLinked {
+            WatchHealthRow(metric: metric)
+        } else {
+            actionRow
+        }
+    }
+
+    @ViewBuilder
+    private var actionRow: some View {
         switch metric.measurementType {
         case .duration:
             WatchTimerRow(metric: metric)
@@ -23,6 +33,20 @@ struct WatchMetricRow: View {
         case .binary:
             WatchBinaryRow(metric: metric)
         }
+    }
+}
+
+/// A health-linked metric is filled by the phone from Apple Health; the
+/// watch renders it read-only — sensors record it, not taps.
+struct WatchHealthRow: View {
+    let metric: WatchMetricSnapshot
+
+    var body: some View {
+        WatchMetricLabel(
+            metric: metric,
+            accessory: "heart.fill",
+            accessoryColor: .pink
+        )
     }
 }
 
