@@ -26,6 +26,11 @@ struct TimerMetricState {
         MetricColor.color(named: colorName)
     }
 
+    /// The fill behind the widget's white-labelled start/stop buttons.
+    var prominentColor: Color {
+        MetricColor.prominentColor(named: colorName)
+    }
+
     /// The range a running countdown animates across, or nil when counting up.
     var countdownInterval: ClosedRange<Date>? {
         guard let since = runningSince, let target = countdownDuration, target > 0 else { return nil }
@@ -192,14 +197,14 @@ extension TimerControlWidgetView {
             Button(intent: StopTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Stop", icon: "stop.fill")
             }
-            .tint(metric.displayColor)
+            .tint(metric.prominentColor)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else {
             Button(intent: StartTimerIntent(metricID: metric.stableID)) {
                 buttonLabel("Start", icon: "play.fill")
             }
-            .tint(metric.displayColor)
+            .tint(metric.prominentColor)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }

@@ -1,10 +1,13 @@
 import SwiftUI
 
+/// The statistics card on the detail screens. Today's value and daily-goal
+/// progress live in the hero directly above, so this card sticks to the
+/// longer arcs: the current week when a weekly goal is set, the lifetime
+/// total, and the streak.
 struct StatisticsView: View {
     let sessions: [Session]
     let measurementType: MeasurementType
     let unit: String?
-    let dailyGoal: TimeInterval?
     let weeklyGoal: TimeInterval?
     let excludedWeekdays: [Int]
     @Binding var showingDetailedStats: Bool
@@ -55,8 +58,13 @@ struct StatisticsView: View {
     private var statsContent: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
-                todayItem
-                weeklyOrTotalItem
+                if let goal = weeklyGoal {
+                    weekItem(goal)
+                }
+                statItem(
+                    "Total",
+                    SessionStatistics.overallTotal(from: dailyTotals)
+                )
                 streakItem(
                     "Streak",
                     SessionStatistics.currentStreak(
@@ -72,49 +80,19 @@ struct StatisticsView: View {
 // MARK: - Items
 
 extension StatisticsView {
-    @ViewBuilder
-    private var todayItem: some View {
-        let today = SessionStatistics.todayTotal(from: dailyTotals)
-        if let goal = dailyGoal {
-            DailyGoalItem(
-                label: "Today",
-                today: today,
-                goal: goal,
-                excludedWeekdays: excludedWeekdays,
-                measurementType: measurementType,
-                unit: unit,
-                tint: tint
-            )
-        } else {
-            statItem("Today", today)
-        }
+    private func weekItem(_ goal: TimeInterval) -> some View {
+        GoalProgressView(
+            label: "Week",
+            current: SessionStatistics.currentWeekTotal(
+                from: dailyTotals
+            ),
+            goal: goal,
+            measurementType: measurementType,
+            unit: unit,
+            tint: tint
+        )
     }
 
-    @ViewBuilder
-    private var weeklyOrTotalItem: some View {
-        if let goal = weeklyGoal {
-            GoalProgressView(
-                label: "Week",
-                current: SessionStatistics.currentWeekTotal(
-                    from: dailyTotals
-                ),
-                goal: goal,
-                measurementType: measurementType,
-                unit: unit,
-                tint: tint
-            )
-        } else {
-            statItem(
-                "Total",
-                SessionStatistics.overallTotal(from: dailyTotals)
-            )
-        }
-    }
-}
-
-// MARK: - Helpers
-
-extension StatisticsView {
     private func statItem(
         _ title: String,
         _ value: TimeInterval

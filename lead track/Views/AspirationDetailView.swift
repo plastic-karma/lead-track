@@ -3,13 +3,16 @@ import SwiftUI
 
 /// The aspiration detail: a cover header, the "why" text, the live rollup
 /// (lifetime + recent), and the editable list of attached metrics and projects,
-/// each tappable through to its own screen. Edit and delete sit in the toolbar.
+/// each tappable through to its own screen. Edit sits in the toolbar; delete
+/// hides behind the ellipsis menu and a confirmation, so the destructive
+/// action is never one accidental tap away.
 struct AspirationDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     let aspiration: Aspiration
     @State private var showingEdit = false
     @State private var showingAttach = false
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         List {
@@ -21,6 +24,15 @@ struct AspirationDetailView: View {
         .navigationTitle(aspiration.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbar }
+        .confirmationDialog(
+            "Delete \(aspiration.title)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Aspiration", role: .destructive, action: deleteAspiration)
+        } message: {
+            Text("Its metrics and projects stay in your library.")
+        }
         .sheet(isPresented: $showingEdit) {
             AspirationFormView(aspiration: aspiration)
         }
@@ -155,8 +167,14 @@ extension AspirationDetailView {
         ToolbarItem {
             Button("Edit") { showingEdit = true }
         }
-        ToolbarItem(placement: .destructiveAction) {
-            Button("Delete", role: .destructive, action: deleteAspiration)
+        ToolbarItem {
+            Menu {
+                Button("Delete Aspiration", systemImage: "trash", role: .destructive) {
+                    showingDeleteConfirmation = true
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
+            }
         }
     }
 

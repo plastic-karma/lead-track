@@ -286,7 +286,8 @@ the same aspiration can appear in both tabs' histories; harmless for v1.
 - The list of **attached metrics & projects**, each tappable through to its
   existing detail screen, with remove affordances (see
   [Mutable membership](#mutable-membership)) and an "Add" entry point.
-- Edit and delete in the toolbar.
+- Edit in the toolbar; delete behind the toolbar's ellipsis menu, guarded by
+  a confirmation dialog.
 
 ### Create / edit sheet
 

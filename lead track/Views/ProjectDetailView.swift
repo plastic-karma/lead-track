@@ -51,7 +51,6 @@ struct ProjectDetailView: View {
                 sessions: sessions,
                 measurementType: project.metric?.measurementType ?? .duration,
                 unit: project.metric?.unit,
-                dailyGoal: nil,
                 weeklyGoal: nil,
                 excludedWeekdays: [],
                 showingDetailedStats: $showingDetailedStats,
