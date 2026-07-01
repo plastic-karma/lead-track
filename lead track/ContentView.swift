@@ -15,66 +15,46 @@ enum AppTab: Hashable {
 /// navigate to an aspiration. Cross-tab links push on the current stack rather
 /// than switching tabs.
 ///
-/// Today and Aspirations sit on a native horizontal pager rather than a stock
-/// bottom-bar `TabView`, whose selection change just cuts with no animation.
-/// A `scrollPosition` binding drives both the swipe and the custom tab bar
-/// below it, so a tap slides exactly like a finished swipe does. Swiping is
-/// disabled once the active tab has pushed past its root, so it never fights
-/// a detail screen's interactive back-swipe.
+/// Today and Aspirations sit on a page-style `TabView` so each whole screen
+/// slides into place on a swipe (and, driven through the same selection, on a
+/// tap of the custom `AppTabBar` below). A `.page` style is used rather than a
+/// hand-rolled horizontal `ScrollView`: it keeps each `NavigationStack` a
+/// top-level page, so their large-title bars keep the standard leading margin
+/// that a nested scroll view would otherwise collapse. The built-in page dots
+/// are hidden since `AppTabBar` is the visible affordance.
 struct ContentView: View {
-    @State private var selectedTab: AppTab? = .today
+    @State private var selectedTab: AppTab = .today
     @State private var todayPath = NavigationPath()
     @State private var aspirationsPath = NavigationPath()
 
     var body: some View {
         VStack(spacing: 0) {
-            pager
+            TabView(selection: $selectedTab) {
+                NavigationStack(path: $todayPath) {
+                    MetricListView()
+                        .appDestinations()
+                }
+                .tag(AppTab.today)
+
+                NavigationStack(path: $aspirationsPath) {
+                    AspirationListView()
+                        .appDestinations()
+                }
+                .tag(AppTab.aspirations)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+
             AppTabBar(selectedTab: animatedSelection)
         }
     }
 }
 
 private extension ContentView {
-    var pager: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 0) {
-                NavigationStack(path: $todayPath) {
-                    MetricListView()
-                        .appDestinations()
-                }
-                .containerRelativeFrame(.horizontal)
-                .frame(maxHeight: .infinity)
-                .id(AppTab.today)
-
-                NavigationStack(path: $aspirationsPath) {
-                    AspirationListView()
-                        .appDestinations()
-                }
-                .containerRelativeFrame(.horizontal)
-                .frame(maxHeight: .infinity)
-                .id(AppTab.aspirations)
-            }
-            .frame(maxHeight: .infinity)
-            .scrollTargetLayout()
-        }
-        .scrollTargetBehavior(.viewAligned)
-        .scrollPosition(id: $selectedTab)
-        .scrollDisabled(!isAtRoot)
-        .scrollIndicators(.hidden)
-    }
-
-    var isAtRoot: Bool {
-        switch selectedTab {
-        case .aspirations: aspirationsPath.isEmpty
-        case .today, nil: todayPath.isEmpty
-        }
-    }
-
-    /// Routes tab-bar taps through the same state the pager scrolls on, so a
-    /// tap and a swipe settle the same way.
+    /// Tab-bar taps animate the page transition (a swipe already slides
+    /// natively), so a tap settles the same way a finished swipe does.
     var animatedSelection: Binding<AppTab> {
         Binding(
-            get: { selectedTab ?? .today },
+            get: { selectedTab },
             set: { newValue in
                 withAnimation(.snappy) {
                     selectedTab = newValue
