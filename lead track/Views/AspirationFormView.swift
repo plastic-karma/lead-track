@@ -79,7 +79,8 @@ extension AspirationFormView {
             AspirationFeedPicker(
                 selectedMetrics: $selectedMetrics,
                 selectedProjects: $selectedProjects,
-                tint: color.color
+                tint: color.color,
+                prominentTint: color.prominentColor
             )
         }
         .padding(.horizontal, 20)
@@ -141,7 +142,7 @@ extension AspirationFormView {
                 .frame(width: 46, height: 46)
                 .background(
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(color.color)
+                        .fill(color.prominentColor)
                 )
         }
     }
@@ -185,7 +186,7 @@ extension AspirationFormView {
         ToolbarItem(placement: .confirmationAction) {
             Button(editing == nil ? "Create" : "Save", action: save)
                 .buttonStyle(.borderedProminent)
-                .tint(color.color)
+                .tint(color.prominentColor)
                 .disabled(trimmedTitle.isEmpty)
         }
     }

@@ -173,6 +173,8 @@ extension MetricCardView {
         .accessibilityLabel("Log one \(metric.unit ?? "entry")")
     }
 
+    /// The fill is the deeper prominent variant, not the identity tint, so
+    /// the white label keeps 4.5:1 contrast in both color schemes.
     private func actionLabel(_ systemName: String, _ title: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: systemName)
@@ -185,8 +187,8 @@ extension MetricCardView {
         .frame(height: 52)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(tint)
-                .shadow(color: tint.opacity(0.5), radius: 8)
+                .fill(metric.prominentColor)
+                .shadow(color: metric.prominentColor.opacity(0.5), radius: 8)
         )
     }
 

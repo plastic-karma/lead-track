@@ -176,7 +176,6 @@ extension MetricDetailView {
             sessions: sessions,
             measurementType: metric.measurementType,
             unit: metric.unit,
-            dailyGoal: metric.dailyGoal,
             weeklyGoal: metric.weeklyGoal,
             excludedWeekdays: metric.excludedWeekdays,
             showingDetailedStats: $showingDetailedStats,

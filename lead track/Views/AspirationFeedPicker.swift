@@ -12,6 +12,9 @@ struct AspirationFeedPicker: View {
     @Binding var selectedMetrics: Set<Metric>
     @Binding var selectedProjects: Set<Project>
     let tint: Color
+    /// The deeper variant of `tint` used behind white marks (see
+    /// `MetricColor.prominentColor`), so selection badges stay readable.
+    let prominentTint: Color
 
     @State private var expanded: Set<Metric> = []
     @State private var showingNewMetric = false
@@ -96,7 +99,7 @@ extension AspirationFeedPicker {
             Button { primaryTap(metric) } label: { rowLabel(metric) }
                 .buttonStyle(.plain)
             Button { toggleWhole(metric) } label: {
-                SelectionBadge(isSelected: selectedMetrics.contains(metric), tint: tint)
+                SelectionBadge(isSelected: selectedMetrics.contains(metric), tint: prominentTint)
             }
             .buttonStyle(.plain)
         }
@@ -132,7 +135,7 @@ extension AspirationFeedPicker {
             .frame(width: 38, height: 38)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(metric.displayColor)
+                    .fill(metric.prominentColor)
             )
     }
 }
@@ -158,7 +161,7 @@ extension AspirationFeedPicker {
                 Spacer(minLength: 4)
                 SelectionBadge(
                     isSelected: whole || selectedProjects.contains(project),
-                    tint: tint,
+                    tint: prominentTint,
                     size: 22
                 )
             }
