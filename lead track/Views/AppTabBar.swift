@@ -41,10 +41,10 @@ private extension AppTabBar {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-            // Geometrically centered reads as left-leaning — square.stack.3d.up.fill
-            // and mountain.2 both carry more visual weight on their right side, so
-            // nudge the whole icon+label a couple points right to compensate.
-            .offset(x: 3)
+            // The icon+label are geometrically centered in each slot (verified to
+            // sub-point precision), but both tabs still read as slightly left of
+            // center, so nudge the content right to balance them by eye.
+            .offset(x: 8)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
