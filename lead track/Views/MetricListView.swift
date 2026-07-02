@@ -45,6 +45,7 @@ struct MetricListView: View {
         }
         .background(dashboardBackground)
         .navigationTitle("Today")
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 appMenu

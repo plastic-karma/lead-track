@@ -21,6 +21,7 @@ struct AspirationListView: View {
         }
         .background(aspirationsBackground)
         .navigationTitle("Aspirations")
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
