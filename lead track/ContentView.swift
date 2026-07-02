@@ -1,23 +1,26 @@
 import SwiftData
 import SwiftUI
 
-/// The two screens `ContentView` pages between. Lives at file scope (rather
-/// than nested) so `AppTabBar` can share it.
+/// The three screens `ContentView` pages between — the app's three
+/// timescales: the day, the week, and the lifetime. Lives at file scope
+/// (rather than nested) so `AppTabBar` can share it.
 enum AppTab: Hashable {
     case today
+    case week
     case aspirations
 }
 
-/// The app root: a two-tab shell elevating aspirations to a peer of daily
-/// tracking. Each tab owns its own `NavigationStack`, and all three drill-in
-/// destinations are registered on both — the Aspirations tab drills into metric
-/// and project screens, and their back-link chips (reachable from Today)
-/// navigate to an aspiration. Cross-tab links push on the current stack rather
-/// than switching tabs.
+/// The app root: a three-tab shell — Today (the day), Week (the weekly
+/// review and intentions), Aspirations (the lifetime). Each tab owns its own
+/// `NavigationStack`, and all three drill-in destinations are registered on
+/// every stack — the Aspirations tab drills into metric and project screens,
+/// and their back-link chips (reachable from Today) navigate to an
+/// aspiration. Cross-tab links push on the current stack rather than
+/// switching tabs.
 ///
-/// Today and Aspirations sit on a page-style `TabView` so each whole screen
-/// slides into place on a swipe (and, driven through the same selection, on a
-/// tap of the custom `AppTabBar` below). A `.page` style is used rather than a
+/// The tabs sit on a page-style `TabView` so each whole screen slides into
+/// place on a swipe (and, driven through the same selection, on a tap of the
+/// custom `AppTabBar` below). A `.page` style is used rather than a
 /// hand-rolled horizontal `ScrollView`: it keeps each `NavigationStack` a
 /// top-level page, so their large-title bars keep the standard leading margin
 /// that a nested scroll view would otherwise collapse. The built-in page dots
@@ -25,7 +28,11 @@ enum AppTab: Hashable {
 struct ContentView: View {
     @State private var selectedTab: AppTab = .today
     @State private var todayPath = NavigationPath()
+    @State private var weekPath = NavigationPath()
     @State private var aspirationsPath = NavigationPath()
+    /// Tapping the weekly review notification raises this responder's flag;
+    /// the shell answers by sliding to the Week tab, even on a cold launch.
+    @ObservedObject private var notificationResponder = NotificationResponder.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,6 +42,12 @@ struct ContentView: View {
                         .appDestinations()
                 }
                 .tag(AppTab.today)
+
+                NavigationStack(path: $weekPath) {
+                    WeeklyReviewView()
+                        .appDestinations()
+                }
+                .tag(AppTab.week)
 
                 NavigationStack(path: $aspirationsPath) {
                     AspirationListView()
@@ -46,6 +59,19 @@ struct ContentView: View {
 
             AppTabBar(selectedTab: animatedSelection)
         }
+        .onAppear(perform: routeToWeekIfRequested)
+        .onChange(of: notificationResponder.showWeeklyReview) {
+            routeToWeekIfRequested()
+        }
+    }
+
+    /// Consumes the review deep-link flag by switching to the Week tab.
+    private func routeToWeekIfRequested() {
+        guard notificationResponder.showWeeklyReview else { return }
+        withAnimation(.snappy) {
+            selectedTab = .week
+        }
+        notificationResponder.showWeeklyReview = false
     }
 }
 

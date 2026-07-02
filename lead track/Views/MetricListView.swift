@@ -12,8 +12,9 @@ struct MetricListView: View {
     @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
-    /// The review flag lives on the notification responder so a tapped
-    /// weekly notification can raise it, even across a cold launch.
+    /// Raising the responder's review flag slides the app to the Week tab
+    /// (see `ContentView`) — the same route a tapped weekly notification
+    /// takes, so the menu entry and the notification land identically.
     @ObservedObject private var notificationResponder = NotificationResponder.shared
     @State private var showingExport = false
     @State private var showingImport = false
@@ -57,10 +58,6 @@ struct MetricListView: View {
         .sheet(isPresented: $showingAddSheet) {
             MetricFormView()
                 .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $notificationResponder.showWeeklyReview) {
-            WeeklyReviewView()
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingExport) {

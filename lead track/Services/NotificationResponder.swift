@@ -4,9 +4,9 @@ import UIKit
 import UserNotifications
 
 /// Routes notification taps into the app. Tapping the weekly review
-/// notification raises the flag the dashboard binds its review sheet to;
-/// because the flag lives on a singleton set up before the first scene
-/// renders, a tap that cold-launches the app still lands.
+/// notification raises the flag the root tab shell answers by sliding to
+/// the Week tab; because the flag lives on a singleton set up before the
+/// first scene renders, a tap that cold-launches the app still lands.
 final class NotificationResponder: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationResponder()
 

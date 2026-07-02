@@ -10,6 +10,7 @@ struct AppTabBar: View {
     var body: some View {
         HStack(spacing: 0) {
             tabButton(.today, label: "Today", systemImage: "square.stack.3d.up.fill")
+            tabButton(.week, label: "Week", systemImage: "calendar")
             tabButton(.aspirations, label: "Aspirations", systemImage: "mountain.2")
         }
         .accessibilityElement(children: .contain)
