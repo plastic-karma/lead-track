@@ -43,7 +43,7 @@ struct MetricListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .background(dashboardBackground)
+        .background(Theme.washedScreen)
         .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -86,17 +86,6 @@ struct MetricListView: View {
                 )
             }
         }
-    }
-
-    /// The dashboard's warm base with a soft copper atmosphere washing the top,
-    /// echoing the aspiration create sheet so the whole app feels lit alike.
-    private var dashboardBackground: some View {
-        Theme.screenBackground
-            .overlay(alignment: .top) {
-                Theme.wash(Color.accentColor)
-                    .frame(height: 280)
-            }
-            .ignoresSafeArea()
     }
 }
 

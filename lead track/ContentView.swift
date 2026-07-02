@@ -59,6 +59,7 @@ struct ContentView: View {
 
             AppTabBar(selectedTab: animatedSelection)
         }
+        .background(Theme.washedScreen)
         .onAppear(perform: routeToWeekIfRequested)
         .onChange(of: notificationResponder.showWeeklyReview) {
             routeToWeekIfRequested()
