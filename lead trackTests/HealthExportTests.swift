@@ -41,7 +41,7 @@ struct MetricHealthExportTests {
     @Test
     func enablingStampsTheSwitchOnDate() {
         let metric = Metric(name: "Meditate")
-        let enabled = Date(timeIntervalSince1970: 1_000)
+        let enabled = Date(timeIntervalSince1970: 1000)
         metric.setHealthExport(.mindfulness, at: enabled)
         #expect(metric.healthExportTarget == .mindfulness)
         #expect(metric.healthExportEnabledAt == enabled)
@@ -50,7 +50,7 @@ struct MetricHealthExportTests {
     @Test
     func retargetingKeepsTheOriginalStamp() {
         let metric = Metric(name: "Meditate")
-        let enabled = Date(timeIntervalSince1970: 1_000)
+        let enabled = Date(timeIntervalSince1970: 1000)
         metric.setHealthExport(.mindfulness, at: enabled)
         metric.setHealthExport(.workout, at: enabled.addingTimeInterval(500))
         #expect(metric.healthExportTarget == .workout)
@@ -70,7 +70,7 @@ struct MetricHealthExportTests {
 // MARK: - Export Plan
 
 struct HealthSessionExportTests {
-    private let enabled = Date(timeIntervalSince1970: 10_000)
+    private let enabled = Date(timeIntervalSince1970: 10000)
 
     private func timerSession(startedAt: Date, length: TimeInterval) -> Session {
         Session(

@@ -246,8 +246,7 @@ extension MetricFormView {
     /// always when it is already on, so the stored choice still renders.
     @ViewBuilder
     private var healthExportSection: some View {
-        if kind == .duration,
-           healthExport != nil || HealthSessionExportService.shared.isAvailable {
+        if kind == .duration, healthExport != nil || HealthSessionExportService.shared.isAvailable {
             MetricFormHealthExportSection(selection: $healthExport)
         }
     }
