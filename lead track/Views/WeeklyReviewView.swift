@@ -37,9 +37,7 @@ struct WeeklyReviewView: View {
             metrics: metrics, aspirations: aspirations, intentions: intentions, weeksBack: weeksBack
         )
         return content(review)
-            .background(Theme.screenBackground)
             .navigationTitle("Week")
-            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar { toolbarItems(review) }
             .sheet(isPresented: $showingSettings) {
                 WeeklyReviewSettingsView()

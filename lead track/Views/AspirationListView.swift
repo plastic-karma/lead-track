@@ -19,9 +19,7 @@ struct AspirationListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .background(aspirationsBackground)
         .navigationTitle("Aspirations")
-        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
@@ -39,17 +37,6 @@ struct AspirationListView: View {
 // MARK: - Pieces
 
 extension AspirationListView {
-    /// The Aspirations base with a soft copper atmosphere washing the top,
-    /// matching the Today dashboard so the two peer screens feel lit alike.
-    private var aspirationsBackground: some View {
-        Theme.screenBackground
-            .overlay(alignment: .top) {
-                Theme.wash(Color.accentColor)
-                    .frame(height: 280)
-            }
-            .ignoresSafeArea()
-    }
-
     private func card(_ aspiration: Aspiration) -> some View {
         NavigationLink(value: aspiration) {
             AspirationCardView(aspiration: aspiration)
