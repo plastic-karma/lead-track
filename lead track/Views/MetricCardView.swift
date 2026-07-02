@@ -35,7 +35,11 @@ struct MetricCardView: View {
                 ProgressTrack(fraction: min(today / max(goal, 1), 1), tint: tint)
                     .frame(height: 6)
             }
-            actionButton(today: today)
+            if metric.isHealthLinked {
+                healthAttribution
+            } else {
+                actionButton(today: today)
+            }
         }
         .cardSurface()
     }
@@ -102,6 +106,21 @@ extension MetricCardView {
 // MARK: - Actions
 
 extension MetricCardView {
+    /// Health-linked cards act nowhere — the day fills itself from Apple
+    /// Health — so the action slot shows provenance instead of a button.
+    private var healthAttribution: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "heart.fill")
+            Text("From Apple Health")
+            Spacer()
+            if let synced = metric.lastHealthSyncAt {
+                Text("Updated \(synced, format: .relative(presentation: .named))")
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+    }
+
     @ViewBuilder
     private func actionButton(today: TimeInterval) -> some View {
         switch metric.measurementType {

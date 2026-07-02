@@ -10,6 +10,16 @@ that are specific to the domain.
 A tracked thing — either duration (timer-based) or count (with a unit like
 "pages"). Owns its projects and sessions, plus goals, reminders, icon, color.
 
+**Health-linked metric**:
+A metric whose sessions are filled from Apple Health instead of recorded by
+hand: one mirrored value-session per day for the chosen source (active
+calories, exercise minutes, stand minutes, workout count, workout time).
+Read-only on every surface — no timers, manual logging, projects, watch
+actions, or imports. Created only by explicit choice, and Health read access
+is requested at that moment, never up front.
+_Avoid_: health measurement type (it is a link on a metric, not a fourth
+measurement type).
+
 **Project**:
 An optional sub-grouping inside a single metric (e.g. Reading → "War and
 Peace"). Owns its own sessions; has a status and dates.

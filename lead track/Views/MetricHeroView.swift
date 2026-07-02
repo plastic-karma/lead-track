@@ -14,12 +14,17 @@ struct MetricHeroView: View {
     let onLogManually: () -> Void
     @State private var quickLogTrigger = false
     @State private var showingCountdownPicker = false
+    @State private var isSyncingHealth = false
 
     var body: some View {
         VStack(spacing: 20) {
             heroValue
-            primaryButton
-            secondaryActions
+            if metric.isHealthLinked {
+                healthProvenance
+            } else {
+                primaryButton
+                secondaryActions
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -215,6 +220,32 @@ extension MetricHeroView {
                 .font(.subheadline)
         }
         .tint(metric.displayColor)
+    }
+
+    /// Health metrics record themselves, so the action slot offers a manual
+    /// sync instead — which also re-asks for read access if the permission
+    /// sheet was dismissed unanswered.
+    private var healthProvenance: some View {
+        VStack(spacing: 8) {
+            Label("From Apple Health", systemImage: "heart.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button("Sync Now", action: syncNow)
+                .font(.subheadline)
+                .disabled(isSyncingHealth)
+        }
+    }
+
+    private func syncNow() {
+        guard let id = metric.stableID else { return }
+        isSyncingHealth = true
+        let container = modelContext.container
+        Task {
+            await HealthMetricSyncService.shared.connect(
+                metricID: id, container: container
+            )
+            isSyncingHealth = false
+        }
     }
 
     private var manualLogTitle: String {

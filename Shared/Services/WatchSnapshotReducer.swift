@@ -18,6 +18,8 @@ enum WatchSnapshotReducer {
         _ action: WatchAction,
         to metric: WatchMetricSnapshot
     ) -> WatchMetricSnapshot {
+        // Health-linked metrics mirror Apple Health; no tap may change them.
+        guard !metric.isHealthLinked else { return metric }
         var metric = metric
         switch action.kind {
         case .startTimer:
