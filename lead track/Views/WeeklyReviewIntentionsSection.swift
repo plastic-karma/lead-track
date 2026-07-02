@@ -19,72 +19,17 @@ enum IntentionClosureAction {
     case declinePromotion
 }
 
-/// The intentions layer of the weekly review: per aspiration, last week's
-/// unclosed intentions awaiting their one decision, then the "Set an
-/// intention" affordance — closing and setting live here; ticking lives on
-/// Today. Renders nothing when browsing earlier weeks, and nothing at all
-/// when no aspirations exist. Copy is factual throughout: no automated
-/// praise, no automated disappointment.
-extension WeeklyReviewView {
-    @ViewBuilder
-    func intentionsSection(_ review: WeeklyReview) -> some View {
-        if review.weeksBack == 0, !aspirations.isEmpty {
-            VStack(spacing: 12) {
-                Text("Intentions")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(aspirations) { aspiration in
-                        aspirationIntentions(aspiration, review: review)
-                    }
-                }
-                .cardSurface()
-            }
-            .padding(.horizontal)
-            .sheet(item: $settingIntentionFor) { aspiration in
-                IntentionFormView(aspiration: aspiration)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-            }
-            .sheet(item: $promotionGoal) { route in
-                GoalSettingsView(metric: route.metric, prefillWeeklyGoal: route.prefillWeekly)
-            }
-        }
-    }
-
-    private func aspirationIntentions(_ aspiration: Aspiration, review: WeeklyReview) -> some View {
-        let id = aspiration.stableID?.uuidString ?? aspiration.title
-        let closures = review.intentionClosures.filter { $0.aspirationID == id }
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: aspiration.displayIcon)
-                    .font(.caption)
-                    .foregroundStyle(aspiration.displayColor)
-                Text(aspiration.title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(closures) { closure in
-                IntentionClosureRow(closure: closure) { action in
-                    handle(action, closureID: closure.id)
-                }
-            }
-            Button {
-                settingIntentionFor = aspiration
-            } label: {
-                Label("Set an intention", systemImage: "plus.circle")
-                    .font(.subheadline)
-            }
-            .buttonStyle(.borderless)
-        }
-    }
-}
-
 // MARK: - Decisions
 
+/// The decision half of the intention lifecycle: the closure choices made on
+/// an aspiration's card write back through here — closing and setting live at
+/// the review; ticking lives on Today. Copy is factual throughout: no
+/// automated praise, no automated disappointment.
 extension WeeklyReviewView {
-    private func handle(_ action: IntentionClosureAction, closureID: String) {
+    /// Applies a card's closure decision to its intention. Internal (not
+    /// private) because the rows live on the aspiration cards in their own
+    /// file.
+    func handle(_ action: IntentionClosureAction, closureID: String) {
         guard let intention = intentions.first(where: { $0.stableID?.uuidString == closureID })
         else { return }
         switch action {
