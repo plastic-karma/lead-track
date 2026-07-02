@@ -15,9 +15,13 @@ struct GoalSettingsView: View {
     @State private var streakAlertTime: Date
     @State private var saveTrigger = false
 
-    init(metric: Metric) {
+    /// `prefillWeeklyGoal` (in the metric's native unit) pre-enables the
+    /// weekly goal with that value — how a promoted intention's target
+    /// arrives — without touching the metric until Save.
+    init(metric: Metric, prefillWeeklyGoal: Double? = nil) {
         self.metric = metric
         let isCount = metric.measurementType == .count
+        let weekly = prefillWeeklyGoal ?? metric.weeklyGoal
         _hasDailyGoal = State(initialValue: metric.dailyGoal != nil)
         _excludedWeekdays = State(initialValue: Set(metric.excludedWeekdays))
         _dailyGoalValue = State(
@@ -26,12 +30,12 @@ struct GoalSettingsView: View {
                 : (metric.dailyGoal ?? 1800) / 60
         )
         _hasWeeklyGoal = State(
-            initialValue: metric.weeklyGoal != nil
+            initialValue: weekly != nil
         )
         _weeklyGoalValue = State(
             initialValue: isCount
-                ? (metric.weeklyGoal ?? 50)
-                : (metric.weeklyGoal ?? 18000) / 3600
+                ? (weekly ?? 50)
+                : (weekly ?? 18000) / 3600
         )
         _hasReminder = State(
             initialValue: metric.reminderTime != nil

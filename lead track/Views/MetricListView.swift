@@ -8,6 +8,7 @@ struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
+    @Query(sort: \Intention.createdAt) private var intentions: [Intention]
     @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
@@ -35,6 +36,7 @@ struct MetricListView: View {
                         )
                     }
                 }
+                TodayIntentionsSection(intentions: intentions)
                 TodayAspirationsFooter(aspirations: aspirations)
             }
             .padding(.horizontal)

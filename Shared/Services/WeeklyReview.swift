@@ -20,6 +20,9 @@ struct WeeklyReview {
     let aspirationWeeks: [AspirationWeek]
     /// Aspirations that logged nothing this week.
     let quietAspirations: [QuietAspiration]
+    /// Unclosed intentions from the most recently completed week, awaiting
+    /// closure. Empty when the feature is unused — additive, never a fork.
+    let intentionClosures: [IntentionClosure]
     /// Completed sessions per day across all metrics, oldest first.
     let sessionSeries: [Double]
 }
@@ -66,6 +69,7 @@ extension WeeklyReview {
     static func build(
         metrics: [Metric],
         aspirations: [Aspiration] = [],
+        intentions: [Intention] = [],
         weeksBack: Int = 0,
         now: Date = .now,
         calendar: Calendar = .current
@@ -81,6 +85,9 @@ extension WeeklyReview {
             quietMetrics: metricSplit.quiet,
             aspirationWeeks: aspirationSplit.weeks,
             quietAspirations: aspirationSplit.quiet,
+            intentionClosures: intentionClosures(
+                from: intentions, weeksBack: weeksBack, now: now, calendar: calendar
+            ),
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
         )
     }

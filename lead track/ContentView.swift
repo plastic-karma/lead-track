@@ -82,7 +82,7 @@ private extension View {
 #Preview {
     ContentView()
         .modelContainer(
-            for: [Metric.self, Project.self, Session.self, Aspiration.self],
+            for: [Metric.self, Project.self, Session.self, Aspiration.self, Intention.self],
             inMemory: true
         )
 }

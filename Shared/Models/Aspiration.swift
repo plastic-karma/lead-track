@@ -50,6 +50,16 @@ final class Aspiration {
     #endif
     var projects: [Project] = []
 
+    // The week-scoped commitments made under this aspiration. Cascade — a
+    // deliberate divergence from the nullify doctrine above: metrics and
+    // sessions pre-exist an aspiration and outlive it, but an intention is
+    // meaningless without its why, so deleting the aspiration takes its
+    // intentions (history included) with it.
+    #if canImport(SwiftData)
+    @Relationship(deleteRule: .cascade, inverse: \Intention.aspiration)
+    #endif
+    var intentions: [Intention] = []
+
     init(
         title: String,
         detail: String = "",
