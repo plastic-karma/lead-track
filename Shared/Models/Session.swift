@@ -16,6 +16,11 @@ final class Session {
     /// seconds instead of up — chosen per session when the user starts a
     /// countdown. Display-only: the recorded length is still real elapsed time.
     var countdownDuration: TimeInterval?
+    /// When this session was written to Apple Health (see
+    /// `HealthSessionExport`); nil means not sent, so each session is
+    /// exported at most once. Optional and defaulting to nil, so existing
+    /// stores migrate untouched.
+    var healthExportedAt: Date?
 
     var isRunning: Bool {
         endedAt == nil && value == nil

@@ -20,6 +20,7 @@ struct MetricFormView: View {
     @State private var didSuggestColor = false
     @State private var kind: MetricFormKind
     @State private var healthSource: HealthDataSource
+    @State private var healthExport: HealthExportTarget?
     @State private var unit: String
     @State private var saveTrigger = false
 
@@ -32,6 +33,7 @@ struct MetricFormView: View {
         _color = State(initialValue: storedColor ?? .copper)
         _kind = State(initialValue: MetricFormKind(metric: metric))
         _healthSource = State(initialValue: metric?.healthSource ?? .activeCalories)
+        _healthExport = State(initialValue: metric?.healthExportTarget)
         _unit = State(initialValue: metric?.unit ?? "")
     }
 
@@ -62,6 +64,7 @@ struct MetricFormView: View {
                 nameSection
                 descriptionSection
                 typePicker
+                healthExportSection
                 iconPicker
                 colorPicker
             }
@@ -111,10 +114,14 @@ struct MetricFormView: View {
 
     private func save() {
         let metric = editingMetric ?? newMetric()
+        let previousExport = metric.healthExportRaw
         apply(to: metric)
         if editingMetric == nil {
             modelContext.insert(metric)
             connectHealthIfNeeded(metric)
+        }
+        if metric.healthExportRaw != previousExport, metric.healthExportTarget != nil {
+            connectHealthExport(metric)
         }
         saveTrigger.toggle()
         dismiss()
@@ -145,6 +152,9 @@ struct MetricFormView: View {
         if !metric.isHealthLinked {
             metric.unit = kind == .count ? unit : nil
         }
+        if metric.supportsHealthExport {
+            metric.setHealthExport(healthExport)
+        }
     }
 
     /// First save of a health metric: persist it, then ask to read its one
@@ -156,6 +166,19 @@ struct MetricFormView: View {
         let container = modelContext.container
         Task {
             await HealthMetricSyncService.shared.connect(
+                metricID: id, container: container
+            )
+        }
+    }
+
+    /// A save that switches export on (or to another record type) persists
+    /// the metric, asks to write that one type, and sends what's pending.
+    private func connectHealthExport(_ metric: Metric) {
+        guard let id = metric.stableID else { return }
+        try? modelContext.save()
+        let container = modelContext.container
+        Task {
+            await HealthSessionExportService.shared.connect(
                 metricID: id, container: container
             )
         }
@@ -217,6 +240,16 @@ extension MetricFormView {
     private var showsHealthOption: Bool {
         kind == .health
             || (!isEditing && HealthMetricSyncService.shared.isAvailable)
+    }
+
+    /// Export is offered for timer metrics on devices with health data — and
+    /// always when it is already on, so the stored choice still renders.
+    @ViewBuilder
+    private var healthExportSection: some View {
+        if kind == .duration,
+           healthExport != nil || HealthSessionExportService.shared.isAvailable {
+            MetricFormHealthExportSection(selection: $healthExport)
+        }
     }
 
     private var healthSourceRow: some View {

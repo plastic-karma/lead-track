@@ -52,6 +52,9 @@ struct lead_trackApp: App {
         lockService.handleScenePhase(phase)
         if phase == .background {
             PhoneWatchSyncService.shared.pushSnapshot()
+            // Leaving the app is the moment sessions completed while it was
+            // open get sent to Apple Health. No-op until a metric exports.
+            exportSessionsToHealth()
         }
         guard phase == .active else { return }
         CountdownCoordinator.shared.reconcile()
@@ -67,6 +70,16 @@ struct lead_trackApp: App {
         let container = sharedModelContainer
         Task {
             await HealthMetricSyncService.shared.refreshAll(container: container)
+        }
+        // Becoming active also catches sessions completed elsewhere — from
+        // the watch, a widget, or an auto-stopped countdown.
+        exportSessionsToHealth()
+    }
+
+    private func exportSessionsToHealth() {
+        let container = sharedModelContainer
+        Task {
+            await HealthSessionExportService.shared.exportAll(container: container)
         }
     }
 }
