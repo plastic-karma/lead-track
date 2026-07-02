@@ -43,6 +43,7 @@ struct MetricListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
+        .background(Theme.washedScreen)
         .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {

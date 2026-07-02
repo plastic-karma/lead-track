@@ -37,6 +37,21 @@ enum Theme {
         )
     }
 
+    /// The full screen fill: the warm base with the copper wash up top, bled
+    /// under the safe area as one piece. Painted both behind the shell (so the
+    /// color reaches past the status bar) and per screen (so it also covers the
+    /// navigation stack's own opaque fill in the content area) — the page-style
+    /// `TabView` insets each page below the status bar, so neither layer alone
+    /// covers the whole screen, but together they read as one continuous fill.
+    static var washedScreen: some View {
+        screenBackground
+            .overlay(alignment: .top) {
+                wash(Color.accentColor)
+                    .frame(height: 280)
+            }
+            .ignoresSafeArea()
+    }
+
     /// A warm neutral built from a gray level plus a touch of red/green
     /// warmth, resolved per light/dark so surfaces stay legible in both.
     private static func warmNeutral(dark: Double, light: Double) -> Color {

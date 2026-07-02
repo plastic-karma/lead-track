@@ -59,26 +59,11 @@ struct ContentView: View {
 
             AppTabBar(selectedTab: animatedSelection)
         }
-        .background(appBackground)
+        .background(Theme.washedScreen)
         .onAppear(perform: routeToWeekIfRequested)
         .onChange(of: notificationResponder.showWeeklyReview) {
             routeToWeekIfRequested()
         }
-    }
-
-    /// A single continuous background behind the whole shell: the warm base
-    /// with the copper wash up top, echoing the aspiration create sheet. Painted
-    /// here — behind the `TabView` — rather than per screen because a page-style
-    /// `TabView` won't let a child's `ignoresSafeArea` background reach past the
-    /// status bar, which left a white band above the fill. From here the color
-    /// bleeds under the status bar so every tab connects neatly to the top.
-    private var appBackground: some View {
-        Theme.screenBackground
-            .overlay(alignment: .top) {
-                Theme.wash(Color.accentColor)
-                    .frame(height: 280)
-            }
-            .ignoresSafeArea()
     }
 
     /// Consumes the review deep-link flag by switching to the Week tab.

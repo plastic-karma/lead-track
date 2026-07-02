@@ -19,6 +19,7 @@ struct AspirationListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
+        .background(Theme.washedScreen)
         .navigationTitle("Aspirations")
         .toolbar {
             ToolbarItem {
