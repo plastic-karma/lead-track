@@ -2,7 +2,7 @@ name: iOS
 
 on:
   push:
-    branches: [ "main", "claude/weekly-view-aspirations-redesign-mfydcj" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   # Allows on-demand build validation of any branch (e.g. from a non-Mac machine):
