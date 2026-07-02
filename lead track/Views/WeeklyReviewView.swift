@@ -1,45 +1,47 @@
 import SwiftData
 import SwiftUI
 
-/// The weekly review: one overview card for the whole week, then a swipeable
-/// page of insights per metric, with the metrics that stayed quiet listed at
-/// the end. Chevrons on the overview card browse earlier weeks, and tapping
-/// a page drills into that metric's detail screen. Pages snap like the
-/// dashboard cards they echo; the dots between them wear each metric's
-/// identity color.
+/// The Week tab: one overview card for the whole week, the aspiration lens,
+/// the intentions to close and set, then a swipeable page of insights per
+/// metric, with the metrics that stayed quiet listed at the end. Chevrons on
+/// the overview card browse earlier weeks, and tapping a page drills into
+/// that metric's detail screen. Pages snap like the dashboard cards they
+/// echo; the dots between them wear each metric's identity color.
+///
+/// Formerly a notification-triggered sheet; it now anchors the middle
+/// timescale of the app's three tabs (day / week / lifetime), and the review
+/// notification simply switches to this tab. Hosted in `ContentView`'s
+/// navigation stack, so the shared drill-in destinations apply.
 struct WeeklyReviewView: View {
-    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    /// Internal (not private, like `aspirations`) so the intentions section in
+    /// its own file can pick an identity color for a promoted metric.
+    @Query(sort: \Metric.createdAt) var metrics: [Metric]
     /// Internal (not private) so the aspiration section in its own file can read
     /// it to map a card back to its aspiration for navigation.
     @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
-    @Environment(\.dismiss) private var dismiss
+    /// Internal so the intentions section can map a closure decision back to
+    /// its model.
+    @Query(sort: \Intention.createdAt) var intentions: [Intention]
+    @Environment(\.modelContext) var modelContext
     @State private var showingSettings = false
     @State private var currentPage: String?
     @State private var weeksBack = 0
+    /// The aspiration a new intention is being set under, if any.
+    @State var settingIntentionFor: Aspiration?
+    /// The goal-settings route an accepted goal promotion opens.
+    @State var promotionGoal: PromotionGoalRoute?
 
     var body: some View {
         let review = WeeklyReview.build(
-            metrics: metrics, aspirations: aspirations, weeksBack: weeksBack
+            metrics: metrics, aspirations: aspirations, intentions: intentions, weeksBack: weeksBack
         )
-        return NavigationStack {
-            content(review)
-                .background(Theme.screenBackground)
-                .navigationTitle("Weekly Review")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { toolbarItems(review) }
-                .sheet(isPresented: $showingSettings) {
-                    WeeklyReviewSettingsView()
-                }
-                .navigationDestination(for: Metric.self) { metric in
-                    MetricDetailView(metric: metric)
-                }
-                .navigationDestination(for: Project.self) { project in
-                    ProjectDetailView(project: project)
-                }
-                .navigationDestination(for: Aspiration.self) { aspiration in
-                    AspirationDetailView(aspiration: aspiration)
-                }
-        }
+        return content(review)
+            .background(Theme.screenBackground)
+            .navigationTitle("Week")
+            .toolbar { toolbarItems(review) }
+            .sheet(isPresented: $showingSettings) {
+                WeeklyReviewSettingsView()
+            }
     }
 
     @ViewBuilder
@@ -53,9 +55,6 @@ struct WeeklyReviewView: View {
 
     @ToolbarContentBuilder
     private func toolbarItems(_ review: WeeklyReview) -> some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
-            Button("Done") { dismiss() }
-        }
         ToolbarItem(placement: .topBarTrailing) {
             if !review.metricWeeks.isEmpty {
                 ShareLink(
@@ -84,6 +83,7 @@ extension WeeklyReviewView {
                 WeekOverviewCard(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
                 aspirationSection(review)
+                intentionsSection(review)
                 if review.metricWeeks.isEmpty {
                     emptyWeekCard
                         .padding(.horizontal)

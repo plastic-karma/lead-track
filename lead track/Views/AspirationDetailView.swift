@@ -7,19 +7,25 @@ import SwiftUI
 /// hides behind the ellipsis menu and a confirmation, so the destructive
 /// action is never one accidental tap away.
 struct AspirationDetailView: View {
-    @Environment(\.modelContext) private var modelContext
+    /// Internal so the intention sections in their own file can write
+    /// deletions through it.
+    @Environment(\.modelContext) var modelContext
     @Environment(\.dismiss) private var dismiss
     let aspiration: Aspiration
     @State private var showingEdit = false
     @State private var showingAttach = false
     @State private var showingDeleteConfirmation = false
+    /// Internal for the "This week" block in `AspirationIntentionSections`.
+    @State var showingSetIntention = false
 
     var body: some View {
         List {
             coverSection
             whySection
+            thisWeekSection
             effortSection(AspirationRollup.compute(for: aspiration))
             attachedSection
+            pastIntentionsSection
         }
         .navigationTitle(aspiration.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -31,13 +37,18 @@ struct AspirationDetailView: View {
         ) {
             Button("Delete Aspiration", role: .destructive, action: deleteAspiration)
         } message: {
-            Text("Its metrics and projects stay in your library.")
+            Text("Its metrics and projects stay in your library. Its intentions go with it.")
         }
         .sheet(isPresented: $showingEdit) {
             AspirationFormView(aspiration: aspiration)
         }
         .sheet(isPresented: $showingAttach) {
             AspirationAttachSheet(aspiration: aspiration)
+        }
+        .sheet(isPresented: $showingSetIntention) {
+            IntentionFormView(aspiration: aspiration)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 }
