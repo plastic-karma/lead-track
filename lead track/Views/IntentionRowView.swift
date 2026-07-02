@@ -75,7 +75,7 @@ extension IntentionRowView {
     /// are recorded, they just don't advance a per-day count.
     private var tickButton: some View {
         Button {
-            withAnimation(.snappy) { intention.tick() }
+            withAnimation(.snappy) { _ = intention.tick() }
         } label: {
             Image(systemName: intention.hasTick() ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
@@ -93,7 +93,7 @@ extension IntentionRowView {
     private var actions: some View {
         if intention.kind == .counted, intention.hasTick() {
             Button("Undo Tick", systemImage: "arrow.uturn.backward") {
-                withAnimation(.snappy) { intention.undoTick() }
+                withAnimation(.snappy) { _ = intention.undoTick() }
             }
         }
         Button("Rename", systemImage: "pencil") {
