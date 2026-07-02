@@ -94,12 +94,10 @@ struct HealthMirrorWindowTests {
             days: 30, endingOn: reference, calendar: calendar
         )
         #expect(window.count == 30)
-        #expect(try #require(window.last) == calendar.startOfDay(for: reference))
-        let span = calendar.dateComponents(
-            [.day],
-            from: try #require(window.first),
-            to: try #require(window.last)
-        ).day
+        let first = try #require(window.first)
+        let last = try #require(window.last)
+        #expect(last == calendar.startOfDay(for: reference))
+        let span = calendar.dateComponents([.day], from: first, to: last).day
         #expect(span == 29)
     }
 
