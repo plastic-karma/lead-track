@@ -1,26 +1,27 @@
 import SwiftData
 import SwiftUI
 
-/// The Week tab: one overview card for the whole week, the aspiration lens,
-/// the intentions to close and set, then a swipeable page of insights per
-/// metric, with the metrics that stayed quiet listed at the end. Chevrons on
-/// the overview card browse earlier weeks, and tapping a page drills into
-/// that metric's detail screen. Pages snap like the dashboard cards they
-/// echo; the dots between them wear each metric's identity color.
+/// The Week tab: one overview card for the whole week, then the aspiration
+/// cards at center stage — each carrying its week and its intentions, and
+/// drilling into its day-by-day distribution — then a swipeable page of
+/// insights per metric, with the metrics that stayed quiet listed at the end.
+/// Chevrons on the overview card browse earlier weeks, and tapping a page
+/// drills into that metric's detail screen. Pages snap like the dashboard
+/// cards they echo; the dots between them wear each metric's identity color.
 ///
 /// Formerly a notification-triggered sheet; it now anchors the middle
 /// timescale of the app's three tabs (day / week / lifetime), and the review
 /// notification simply switches to this tab. Hosted in `ContentView`'s
 /// navigation stack, so the shared drill-in destinations apply.
 struct WeeklyReviewView: View {
-    /// Internal (not private, like `aspirations`) so the intentions section in
-    /// its own file can pick an identity color for a promoted metric.
+    /// Internal (not private, like `aspirations`) so the intention decisions
+    /// in their own file can pick an identity color for a promoted metric.
     @Query(sort: \Metric.createdAt) var metrics: [Metric]
     /// Internal (not private) so the aspiration section in its own file can read
     /// it to map a card back to its aspiration for navigation.
     @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
-    /// Internal so the intentions section can map a closure decision back to
-    /// its model.
+    /// Internal so the intention decisions can map a closure made on a card
+    /// back to its model.
     @Query(sort: \Intention.createdAt) var intentions: [Intention]
     @Environment(\.modelContext) var modelContext
     @State private var showingSettings = false
@@ -83,7 +84,6 @@ extension WeeklyReviewView {
                 WeekOverviewCard(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
                 aspirationSection(review)
-                intentionsSection(review)
                 if review.metricWeeks.isEmpty {
                     emptyWeekCard
                         .padding(.horizontal)

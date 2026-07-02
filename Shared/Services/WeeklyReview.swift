@@ -76,7 +76,14 @@ extension WeeklyReview {
     ) -> WeeklyReview {
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
         let metricSplit = partitionMetrics(metrics, bounds: bounds, calendar: calendar)
-        let aspirationSplit = partitionAspirations(aspirations, bounds: bounds, calendar: calendar)
+        let closures = intentionClosures(
+            from: intentions, weeksBack: weeksBack, now: now, calendar: calendar
+        )
+        let context = AspirationWeekContext(
+            bounds: bounds, now: now, calendar: calendar,
+            intentions: intentions, closureOwners: Set(closures.map(\.aspirationID))
+        )
+        let aspirationSplit = partitionAspirations(aspirations, context: context)
         return WeeklyReview(
             start: bounds.start,
             end: bounds.displayEnd,
@@ -85,9 +92,7 @@ extension WeeklyReview {
             quietMetrics: metricSplit.quiet,
             aspirationWeeks: aspirationSplit.weeks,
             quietAspirations: aspirationSplit.quiet,
-            intentionClosures: intentionClosures(
-                from: intentions, weeksBack: weeksBack, now: now, calendar: calendar
-            ),
+            intentionClosures: closures,
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
         )
     }
@@ -95,9 +100,11 @@ extension WeeklyReview {
 
 // MARK: - Assembly Pieces
 
-private extension WeeklyReview {
+extension WeeklyReview {
     /// The reviewed period, the comparison period before it, and its end —
     /// half-open, so a session at the next week's first midnight stays out.
+    /// Internal (not private) so the aspiration lens in its own file windows
+    /// with exactly the same rules.
     struct PeriodBounds {
         let start: Date
         let previousStart: Date
@@ -140,6 +147,38 @@ private extension WeeklyReview {
         }
     }
 
+    static func activeDays(in sessions: [Session], calendar: Calendar) -> Int {
+        Set(sessions.map { calendar.startOfDay(for: $0.startedAt) }).count
+    }
+
+    /// Per-day sums of `value` over the period, zero-filled, oldest first.
+    static func dailyValues(
+        of sessions: [Session],
+        from start: Date,
+        calendar: Calendar,
+        value: (Session) -> Double
+    ) -> [Double] {
+        var byDay: [Date: Double] = [:]
+        for session in sessions {
+            byDay[calendar.startOfDay(for: session.startedAt), default: 0] += value(session)
+        }
+        return (0 ..< periodDays).map { offset in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: start)
+            else { return 0 }
+            return byDay[day] ?? 0
+        }
+    }
+
+    static func stableID(of metric: Metric) -> String {
+        metric.stableID?.uuidString ?? metric.name
+    }
+
+    static func stableID(of aspiration: Aspiration) -> String {
+        aspiration.stableID?.uuidString ?? aspiration.title
+    }
+}
+
+private extension WeeklyReview {
     static func partitionMetrics(
         _ metrics: [Metric],
         bounds: PeriodBounds,
@@ -157,64 +196,6 @@ private extension WeeklyReview {
             }
         }
         return (weeks, quiet)
-    }
-
-    static func partitionAspirations(
-        _ aspirations: [Aspiration],
-        bounds: PeriodBounds,
-        calendar: Calendar
-    ) -> (weeks: [AspirationWeek], quiet: [QuietAspiration]) {
-        var weeks: [AspirationWeek] = []
-        var quiet: [QuietAspiration] = []
-        for aspiration in aspirations {
-            let lifetime = AspirationRollup.compute(for: aspiration).lifetimeSummary
-            if let week = aspirationWeek(aspiration, lifetime: lifetime, bounds: bounds, calendar: calendar) {
-                weeks.append(week)
-            } else {
-                quiet.append(QuietAspiration(
-                    id: stableID(of: aspiration), title: aspiration.title,
-                    icon: aspiration.displayIcon, lifetimeSummary: lifetime
-                ))
-            }
-        }
-        return (weeks, quiet)
-    }
-
-    /// One aspiration's week from its de-duped contributions, windowed to the
-    /// period. `nil` when nothing was logged — it then falls to the quiet list.
-    static func aspirationWeek(
-        _ aspiration: Aspiration,
-        lifetime: String,
-        bounds: PeriodBounds,
-        calendar: Calendar
-    ) -> AspirationWeek? {
-        let perSource = AspirationRollup.contributionSources(of: aspiration)
-            .map { (kind: $0.kind, sessions: bounds.current(in: $0.sessions)) }
-        let sessions = perSource.flatMap(\.sessions)
-        guard !sessions.isEmpty else { return nil }
-        return AspirationWeek(
-            id: stableID(of: aspiration),
-            title: aspiration.title,
-            icon: aspiration.displayIcon,
-            colorName: aspiration.colorName,
-            lifetimeSummary: lifetime,
-            totals: aspirationTotals(perSource),
-            sessionCount: sessions.count,
-            activeDays: activeDays(in: sessions, calendar: calendar),
-            dailySeries: dailyValues(of: sessions, from: bounds.start, calendar: calendar) { _ in 1 }
-        )
-    }
-
-    /// This week's effort merged into one total per unit, zero units dropped.
-    static func aspirationTotals(
-        _ perSource: [(kind: RollupBucket.Kind, sessions: [Session])]
-    ) -> [UnitTotal] {
-        let totals = perSource.map {
-            UnitTotal(kind: $0.kind, value: AspirationRollup.magnitude(of: $0.kind, over: $0.sessions))
-        }
-        return AspirationRollup
-            .mergeByUnit(totals, kind: \.kind) { UnitTotal(kind: $0.kind, value: $0.value + $1.value) }
-            .filter { $0.value > 0 }
     }
 
     static func metricWeek(
@@ -271,10 +252,6 @@ private extension WeeklyReview {
         }
     }
 
-    static func activeDays(in sessions: [Session], calendar: Calendar) -> Int {
-        Set(sessions.map { calendar.startOfDay(for: $0.startedAt) }).count
-    }
-
     static func combinedSessionSeries(
         metrics: [Metric],
         bounds: PeriodBounds,
@@ -282,31 +259,5 @@ private extension WeeklyReview {
     ) -> [Double] {
         let sessions = metrics.flatMap { bounds.currentSessions(of: $0) }
         return dailyValues(of: sessions, from: bounds.start, calendar: calendar) { _ in 1 }
-    }
-
-    /// Per-day sums of `value` over the period, zero-filled, oldest first.
-    static func dailyValues(
-        of sessions: [Session],
-        from start: Date,
-        calendar: Calendar,
-        value: (Session) -> Double
-    ) -> [Double] {
-        var byDay: [Date: Double] = [:]
-        for session in sessions {
-            byDay[calendar.startOfDay(for: session.startedAt), default: 0] += value(session)
-        }
-        return (0 ..< periodDays).map { offset in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: start)
-            else { return 0 }
-            return byDay[day] ?? 0
-        }
-    }
-
-    static func stableID(of metric: Metric) -> String {
-        metric.stableID?.uuidString ?? metric.name
-    }
-
-    static func stableID(of aspiration: Aspiration) -> String {
-        aspiration.stableID?.uuidString ?? aspiration.title
     }
 }

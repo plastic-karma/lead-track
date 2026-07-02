@@ -41,8 +41,10 @@ extension WeeklyReview {
     }
 
     /// One aspiration's week — the review's lens. It leads with the lifetime
-    /// effort poured in (continuity, never a target) and shows what landed this
-    /// week. Tapping through to the detail screen reveals the full breakdown.
+    /// effort poured in (continuity, never a target), shows what landed this
+    /// week, and carries the week's intentions so the card is the one place
+    /// the aspiration's week lives. Tapping through opens the day-by-day
+    /// distribution.
     struct AspirationWeek: Identifiable {
         /// The aspiration's stable identity, so the pager and its scroll
         /// position survive reorders and deletions.
@@ -58,6 +60,20 @@ extension WeeklyReview {
         let activeDays: Int
         /// Sessions per day across the aspiration, oldest first, zero-filled.
         let dailySeries: [Double]
+        /// The current week's open intentions, empty when browsing earlier
+        /// weeks — intention machinery lives only on the live review.
+        let intentions: [IntentionLine]
+    }
+
+    /// One open intention rendered inside its aspiration's card: the
+    /// commitment and its factual accumulation, nothing more.
+    struct IntentionLine: Identifiable {
+        /// The intention's stable identity.
+        let id: String
+        let title: String
+        /// "2 of 3" / "4 of 7 days"; nil for reflective intentions, which
+        /// deliberately carry no progress value.
+        let progressText: String?
     }
 
     /// An aspiration with no logged effort in the period. It still shows its
