@@ -30,6 +30,15 @@ final class Metric {
     var healthSourceRaw: String?
     /// When the mirror last finished refreshing this metric from HealthKit.
     var lastHealthSyncAt: Date?
+    /// Raw `HealthExportTarget` this metric's sessions are written back to
+    /// Apple Health as, or nil when nothing is sent. Stored as the raw string
+    /// (not the enum) for the same forward-compatibility reason as
+    /// `healthSourceRaw`. Optional and defaulting to nil, so existing stores
+    /// migrate untouched.
+    var healthExportRaw: String?
+    /// When export was switched on. Only sessions started at or after this
+    /// are written, so enabling never floods Health with months of history.
+    var healthExportEnabledAt: Date?
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -90,6 +99,38 @@ extension Metric {
     /// intents, CSV import — checks this before writing a session.
     var isHealthLinked: Bool {
         healthSourceRaw != nil
+    }
+}
+
+// MARK: - Health Export
+
+extension Metric {
+    /// The Apple Health record this metric's sessions are written back as,
+    /// or nil when nothing is sent.
+    var healthExportTarget: HealthExportTarget? {
+        healthExportRaw.flatMap(HealthExportTarget.init(rawValue:))
+    }
+
+    /// Whether this metric can send sessions to Apple Health at all: only
+    /// timer metrics record intervals Health can represent, and mirrored
+    /// metrics must never write back what was read from Health.
+    var supportsHealthExport: Bool {
+        measurementType == .duration && !isHealthLinked
+    }
+
+    /// Switches export on, off, or to another target, keeping
+    /// `healthExportEnabledAt` meaningful: turning on stamps `date`, changing
+    /// the target keeps the original stamp, and turning off clears it.
+    func setHealthExport(_ target: HealthExportTarget?, at date: Date = .now) {
+        guard let target else {
+            healthExportRaw = nil
+            healthExportEnabledAt = nil
+            return
+        }
+        if healthExportEnabledAt == nil {
+            healthExportEnabledAt = date
+        }
+        healthExportRaw = target.rawValue
     }
 }
 
