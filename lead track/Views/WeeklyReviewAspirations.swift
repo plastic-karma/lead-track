@@ -98,6 +98,8 @@ extension WeeklyReviewView {
         }
     }
 
+    /// Name and icon only — a resting aspiration carries no figures here; its
+    /// totals wait behind the tap.
     private func quietAspirationContent(
         _ quiet: WeeklyReview.QuietAspiration
     ) -> some View {
@@ -108,9 +110,9 @@ extension WeeklyReviewView {
             Text(quiet.title)
                 .font(.subheadline)
             Spacer()
-            Text(quiet.lifetimeSummary.isEmpty ? "no effort yet" : quiet.lifetimeSummary)
+            Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
     }

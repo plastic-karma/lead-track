@@ -1,11 +1,12 @@
 import Foundation
 
 /// Everything the weekly review screen shows, assembled once from the metrics
-/// and aspirations: the aspiration lens (lifetime poured in + what landed this
-/// week), one swipeable page of insights per active metric, the ones that
-/// stayed quiet, and the combined pulse for the header. Aspirations are
-/// additive — with none attached the review is exactly the metric review it
-/// always was. Pure data, so the assembly is unit-testable (including on Linux).
+/// and aspirations: the aspiration lens (what landed in the reviewed seven
+/// days — lifetime totals stay on the aspiration's own screen), one swipeable
+/// page of insights per active metric, the ones that stayed quiet, and the
+/// combined pulse for the header. Aspirations are additive — with none
+/// attached the review is exactly the metric review it always was. Pure data,
+/// so the assembly is unit-testable (including on Linux).
 struct WeeklyReview {
     /// Start of the oldest day in the period.
     let start: Date

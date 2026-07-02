@@ -28,7 +28,7 @@ struct AspirationWeekDetailView: View {
                 weekCard(detail)
                 sourcesCard(detail.sources)
                 intentionsCard
-                lifetimeCard(detail.week)
+                aspirationDoorway
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
@@ -195,21 +195,15 @@ extension AspirationWeekDetailView {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
-    /// The lifetime headline doubling as the doorway to the aspiration's own
-    /// screen — the week is a slice; the whole story lives one tap further.
-    private func lifetimeCard(_ week: WeeklyReview.AspirationWeek) -> some View {
+    /// The doorway to the aspiration's own screen — the one place its
+    /// lifetime totals live. The week here stays a pure slice, so the door
+    /// carries no figures.
+    private var aspirationDoorway: some View {
         NavigationLink(value: aspiration) {
             HStack(spacing: 12) {
-                MetricIcon(systemName: week.icon, tint: tint)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(week.lifetimeSummary.isEmpty ? "Nothing logged yet" : week.lifetimeSummary)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    Text("All-time")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                MetricIcon(systemName: aspiration.displayIcon, tint: tint)
+                Text("View aspiration")
+                    .font(.subheadline.weight(.semibold))
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption)

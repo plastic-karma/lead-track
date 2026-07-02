@@ -6,7 +6,8 @@ import SwiftData
 #endif
 
 /// The aspiration lens of the weekly review: windowed this-week breakdown,
-/// window-agnostic lifetime, de-dup, quiet handling, and earlier-week browsing.
+/// de-dup, quiet handling, and earlier-week browsing. The review carries no
+/// lifetime figures — those live on the aspiration's own screen.
 struct AspirationWeekTests {
     private let calendar = Calendar.current
 
@@ -107,7 +108,7 @@ extension AspirationWeekTests {
     }
 }
 
-// MARK: - This week vs lifetime
+// MARK: - The week's window
 
 extension AspirationWeekTests {
     @Test
@@ -130,7 +131,7 @@ extension AspirationWeekTests {
     }
 
     @Test
-    func lifetimeSummaryIgnoresTheWindow() {
+    func weekTotalsExcludeEffortOutsideTheWindow() {
         let aspiration = makeAspiration()
         let metric = makeMetric(type: .duration)
         addDuration(3600, to: metric, at: day(1))
@@ -141,8 +142,8 @@ extension AspirationWeekTests {
             metrics: [metric], aspirations: [aspiration]
         ).aspirationWeeks[0]
 
-        #expect(week.lifetimeSummary == "3h 00m")
         #expect(week.totals.map(\.text) == ["1h 00m"])
+        #expect(week.sessionCount == 1)
     }
 
     @Test
@@ -184,7 +185,7 @@ extension AspirationWeekTests {
     }
 
     @Test
-    func aspirationQuietThisWeekStillShowsLifetime() {
+    func aspirationQuietThisWeekRestsInTheQuietList() {
         let aspiration = makeAspiration()
         let metric = makeMetric(type: .duration)
         addDuration(7200, to: metric, at: day(40))
@@ -194,7 +195,7 @@ extension AspirationWeekTests {
 
         #expect(review.aspirationWeeks.isEmpty)
         #expect(review.quietAspirations.count == 1)
-        #expect(review.quietAspirations[0].lifetimeSummary == "2h 00m")
+        #expect(review.quietAspirations[0].title == "Grow wiser")
     }
 }
 

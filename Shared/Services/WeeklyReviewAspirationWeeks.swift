@@ -26,13 +26,12 @@ extension WeeklyReview {
         var weeks: [AspirationWeek] = []
         var quiet: [QuietAspiration] = []
         for aspiration in aspirations {
-            let lifetime = AspirationRollup.compute(for: aspiration).lifetimeSummary
-            if let week = aspirationWeek(aspiration, lifetime: lifetime, context: context) {
+            if let week = aspirationWeek(aspiration, context: context) {
                 weeks.append(week)
             } else {
                 quiet.append(QuietAspiration(
                     id: stableID(of: aspiration), title: aspiration.title,
-                    icon: aspiration.displayIcon, lifetimeSummary: lifetime
+                    icon: aspiration.displayIcon
                 ))
             }
         }
@@ -44,10 +43,9 @@ extension WeeklyReview {
     /// falls to the quiet list.
     static func aspirationWeek(
         _ aspiration: Aspiration,
-        lifetime: String,
         context: AspirationWeekContext
     ) -> AspirationWeek? {
-        let week = weekData(of: aspiration, lifetime: lifetime, context: context)
+        let week = weekData(of: aspiration, context: context)
         let awaitsClosure = context.closureOwners.contains(week.id)
         guard week.sessionCount > 0 || !week.intentions.isEmpty || awaitsClosure else { return nil }
         return week
@@ -61,7 +59,6 @@ private extension WeeklyReview {
     /// the drill-in detail below share this core.
     static func weekData(
         of aspiration: Aspiration,
-        lifetime: String,
         context: AspirationWeekContext
     ) -> AspirationWeek {
         let perSource = AspirationRollup.contributionSources(of: aspiration)
@@ -72,7 +69,6 @@ private extension WeeklyReview {
             title: aspiration.title,
             icon: aspiration.displayIcon,
             colorName: aspiration.colorName,
-            lifetimeSummary: lifetime,
             totals: aspirationTotals(perSource),
             sessionCount: sessions.count,
             activeDays: activeDays(in: sessions, calendar: context.calendar),
@@ -181,9 +177,8 @@ extension WeeklyReview {
         let context = AspirationWeekContext(
             bounds: bounds, now: now, calendar: calendar, intentions: [], closureOwners: []
         )
-        let lifetime = AspirationRollup.compute(for: aspiration).lifetimeSummary
         return AspirationWeekDetail(
-            week: weekData(of: aspiration, lifetime: lifetime, context: context),
+            week: weekData(of: aspiration, context: context),
             sources: weekSources(of: aspiration, bounds: bounds),
             start: bounds.start,
             end: bounds.displayEnd,

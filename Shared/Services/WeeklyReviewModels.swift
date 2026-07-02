@@ -40,10 +40,10 @@ extension WeeklyReview {
         let icon: String
     }
 
-    /// One aspiration's week — the review's lens. It leads with the lifetime
-    /// effort poured in (continuity, never a target), shows what landed this
-    /// week, and carries the week's intentions so the card is the one place
-    /// the aspiration's week lives. Tapping through opens the day-by-day
+    /// One aspiration's week — the review's lens. It carries only what landed
+    /// in the reviewed seven days plus the week's intentions, so the card is
+    /// the one place the aspiration's week lives; lifetime totals stay on the
+    /// aspiration's own screen. Tapping through opens the day-by-day
     /// distribution.
     struct AspirationWeek: Identifiable {
         /// The aspiration's stable identity, so the pager and its scroll
@@ -52,8 +52,6 @@ extension WeeklyReview {
         let title: String
         let icon: String
         let colorName: String?
-        /// The only-grows headline ("142h 30m · 1,240 pages"), window-agnostic.
-        let lifetimeSummary: String
         /// This week's effort, one entry per unit ("2h 10m · 45 pages").
         let totals: [UnitTotal]
         let sessionCount: Int
@@ -76,12 +74,11 @@ extension WeeklyReview {
         let progressText: String?
     }
 
-    /// An aspiration with no logged effort in the period. It still shows its
-    /// lifetime total, so a quiet week reads as continuity, not failure.
+    /// An aspiration with no logged effort in the period. It keeps its seat
+    /// on the review by name alone — its totals live on its own screen.
     struct QuietAspiration: Identifiable {
         let id: String
         let title: String
         let icon: String
-        let lifetimeSummary: String
     }
 }

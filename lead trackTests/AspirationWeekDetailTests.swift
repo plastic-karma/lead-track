@@ -113,7 +113,7 @@ extension AspirationWeekDetailTests {
     }
 
     @Test
-    func quietWeekStillBuildsWithLifetime() {
+    func quietWeekStillBuilds() {
         let aspiration = makeAspiration()
         let metric = makeMetric(type: .duration)
         addDuration(7200, to: metric, at: day(40))
@@ -122,7 +122,6 @@ extension AspirationWeekDetailTests {
         let detail = WeeklyReview.aspirationWeekDetail(for: aspiration)
 
         #expect(detail.week.totals.isEmpty)
-        #expect(detail.week.lifetimeSummary == "2h 00m")
         #expect(detail.sources.isEmpty)
         #expect(detail.busiestDayOffset == nil)
     }
