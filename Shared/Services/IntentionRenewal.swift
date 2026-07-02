@@ -62,7 +62,8 @@ enum IntentionRenewal {
         var length = 1
         while let predecessorID = current.predecessorID,
               let predecessor = byID[predecessorID],
-              visited.insert(predecessorID).inserted {
+              visited.insert(predecessorID).inserted
+        {
             length += 1
             current = predecessor
         }

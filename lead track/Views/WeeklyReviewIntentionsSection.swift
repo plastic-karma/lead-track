@@ -177,7 +177,6 @@ struct IntentionClosureRow: View {
 // MARK: - Row pieces
 
 extension IntentionClosureRow {
-    @ViewBuilder
     private var decisions: some View {
         HStack(spacing: 8) {
             if closure.kind == .reflective {

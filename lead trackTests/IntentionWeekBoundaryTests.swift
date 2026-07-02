@@ -68,7 +68,7 @@ extension IntentionWeekBoundaryTests {
         #if canImport(SwiftData)
         context.insert(metric)
         #endif
-        let week = calendar.dateInterval(of: .weekOfYear, for: .now)!
+        let week = try #require(calendar.dateInterval(of: .weekOfYear, for: .now))
         addSession(to: metric, at: week.start)
         addSession(to: metric, at: week.end)
 
@@ -92,7 +92,7 @@ extension IntentionWeekBoundaryTests {
         // Berlin springs forward on 2026-03-29; its week (Mar 23–29) has a
         // 23-hour day but still seven `startOfDay` buckets.
         let calendar = berlin
-        let created = calendar.date(from: DateComponents(year: 2026, month: 3, day: 23, hour: 10))!
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 23, hour: 10)))
         let intention = try perDayCounted(createdAt: created, calendar: calendar)
 
         let days = IntentionProgress.eligibleDays(of: intention, calendar: calendar)
@@ -104,7 +104,7 @@ extension IntentionWeekBoundaryTests {
     func fallBackWeekStillHasSevenEligibleDays() throws {
         // Berlin falls back on 2026-10-25; a 25-hour day, still seven days.
         let calendar = berlin
-        let created = calendar.date(from: DateComponents(year: 2026, month: 10, day: 19, hour: 10))!
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 19, hour: 10)))
         let intention = try perDayCounted(createdAt: created, calendar: calendar)
 
         let days = IntentionProgress.eligibleDays(of: intention, calendar: calendar)
@@ -119,10 +119,10 @@ extension IntentionWeekBoundaryTests {
     @Test
     func ticksNearMidnightBucketByStartOfDay() throws {
         let calendar = berlin
-        let created = calendar.date(from: DateComponents(year: 2026, month: 6, day: 1, hour: 9))!
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 6, day: 1, hour: 9)))
         let intention = try perDayCounted(createdAt: created, calendar: calendar)
         let week = intention.weekInterval(calendar: calendar)
-        let secondMidnight = calendar.date(byAdding: .day, value: 1, to: week.start)!
+        let secondMidnight = try #require(calendar.date(byAdding: .day, value: 1, to: week.start))
 
         intention.tick(at: secondMidnight.addingTimeInterval(-60), calendar: calendar)
         intention.tick(at: secondMidnight, calendar: calendar)
@@ -134,7 +134,7 @@ extension IntentionWeekBoundaryTests {
     @Test
     func tickWindowClosesAtTheWeekBoundary() throws {
         let calendar = berlin
-        let created = calendar.date(from: DateComponents(year: 2026, month: 6, day: 1, hour: 9))!
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 6, day: 1, hour: 9)))
         let intention = try perDayCounted(createdAt: created, calendar: calendar)
         let week = intention.weekInterval(calendar: calendar)
 
@@ -163,7 +163,7 @@ extension IntentionWeekBoundaryTests {
 
     @Test
     func undoRefusesWhenTheLatestTickIsFromAnEarlierDay() throws {
-        let lastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: .now)!
+        let lastWeek = try #require(calendar.date(byAdding: .weekOfYear, value: -1, to: .now))
         let intention = try Intention.make(
             title: "3 walks", kind: .counted, aspiration: makeAspiration(), target: 3, createdAt: lastWeek
         )

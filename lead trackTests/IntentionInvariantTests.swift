@@ -178,7 +178,7 @@ extension IntentionInvariantTests {
 extension IntentionInvariantTests {
     @Test
     func ticksAreConfinedToTheIntentionsWeek() throws {
-        let lastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: .now)!
+        let lastWeek = try #require(calendar.date(byAdding: .weekOfYear, value: -1, to: .now))
         let intention = try Intention.make(
             title: "3 walks", kind: .counted, aspiration: makeAspiration(), target: 3, createdAt: lastWeek
         )

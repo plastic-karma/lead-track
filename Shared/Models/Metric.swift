@@ -55,10 +55,11 @@ final class Metric {
     // existing metric reads as "no aspirations" with no migration.
     var aspirations: [Aspiration] = []
 
-    // Back-array for the derived intentions computing from this metric. Plain:
-    // the `inverse:` lives on `Intention.metric`, and both sides nullify —
-    // deleting a metric strands its intentions ("source removed") rather than
-    // deleting them. Defaults empty, so existing metrics migrate untouched.
+    /// Back-array for the derived intentions computing from this metric.
+    /// Plain (no macro): the `inverse:` lives on `Intention.metric`, and both
+    /// sides nullify — deleting a metric strands its intentions ("source
+    /// removed") rather than deleting them. Defaults empty, so existing
+    /// metrics migrate untouched.
     var intentions: [Intention] = []
 
     init(

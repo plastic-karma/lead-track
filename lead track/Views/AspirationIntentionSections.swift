@@ -8,7 +8,6 @@ import SwiftUI
 extension AspirationDetailView {
     /// "This week", between the why and the effort: the open commitments and
     /// the second doorway (after the review) for setting one.
-    @ViewBuilder
     var thisWeekSection: some View {
         Section("This Week") {
             ForEach(currentWeekIntentions) { intention in

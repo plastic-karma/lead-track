@@ -169,9 +169,10 @@ extension IntentionProgressTests {
     @Test
     func derivedSessionCountCountsCompletedSessionsInTheWeek() throws {
         let metric = makeMetric()
+        let beforeThisWeek = try #require(calendar.date(byAdding: .day, value: -1, to: weekStart))
         addSession(to: metric, at: inWeek(day: 0))
         addSession(to: metric, at: inWeek(day: 2))
-        addSession(to: metric, at: calendar.date(byAdding: .day, value: -1, to: weekStart)!)
+        addSession(to: metric, at: beforeThisWeek)
         addSession(to: metric, at: inWeek(day: 1), duration: nil)
         let intention = try derived(metric, target: 3)
         let progress = IntentionProgress.compute(for: intention, calendar: calendar)
