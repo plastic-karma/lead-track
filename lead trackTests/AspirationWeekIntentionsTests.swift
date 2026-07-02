@@ -30,6 +30,10 @@ struct AspirationWeekIntentionsTests {
         )!
     }
 
+    private func weeksAgo(_ weeks: Int) -> Date {
+        calendar.date(byAdding: .weekOfYear, value: -weeks, to: .now)!
+    }
+
     private func makeAspiration(_ title: String = "Grow wiser") -> Aspiration {
         let aspiration = Aspiration(title: title)
         #if canImport(SwiftData)
@@ -130,8 +134,7 @@ extension AspirationWeekIntentionsTests {
     @Test
     func pendingClosureKeepsTheAspirationOnStage() throws {
         let aspiration = makeAspiration()
-        let lastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: .now)!
-        let intention = try makeCounted(aspiration: aspiration, createdAt: lastWeek)
+        let intention = try makeCounted(aspiration: aspiration, createdAt: weeksAgo(1))
 
         let review = buildReview(of: aspiration, intentions: [intention])
 
