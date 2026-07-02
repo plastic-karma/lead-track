@@ -46,18 +46,16 @@ extension AspirationWeekCard {
         }
     }
 
+    /// The lifetime figure stands bare, like every aspiration surface —
+    /// "poured into" language marks aspirations elsewhere (Today's footer),
+    /// never the aspiration itself.
     @ViewBuilder
     private var lifetimeLine: some View {
         if !week.lifetimeSummary.isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(week.lifetimeSummary)
-                    .numeralStyle(.value)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                Text("poured in")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(week.lifetimeSummary)
+                .numeralStyle(.value)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
     }
 

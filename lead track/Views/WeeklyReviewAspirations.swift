@@ -11,10 +11,7 @@ extension WeeklyReviewView {
     func aspirationSection(_ review: WeeklyReview) -> some View {
         if !review.aspirationWeeks.isEmpty || !review.quietAspirations.isEmpty {
             VStack(spacing: 12) {
-                Text("Aspirations")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                sectionBreak("Aspirations")
                 ForEach(review.aspirationWeeks) { week in
                     aspirationCard(week, review: review)
                 }

@@ -84,6 +84,8 @@ extension WeeklyReviewView {
                 WeekOverviewCard(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
                 aspirationSection(review)
+                sectionBreak("Metrics")
+                    .padding(.horizontal)
                 if review.metricWeeks.isEmpty {
                     emptyWeekCard
                         .padding(.horizontal)
@@ -102,6 +104,20 @@ extension WeeklyReviewView {
         .onChange(of: weeksBack) {
             currentPage = nil
         }
+    }
+
+    /// The labeled seam between the review's zones — a hairline rule with the
+    /// zone's name, so the week summary, the aspirations, and the metric pages
+    /// read as distinct bands of one screen. Internal (not private) because
+    /// the aspiration section in its own file opens with the same seam.
+    func sectionBreak(_ title: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Shown only when no metrics exist at all; a week without sessions

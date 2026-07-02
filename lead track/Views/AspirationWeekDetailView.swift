@@ -206,7 +206,7 @@ extension AspirationWeekDetailView {
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                    Text("poured in all-time")
+                    Text("All-time")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
