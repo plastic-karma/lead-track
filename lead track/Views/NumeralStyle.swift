@@ -16,7 +16,7 @@ enum NumeralSize {
     fileprivate var font: Font {
         switch self {
         case .hero: .system(size: 56, weight: .bold, design: .rounded)
-        case .value: .system(size: 32, weight: .bold, design: .rounded)
+        case .value: .system(size: 26, weight: .semibold, design: .rounded)
         case .stat: .system(.headline, design: .rounded)
         }
     }
@@ -26,7 +26,7 @@ enum NumeralSize {
     fileprivate var tracking: CGFloat {
         switch self {
         case .hero: -1
-        case .value: -0.5
+        case .value: -0.4
         case .stat: 0
         }
     }
