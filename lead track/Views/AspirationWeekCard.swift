@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// One aspiration's card at the heart of the weekly review: the lifetime
-/// effort poured into it leads (continuity, never a target), then what landed
-/// this week, then the week's intentions — last week's awaiting their
-/// decision, the open ones' factual accumulation, and the affordance to set
-/// another. The day-by-day rhythm lives behind a tap on the week detail
+/// One aspiration's card at the heart of the weekly review: what landed in
+/// the reviewed seven days (lifetime totals live on the aspiration's own
+/// screen, never here), then the week's intentions — last week's awaiting
+/// their decision, the open ones' factual accumulation, and the affordance to
+/// set another. The day-by-day rhythm lives behind a tap on the week detail
 /// screen, so the card itself stays calm.
 struct AspirationWeekCard: View {
     let week: WeeklyReview.AspirationWeek
@@ -22,8 +22,7 @@ struct AspirationWeekCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            lifetimeLine
-            thisWeekLine
+            weekLine
             footer
             intentionsBlock
         }
@@ -46,36 +45,20 @@ extension AspirationWeekCard {
         }
     }
 
-    /// The lifetime figure stands bare, like every aspiration surface —
-    /// "poured into" language marks aspirations elsewhere (Today's footer),
-    /// never the aspiration itself.
+    /// The reviewed week's effort is the card's one figure — the aspiration's
+    /// lifetime totals live on its own screen, never in the review.
     @ViewBuilder
-    private var lifetimeLine: some View {
-        if !week.lifetimeSummary.isEmpty {
-            Text(week.lifetimeSummary)
+    private var weekLine: some View {
+        if week.totals.isEmpty {
+            Text("Quiet this week")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        } else {
+            Text(week.totals.map(\.text).joined(separator: " · "))
                 .numeralStyle(.value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         }
-    }
-
-    private var thisWeekLine: some View {
-        HStack(spacing: 6) {
-            Text("This week")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(thisWeekText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-    }
-
-    private var thisWeekText: String {
-        week.totals.isEmpty
-            ? "—"
-            : week.totals.map(\.text).joined(separator: " · ")
     }
 
     @ViewBuilder
