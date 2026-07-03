@@ -25,7 +25,12 @@ struct AspirationFormView: View {
 
     private let iconOptions = [
         "mountain.2", "sparkles", "star", "heart", "leaf",
-        "flame", "book", "figure.run", "brain.head.profile"
+        "flame", "book", "figure.run", "brain.head.profile",
+        "trophy", "target", "crown",
+        "globe", "sun.max", "moon.stars",
+        "lightbulb", "wand.and.stars", "flag",
+        "hands.sparkles", "figure.mind.and.body", "graduationcap",
+        "bolt.heart", "hare", "tree"
     ]
 
     init(aspiration: Aspiration? = nil) {

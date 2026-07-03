@@ -54,8 +54,13 @@ struct MetricFormView: View {
 
     private let iconOptions = [
         "clock", "book", "laptopcomputer",
-        "figure.run", "pencil", "music.note",
-        "paintbrush", "hammer", "gamecontroller"
+        "figure.run", "figure.walk", "figure.strengthtraining.traditional",
+        "figure.yoga", "figure.mind.and.body", "bicycle",
+        "pencil", "music.note", "guitars",
+        "paintbrush", "hammer", "gamecontroller",
+        "cup.and.saucer", "fork.knife", "drop",
+        "bed.double", "leaf", "heart",
+        "dollarsign.circle", "cart", "briefcase"
     ]
 
     var body: some View {
