@@ -176,20 +176,21 @@ extension MetricCardView {
         }
     }
 
-    /// Tap logs one unit instantly; the menu offers the custom-amount sheet.
+    /// Tap opens the custom-amount sheet — logging a single unit is rarely
+    /// what's wanted; the menu keeps the quick +1 for when it is.
     private var countButton: some View {
         Menu {
             Button {
-                showingCountEntry = true
+                logOne()
             } label: {
-                Label("Log Custom Amount", systemImage: "square.and.pencil")
+                Label("Log +1", systemImage: "plus")
             }
         } label: {
             actionLabel("plus", "Log")
         } primaryAction: {
-            logOne()
+            showingCountEntry = true
         }
-        .accessibilityLabel("Log one \(metric.unit ?? "entry")")
+        .accessibilityLabel("Log \(metric.unit ?? "amount")")
     }
 
     /// The fill is the deeper prominent variant, not the identity tint, so
