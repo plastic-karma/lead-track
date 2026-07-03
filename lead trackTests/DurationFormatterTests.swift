@@ -32,4 +32,26 @@ struct DurationFormatterTests {
     func formatsExactHour() {
         #expect(DurationFormatter.format(3600) == "1h 00m")
     }
+
+    @Test
+    func compactFormatsMinutes() {
+        #expect(DurationFormatter.compact(2700) == "45m")
+    }
+
+    @Test
+    func compactFormatsExactHours() {
+        #expect(DurationFormatter.compact(3600) == "1h")
+    }
+
+    @Test
+    func compactFormatsHoursAndMinutes() {
+        #expect(DurationFormatter.compact(3900) == "1h05")
+    }
+
+    @Test
+    func compactTruncatesSubMinuteAndNegative() {
+        #expect(DurationFormatter.compact(59) == "0m")
+        #expect(DurationFormatter.compact(0) == "0m")
+        #expect(DurationFormatter.compact(-30) == "0m")
+    }
 }

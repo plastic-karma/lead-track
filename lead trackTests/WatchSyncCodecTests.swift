@@ -10,6 +10,8 @@ struct WatchSyncCodecTests {
     private func sampleMetric(
         runningSince: Date? = nil,
         todayTotal: Double = 0,
+        dailyGoal: Double? = nil,
+        excludedWeekdays: [Int]? = nil,
         countdownDuration: TimeInterval? = nil
     ) -> WatchMetricSnapshot {
         WatchMetricSnapshot(
@@ -21,6 +23,8 @@ struct WatchSyncCodecTests {
             colorName: "sage",
             runningSince: runningSince,
             todayTotal: todayTotal,
+            dailyGoal: dailyGoal,
+            excludedWeekdays: excludedWeekdays,
             countdownDuration: countdownDuration
         )
     }
@@ -77,6 +81,40 @@ struct WatchSyncCodecTests {
     }
 
     @Test
+    func goalFieldsAndDaySurviveRoundTrip() throws {
+        let day = Calendar.current.startOfDay(for: .now)
+        let snapshot = WatchSnapshot(
+            metrics: [
+                sampleMetric(todayTotal: 120, dailyGoal: 1800, excludedWeekdays: [1, 7])
+            ],
+            day: day
+        )
+        let decoded = try #require(
+            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
+        )
+        #expect(decoded == snapshot)
+        #expect(decoded.day == day)
+        #expect(decoded.metrics.first?.dailyGoal == 1800)
+        #expect(decoded.metrics.first?.excludedWeekdays == [1, 7])
+    }
+
+    @Test
+    func legacyCacheWithoutGoalFieldsStillDecodes() throws {
+        let legacy = """
+        {"metrics":[{"id":"11111111-2222-3333-4444-555555555555",
+        "name":"Reading","measurementType":"duration","todayTotal":120}]}
+        """
+        let data = try #require(legacy.data(using: .utf8))
+        let decoded = try JSONDecoder().decode(WatchSnapshot.self, from: data)
+        #expect(decoded.day == nil)
+        let metric = try #require(decoded.metrics.first)
+        #expect(metric.name == "Reading")
+        #expect(metric.todayTotal == 120)
+        #expect(metric.dailyGoal == nil)
+        #expect(metric.excludedWeekdays == nil)
+    }
+
+    @Test
     func decodingRejectsForeignPayloads() {
         #expect(WatchSyncCodec.snapshot(from: [:]) == nil)
         #expect(WatchSyncCodec.action(from: ["action": "junk"]) == nil)
@@ -98,21 +136,25 @@ struct WatchSnapshotReducerTests {
 
     private func snapshot(
         runningSince: Date? = nil,
-        todayTotal: Double = 0
+        todayTotal: Double = 0,
+        day: Date? = nil
     ) -> WatchSnapshot {
-        WatchSnapshot(metrics: [
-            WatchMetricSnapshot(
-                id: metricID,
-                name: "Reading",
-                measurementType: .duration,
-                unit: nil,
-                icon: "book",
-                colorName: nil,
-                runningSince: runningSince,
-                todayTotal: todayTotal,
-                countdownDuration: nil
-            )
-        ])
+        WatchSnapshot(
+            metrics: [
+                WatchMetricSnapshot(
+                    id: metricID,
+                    name: "Reading",
+                    measurementType: .duration,
+                    unit: nil,
+                    icon: "book",
+                    colorName: nil,
+                    runningSince: runningSince,
+                    todayTotal: todayTotal,
+                    countdownDuration: nil
+                )
+            ],
+            day: day
+        )
     }
 
     @Test
@@ -205,5 +247,47 @@ struct WatchSnapshotReducerTests {
         let result = WatchSnapshotReducer.applying(action, to: original)
 
         #expect(result == original)
+    }
+
+    @Test
+    func sameDayActionPreservesTheDayStamp() {
+        let day = Calendar.current.startOfDay(for: .now)
+        let action = WatchAction(kind: .logValue, metricID: metricID, value: 2)
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(todayTotal: 1, day: day)
+        )
+
+        #expect(result.day == day)
+        #expect(result.metrics.first?.todayTotal == 3)
+    }
+
+    @Test
+    func crossDayActionZeroesTotalsAndRestamps() throws {
+        let calendar = Calendar.current
+        let yesterday = try #require(
+            calendar.date(byAdding: .day, value: -1, to: .now)
+        )
+        let action = WatchAction(kind: .logValue, metricID: metricID, value: 2)
+
+        let result = WatchSnapshotReducer.applying(
+            action,
+            to: snapshot(todayTotal: 9, day: calendar.startOfDay(for: yesterday))
+        )
+
+        #expect(result.day == calendar.startOfDay(for: action.timestamp))
+        #expect(result.metrics.first?.todayTotal == 2)
+    }
+
+    @Test
+    func snapshotWithoutDayStampIsNeverRolledForward() {
+        let action = WatchAction(kind: .logValue, metricID: metricID, value: 2)
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(todayTotal: 9)
+        )
+
+        #expect(result.day == nil)
+        #expect(result.metrics.first?.todayTotal == 11)
     }
 }

@@ -23,6 +23,9 @@
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */; };
 		0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */; };
+		0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000019 /* ComplicationProgressTests.swift */; };
+		0A1CAF010000000000000022 /* ComplicationTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */; };
+		0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
 		DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */; };
@@ -125,6 +128,9 @@
 		0A1CAF020000000000000002 /* lead-track Watch Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Watch Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSyncCodecTests.swift; sourceTree = "<group>"; };
 		0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchActionHandlerTests.swift; sourceTree = "<group>"; };
+		0A1CAF010000000000000019 /* ComplicationProgressTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComplicationProgressTests.swift; sourceTree = "<group>"; };
+		0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComplicationTimelineTests.swift; sourceTree = "<group>"; };
+		0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSnapshotBuilderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -258,6 +264,9 @@
 				D1F0010000000000020001 /* HealthMetricTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
+				0A1CAF010000000000000019 /* ComplicationProgressTests.swift */,
+				0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */,
+				0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */,
 			);
 			path = "lead trackTests";
 			sourceTree = "<group>";
@@ -621,6 +630,9 @@
 				D1F0010000000000020002 /* HealthMetricTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
+				0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */,
+				0A1CAF010000000000000022 /* ComplicationTimelineTests.swift in Sources */,
+				0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
