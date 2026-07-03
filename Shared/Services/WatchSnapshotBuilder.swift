@@ -8,9 +8,16 @@ enum WatchSnapshotBuilder {
         return snapshot(from: metrics)
     }
 
-    static func snapshot(from metrics: [Metric]) -> WatchSnapshot {
+    static func snapshot(
+        from metrics: [Metric],
+        at now: Date = .now,
+        calendar: Calendar = .current
+    ) -> WatchSnapshot {
         let sorted = metrics.sorted { $0.createdAt < $1.createdAt }
-        return WatchSnapshot(metrics: sorted.compactMap(metricSnapshot))
+        return WatchSnapshot(
+            metrics: sorted.compactMap(metricSnapshot),
+            day: calendar.startOfDay(for: now)
+        )
     }
 
     private static func metricSnapshot(
@@ -27,6 +34,8 @@ enum WatchSnapshotBuilder {
             colorName: metric.colorName,
             runningSince: running?.startedAt,
             todayTotal: SessionStatistics.todayTotal(from: metric.sessions),
+            dailyGoal: metric.dailyGoal,
+            excludedWeekdays: metric.excludedWeekdays,
             countdownDuration: running?.countdownDuration,
             healthSourceRaw: metric.healthSourceRaw
         )

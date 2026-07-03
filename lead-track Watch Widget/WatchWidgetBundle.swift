@@ -5,5 +5,8 @@ import WidgetKit
 struct WatchWidgetBundle: WidgetBundle {
     var body: some Widget {
         WatchTimerWidget()
+        WatchGoalsWidget()
+        WatchMetricWidget()
+        WatchDayRingWidget()
     }
 }

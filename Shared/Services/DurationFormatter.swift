@@ -14,4 +14,19 @@ enum DurationFormatter {
         }
         return String(format: "%ds", seconds)
     }
+
+    /// Compact form for tiny complication dials: "45m", "1h", "1h05"
+    /// (`format`'s "45m 30s" is too wide for a ~30pt ring center).
+    static func compact(_ interval: TimeInterval) -> String {
+        let totalMinutes = max(Int(interval), 0) / 60
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours == 0 {
+            return "\(minutes)m"
+        }
+        if minutes == 0 {
+            return "\(hours)h"
+        }
+        return String(format: "%dh%02d", hours, minutes)
+    }
 }

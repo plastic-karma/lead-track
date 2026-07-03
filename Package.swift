@@ -32,7 +32,8 @@ let package = Package(
                 "CountdownReconcileTests.swift",
                 "DefaultProjectTests.swift",
                 "SessionMoveTests.swift",
-                "WatchActionHandlerTests.swift"
+                "WatchActionHandlerTests.swift",
+                "WatchSnapshotBuilderTests.swift"
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
