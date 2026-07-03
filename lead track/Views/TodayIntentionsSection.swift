@@ -1,10 +1,11 @@
 import SwiftData
 import SwiftUI
 
-/// The current week's open intentions on Today, directly above the "Poured
-/// Into" footer — commitments above, evidence below. Follows the
-/// `TodayAspirationsFooter` doctrine: renders nothing when the week has no
-/// intentions, so Today stays exactly as it was for non-users.
+/// The current week's open intentions on Today, sitting just under the header
+/// and above the individual metric cards — commitments first, the day's
+/// metrics below. Follows the `TodayAspirationsFooter` doctrine: renders
+/// nothing when the week has no intentions, so Today stays exactly as it was
+/// for non-users.
 struct TodayIntentionsSection: View {
     let intentions: [Intention]
 
