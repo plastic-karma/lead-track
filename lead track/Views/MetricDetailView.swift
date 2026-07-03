@@ -5,6 +5,7 @@ struct MetricDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
     @Query private var sessions: [Session]
+    @Query(sort: \Aspiration.createdAt) private var allAspirations: [Aspiration]
     @State private var showingProjectForm = false
     @State private var showingDetailedStats = false
     @State private var showingGoalSettings = false
@@ -55,6 +56,18 @@ struct MetricDetailView: View {
 
     private var dailyTotals: [DailyTotal] {
         SessionStatistics.dailyTotals(from: sessions)
+    }
+
+    /// The aspirations this metric is poured into. Read from the forward
+    /// relationship (`Aspiration.metrics`) rather than the `metric.aspirations`
+    /// back-array: SwiftData doesn't reliably populate the many-to-many inverse
+    /// when only the aspiration side is ever written, so the back-array reads
+    /// empty. Mirrors how the Today footer and `AspirationRollup` read effort,
+    /// and stays reactive as links change.
+    private var connectedAspirations: [Aspiration] {
+        allAspirations.filter { aspiration in
+            aspiration.metrics.contains(where: { $0 === metric })
+        }
     }
 
     var body: some View {
@@ -168,12 +181,10 @@ extension MetricDetailView {
 
     @ViewBuilder
     private var aspirationsSection: some View {
-        if !metric.aspirations.isEmpty {
-            Section("Part of") {
-                AspirationChipsRow(
-                    aspirations: metric.aspirations.sorted { $0.createdAt < $1.createdAt }
-                )
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        if !connectedAspirations.isEmpty {
+            Section("Poured Into") {
+                AspirationChipsRow(aspirations: connectedAspirations)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
         }
     }
