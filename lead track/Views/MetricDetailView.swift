@@ -169,7 +169,7 @@ extension MetricDetailView {
     @ViewBuilder
     private var aspirationsSection: some View {
         if !metric.aspirations.isEmpty {
-            Section("Part of") {
+            Section("Poured Into") {
                 AspirationChipsRow(
                     aspirations: metric.aspirations.sorted { $0.createdAt < $1.createdAt }
                 )
