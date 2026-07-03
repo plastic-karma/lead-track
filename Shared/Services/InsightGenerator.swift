@@ -16,7 +16,7 @@ enum InsightGenerator {
         let previous = nonRunning.filter {
             $0.startedAt >= previousStart && $0.startedAt < currentStart
         }
-        let raw = collectRaw(metric: metric, current: current, previous: previous)
+        let raw = collectRaw(metric: metric, current: current, previous: previous, now: end)
         return applyCategoryCaps(raw)
     }
 }
@@ -32,9 +32,16 @@ private extension InsightGenerator {
     static func collectRaw(
         metric: Metric,
         current: [Session],
-        previous: [Session]
+        previous: [Session],
+        now: Date
     ) -> [Insight] {
         var results: [Insight] = []
+        // Measure-health leads: ordering is priority, and a fired health
+        // insight (rare, by design) must not be crowded out of the card's
+        // three slots by a routine delta. The category cap then keeps them
+        // to at most one per metric per week for free.
+        append(&results, MeasureHealth.detectGoalClustering(metric: metric, now: now))
+        append(&results, MeasureHealth.detectStreakSaver(metric: metric, now: now))
         append(&results, detectDayOfWeekMode(sessions: current))
         append(&results, detectTimeOfDayMode(sessions: current))
         append(&results, detectVolumeChange(metric: metric, current: current, previous: previous))

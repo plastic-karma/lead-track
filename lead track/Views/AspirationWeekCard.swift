@@ -14,6 +14,13 @@ struct AspirationWeekCard: View {
     var onSetIntention: (() -> Void)?
     /// Receives a closure row's decision, keyed by the intention's ID.
     var onClosureAction: ((IntentionClosureAction, String) -> Void)?
+    /// Records this week's alignment pulse (rating, then optionally a note);
+    /// nil (earlier weeks, unmapped aspirations) hides the composer.
+    var onCheckIn: ((AlignmentRating, String?) -> Void)?
+    /// The rating tapped this visit, keeping the note field on stage after
+    /// the write flips `week.offersCheckIn` off.
+    @State private var pulseRating: AlignmentRating?
+    @State private var pulseNote = ""
 
     private var tint: Color {
         MetricColor.color(named: week.colorName)
@@ -25,6 +32,7 @@ struct AspirationWeekCard: View {
             weekLine
             footer
             intentionsBlock
+            pulseBlock
         }
         .cardSurface()
     }
@@ -131,5 +139,81 @@ extension AspirationWeekCard {
             }
             .buttonStyle(.borderless)
         }
+    }
+}
+
+// MARK: - Pulse
+
+extension AspirationWeekCard {
+    /// The weekly alignment pulse and, rarely, the narrowing line. No dismiss
+    /// button anywhere — scrolling past *is* the dismissal, and a skipped
+    /// week leaves no trace.
+    @ViewBuilder
+    private var pulseBlock: some View {
+        if week.narrowing != nil || composerVisible {
+            Divider()
+            narrowingLine
+            pulseComposer
+        }
+    }
+
+    private var composerVisible: Bool {
+        onCheckIn != nil && (week.offersCheckIn || pulseRating != nil)
+    }
+
+    @ViewBuilder
+    private var narrowingLine: some View {
+        if let narrowing = week.narrowing {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "arrow.triangle.merge")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text(narrowing.line)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pulseComposer: some View {
+        if composerVisible {
+            Text("Is this effort still serving the why?")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ForEach(AlignmentRating.allCases, id: \.rawValue) { rating in
+                    pulseButton(rating)
+                }
+            }
+            if pulseRating != nil {
+                TextField("Add a note (optional)", text: $pulseNote)
+                    .font(.caption)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(submitPulseNote)
+            }
+        }
+    }
+
+    private func pulseButton(_ rating: AlignmentRating) -> some View {
+        Button {
+            pulseRating = rating
+            onCheckIn?(rating, nil)
+        } label: {
+            Text(rating.shortLabel)
+                .font(.caption.weight(.medium))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(pulseRating == rating ? tint : nil)
+    }
+
+    private func submitPulseNote() {
+        guard let rating = pulseRating else { return }
+        let trimmed = pulseNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onCheckIn?(rating, trimmed)
     }
 }

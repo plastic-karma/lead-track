@@ -17,6 +17,8 @@ extension WeeklyReview {
         let intentions: [Intention]
         /// Aspiration IDs with unclosed intentions awaiting this review.
         let closureOwners: Set<String>
+        /// Aspiration IDs that already recorded this week's alignment pulse.
+        let checkedInOwners: Set<String>
     }
 
     static func partitionAspirations(
@@ -64,8 +66,9 @@ private extension WeeklyReview {
         let perSource = AspirationRollup.contributionSources(of: aspiration)
             .map { (kind: $0.kind, sessions: context.bounds.current(in: $0.sessions)) }
         let sessions = perSource.flatMap(\.sessions)
+        let id = stableID(of: aspiration)
         return AspirationWeek(
-            id: stableID(of: aspiration),
+            id: id,
             title: aspiration.title,
             icon: aspiration.displayIcon,
             colorName: aspiration.colorName,
@@ -75,7 +78,11 @@ private extension WeeklyReview {
             dailySeries: dailyValues(
                 of: sessions, from: context.bounds.start, calendar: context.calendar
             ) { _ in 1 },
-            intentions: intentionLines(of: aspiration, context: context)
+            intentions: intentionLines(of: aspiration, context: context),
+            offersCheckIn: context.bounds.isCurrentWeek && !context.checkedInOwners.contains(id),
+            narrowing: context.bounds.isCurrentWeek
+                ? MeasureHealth.detectNarrowing(for: aspiration, now: context.now, calendar: context.calendar)
+                : nil
         )
     }
 
@@ -175,7 +182,8 @@ extension WeeklyReview {
     ) -> AspirationWeekDetail {
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
         let context = AspirationWeekContext(
-            bounds: bounds, now: now, calendar: calendar, intentions: [], closureOwners: []
+            bounds: bounds, now: now, calendar: calendar,
+            intentions: [], closureOwners: [], checkedInOwners: []
         )
         return AspirationWeekDetail(
             week: weekData(of: aspiration, context: context),

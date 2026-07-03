@@ -1,11 +1,12 @@
 import SwiftData
 import SwiftUI
 
-/// The route an accepted goal promotion opens: the existing goal-settings
-/// sheet for the linked metric, prefilled from the intention's target when
-/// the units line up (a value-sum target is already in the metric's native
-/// unit; a session count is not an amount, so the user picks one).
-struct PromotionGoalRoute: Identifiable {
+/// The goal-settings sheet route, shared by its three callers: an accepted
+/// goal promotion (prefilled from the intention's target when the units line
+/// up — a value-sum target is already in the metric's native unit; a session
+/// count is not an amount, so the user picks one), a measure-health insight's
+/// "Review goal" chip, and a goal season's Adjust decision.
+struct GoalSettingsRoute: Identifiable {
     let id = UUID()
     let metric: Metric
     let prefillWeekly: Double?
@@ -49,10 +50,10 @@ extension WeeklyReviewView {
         case .weeklyGoal:
             guard let metric = intention.metric else { return }
             let prefill = intention.derivedMode == .valueSum ? intention.target : nil
-            promotionGoal = PromotionGoalRoute(metric: metric, prefillWeekly: prefill)
+            goalSettingsRoute = GoalSettingsRoute(metric: metric, prefillWeekly: prefill)
         case .dailyGoal:
             guard let metric = intention.metric else { return }
-            promotionGoal = PromotionGoalRoute(metric: metric, prefillWeekly: nil)
+            goalSettingsRoute = GoalSettingsRoute(metric: metric, prefillWeekly: nil)
         case .countMetric:
             promote(intention, into: .count)
         case .binaryMetric:
@@ -166,8 +167,8 @@ extension IntentionClosureRow {
 
     private var promotionDescription: String {
         switch closure.promotion {
-        case .weeklyGoal: "a weekly goal on its metric"
-        case .dailyGoal: "a daily goal on its metric"
+        case .weeklyGoal: "a weekly goal on its metric for a season"
+        case .dailyGoal: "a daily goal on its metric for a season"
         case .countMetric: "a metric of its own"
         case .binaryMetric: "a daily habit of its own"
         case nil: ""

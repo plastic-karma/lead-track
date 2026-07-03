@@ -23,9 +23,6 @@ extension WeeklyReviewView {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
-            .sheet(item: $promotionGoal) { route in
-                GoalSettingsView(metric: route.metric, prefillWeeklyGoal: route.prefillWeekly)
-            }
         }
     }
 
@@ -53,7 +50,8 @@ extension WeeklyReviewView {
             week: week,
             closures: review.intentionClosures.filter { $0.aspirationID == week.id },
             onSetIntention: setIntentionAction(for: aspiration, in: review),
-            onClosureAction: { action, id in handle(action, closureID: id) }
+            onClosureAction: { action, id in handle(action, closureID: id) },
+            onCheckIn: checkInAction(for: aspiration, in: review)
         )
     }
 
@@ -65,6 +63,34 @@ extension WeeklyReviewView {
     ) -> (() -> Void)? {
         guard review.weeksBack == 0, let aspiration else { return nil }
         return { settingIntentionFor = aspiration }
+    }
+
+    /// The card's pulse composer — live review only, and only when the card
+    /// maps back to its model.
+    private func checkInAction(
+        for aspiration: Aspiration?,
+        in review: WeeklyReview
+    ) -> ((AlignmentRating, String?) -> Void)? {
+        guard review.weeksBack == 0, let aspiration else { return nil }
+        return { rating, note in recordCheckIn(rating, note: note, for: aspiration) }
+    }
+
+    /// Upserts the current week's pulse: one row per aspiration per calendar
+    /// week, the latest edit winning. Rating taps pass a nil note (leaving
+    /// any typed note alone); the note field passes its text.
+    private func recordCheckIn(_ rating: AlignmentRating, note: String?, for aspiration: Aspiration) {
+        if let existing = AspirationAlignment.currentWeekCheckIn(of: aspiration) {
+            existing.ratingRaw = rating.rawValue
+            if let note { existing.note = note }
+            return
+        }
+        let checkIn = AspirationCheckIn(
+            aspiration: aspiration,
+            rating: rating,
+            weekStart: Intention.weekStart(containing: .now),
+            note: note ?? ""
+        )
+        modelContext.insert(checkIn)
     }
 
     @ViewBuilder

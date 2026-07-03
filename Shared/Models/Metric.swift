@@ -39,6 +39,18 @@ final class Metric {
     /// When export was switched on. Only sessions started at or after this
     /// are written, so enabling never floods Health with months of history.
     var healthExportEnabledAt: Date?
+    /// When the current goal season began: stamped when a goal is enabled,
+    /// an amount changes, or the season is renewed at a review (see
+    /// `GoalSeason`). nil = an unseasoned pre-feature goal, which is never
+    /// due. Optional and defaulting to nil, so existing stores migrate
+    /// untouched.
+    var goalSeasonStartedAt: Date?
+    /// The season's length in weeks, chosen when the goal is set
+    /// (`GoalSeason.lengthChoices`). nil alongside a goal = unseasoned.
+    var goalSeasonWeeks: Int?
+    /// What this season is for, in the user's words — the review row's
+    /// framing line. Defaults empty, so existing metrics migrate untouched.
+    var goalSeasonNote: String = ""
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)

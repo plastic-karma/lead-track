@@ -8,6 +8,9 @@ struct MetricWeekCard: View {
     let week: WeeklyReview.MetricWeek
     /// First day of the review period, anchoring the day-strip labels.
     let weekStart: Date
+    /// Opens the goal-settings sheet — rendered only beside measure-health
+    /// insights, whose remedy is reviewing the target itself.
+    var onReviewGoal: (() -> Void)?
 
     /// Insights beyond this start repeating the card's own numbers.
     private static let maxInsights = 3
@@ -132,7 +135,7 @@ extension MetricWeekCard {
     }
 
     private func insightRow(_ insight: Insight) -> some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: insight.symbol)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
@@ -142,6 +145,13 @@ extension MetricWeekCard {
                 Text(insight.detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if insight.category == .measureHealth, let onReviewGoal {
+                Button("Review goal", action: onReviewGoal)
+                    .font(.caption.weight(.medium))
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
             }
         }
     }

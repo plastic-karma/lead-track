@@ -2,6 +2,9 @@ import Foundation
 
 enum InsightCategory: Hashable {
     case volume, distribution, consistency, goal
+    /// The measure's grip on behavior (see `MeasureHealth`): copy questions
+    /// the measure, never the user.
+    case measureHealth
 }
 
 enum TimeOfDayBucket: String, Equatable, CaseIterable {
@@ -65,6 +68,16 @@ enum Insight: Equatable {
         currentHits: Int,
         previousHits: Int
     )
+    /// Daily totals hugging the goal line — is the line the point?
+    case goalClustering(
+        bandedHits: Int,
+        totalHits: Int
+    )
+    /// Tiny late sole-session days under a long streak — the chain being fed.
+    case streakSaver(
+        occurrences: Int,
+        streak: Int
+    )
 }
 
 extension Insight {
@@ -74,6 +87,7 @@ extension Insight {
         case .volumeChange: .volume
         case .activeDaysChange: .consistency
         case .goalHitRateChange: .goal
+        case .goalClustering, .streakSaver: .measureHealth
         }
     }
 
@@ -93,6 +107,10 @@ extension Insight {
                 : "calendar.badge.exclamationmark"
         case .goalHitRateChange:
             "target"
+        case .goalClustering:
+            "ruler"
+        case .streakSaver:
+            "link"
         }
     }
 }
@@ -112,6 +130,10 @@ extension Insight {
             current >= previous
                 ? "Hitting the goal more often"
                 : "Hitting the goal less often"
+        case .goalClustering:
+            "Days often stop right at the goal"
+        case .streakSaver:
+            "Small late saves kept the chain"
         }
     }
 
@@ -131,6 +153,14 @@ extension Insight {
             return "\(current)/7 days vs \(previous)/7 last week"
         case let .goalHitRateChange(current, previous):
             return "Hit goal \(current)/7 days vs \(previous)/7"
+        case let .goalClustering(banded, hits):
+            return "\(banded) of \(hits) goal days landed within "
+                + "\(Int(MeasureHealth.clusterBand * 100))% of the line. Is the goal "
+                + "the right size — or has the line become the point?"
+        case let .streakSaver(occurrences, _):
+            return "\(occurrences) evenings this month, a session a quarter of "
+                + "your usual size landed after 9 pm. Would a rest day serve "
+                + "the why better than the chain?"
         }
     }
 }

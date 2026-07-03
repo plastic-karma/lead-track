@@ -24,6 +24,9 @@ struct WeeklyReview {
     /// Unclosed intentions from the most recently completed week, awaiting
     /// closure. Empty when the feature is unused — additive, never a fork.
     let intentionClosures: [IntentionClosure]
+    /// Goal seasons awaiting their renew/adjust/retire decision — live review
+    /// only, and empty while the feature is unused (see `GoalSeason`).
+    let goalSeasonReviews: [GoalSeason.Review]
     /// Completed sessions per day across all metrics, oldest first.
     let sessionSeries: [Double]
 }
@@ -71,6 +74,7 @@ extension WeeklyReview {
         metrics: [Metric],
         aspirations: [Aspiration] = [],
         intentions: [Intention] = [],
+        checkIns: [AspirationCheckIn] = [],
         weeksBack: Int = 0,
         now: Date = .now,
         calendar: Calendar = .current
@@ -82,7 +86,8 @@ extension WeeklyReview {
         )
         let context = AspirationWeekContext(
             bounds: bounds, now: now, calendar: calendar,
-            intentions: intentions, closureOwners: Set(closures.map(\.aspirationID))
+            intentions: intentions, closureOwners: Set(closures.map(\.aspirationID)),
+            checkedInOwners: checkedInOwners(of: checkIns, now: now, calendar: calendar)
         )
         let aspirationSplit = partitionAspirations(aspirations, context: context)
         return WeeklyReview(
@@ -94,7 +99,26 @@ extension WeeklyReview {
             aspirationWeeks: aspirationSplit.weeks,
             quietAspirations: aspirationSplit.quiet,
             intentionClosures: closures,
+            goalSeasonReviews: bounds.isCurrentWeek
+                ? GoalSeason.reviews(for: metrics, aspirations: aspirations, now: now, calendar: calendar)
+                : [],
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
+        )
+    }
+
+    /// Aspiration IDs that already checked in during the calendar week
+    /// containing `now`, so the live review offers the pulse only where it is
+    /// still open.
+    static func checkedInOwners(
+        of checkIns: [AspirationCheckIn],
+        now: Date,
+        calendar: Calendar
+    ) -> Set<String> {
+        let week = Intention.weekStart(containing: now, calendar: calendar)
+        return Set(
+            checkIns
+                .filter { $0.weekStart == week }
+                .compactMap { $0.aspiration.map { stableID(of: $0) } }
         )
     }
 }

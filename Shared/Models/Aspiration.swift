@@ -60,6 +60,14 @@ final class Aspiration {
     #endif
     var intentions: [Intention] = []
 
+    // The weekly alignment pulses recorded under this aspiration — the app's
+    // only subjective series (see `AspirationCheckIn`). Cascade for the same
+    // reason as intentions: a check-in is meaningless without its why.
+    #if canImport(SwiftData)
+    @Relationship(deleteRule: .cascade, inverse: \AspirationCheckIn.aspiration)
+    #endif
+    var checkIns: [AspirationCheckIn] = []
+
     init(
         title: String,
         detail: String = "",

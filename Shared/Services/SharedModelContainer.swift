@@ -10,7 +10,8 @@ enum SharedModelContainer {
             Project.self,
             Session.self,
             Aspiration.self,
-            Intention.self
+            Intention.self,
+            AspirationCheckIn.self
         ])
         let config: ModelConfiguration
         if inMemoryOnly {

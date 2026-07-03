@@ -13,6 +13,8 @@ struct GoalSettingsView: View {
     @State private var reminderTime: Date
     @State private var hasStreakAlert: Bool
     @State private var streakAlertTime: Date
+    @State private var seasonWeeks: Int
+    @State private var seasonNote: String
     @State private var saveTrigger = false
 
     /// `prefillWeeklyGoal` (in the metric's native unit) pre-enables the
@@ -49,6 +51,10 @@ struct GoalSettingsView: View {
         _streakAlertTime = State(
             initialValue: metric.streakAlertTime ?? Self.defaultTime(hour: 20)
         )
+        _seasonWeeks = State(
+            initialValue: metric.goalSeasonWeeks ?? GoalSeason.defaultLengthWeeks
+        )
+        _seasonNote = State(initialValue: metric.goalSeasonNote)
     }
 
     var body: some View {
@@ -57,6 +63,7 @@ struct GoalSettingsView: View {
                 if metric.measurementType.tracksQuantity {
                     dailyGoalSection
                     weeklyGoalSection
+                    seasonSection
                 } else {
                     restDaysSection
                 }
@@ -150,6 +157,34 @@ extension GoalSettingsView {
             step: step
         )
     }
+
+    /// Every goal is an experiment with an end date: the season's length and
+    /// what it is for. Shown only while a goal is on — no goal, no season.
+    @ViewBuilder
+    private var seasonSection: some View {
+        if hasDailyGoal || hasWeeklyGoal {
+            Section {
+                Picker("Length", selection: $seasonWeeks) {
+                    ForEach(GoalSeason.lengthChoices, id: \.self) { weeks in
+                        Text("\(weeks) weeks").tag(weeks)
+                    }
+                }
+                TextField(
+                    "What is this season for?",
+                    text: $seasonNote,
+                    axis: .vertical
+                )
+            } header: {
+                Text("Season")
+            } footer: {
+                Text(
+                    "Goals are experiments with an end date. When the season "
+                        + "ends, the weekly review asks whether to renew, "
+                        + "adjust, or retire the target."
+                )
+            }
+        }
+    }
 }
 
 // MARK: - Reminder Sections
@@ -218,6 +253,8 @@ extension GoalSettingsView {
     }
 
     private func save() {
+        let previousDaily = metric.dailyGoal
+        let previousWeekly = metric.weeklyGoal
         if metric.measurementType.tracksQuantity {
             saveAmountGoals()
         } else {
@@ -225,11 +262,29 @@ extension GoalSettingsView {
             metric.weeklyGoal = nil
             metric.excludedWeekdays = excludedWeekdays.sorted()
         }
+        saveSeason(previousDaily: previousDaily, previousWeekly: previousWeekly)
         metric.reminderTime = hasReminder ? reminderTime : nil
         metric.streakAlertTime = hasStreakAlert ? streakAlertTime : nil
         NotificationService.rescheduleMetric(metric)
         saveTrigger.toggle()
         dismiss()
+    }
+
+    /// Seasons ride every goal save: a goal present keeps (or starts) its
+    /// season — so unseasoned legacy goals acquire one here, on their first
+    /// edit — and both goals off ends it. Only an amount change re-stamps
+    /// the start; reminder-only edits never reset the clock.
+    private func saveSeason(previousDaily: TimeInterval?, previousWeekly: TimeInterval?) {
+        guard metric.dailyGoal != nil || metric.weeklyGoal != nil else {
+            GoalSeason.clearSeason(of: metric)
+            return
+        }
+        metric.goalSeasonWeeks = seasonWeeks
+        metric.goalSeasonNote = seasonNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        GoalSeason.stampOnSave(
+            metric,
+            amountsChanged: metric.dailyGoal != previousDaily || metric.weeklyGoal != previousWeekly
+        )
     }
 
     private func saveAmountGoals() {
