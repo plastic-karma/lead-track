@@ -24,6 +24,7 @@ struct MetricListView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 TodayHeaderView(metrics: metrics)
+                TodayIntentionsSection(intentions: intentions)
                 if !leftMetrics.isEmpty {
                     sectionHeader(leftTitle)
                     ForEach(leftMetrics) { metricCard($0) }
@@ -37,7 +38,6 @@ struct MetricListView: View {
                         )
                     }
                 }
-                TodayIntentionsSection(intentions: intentions)
                 TodayAspirationsFooter(aspirations: aspirations)
             }
             .padding(.horizontal)
