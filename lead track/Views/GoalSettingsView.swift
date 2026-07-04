@@ -15,6 +15,7 @@ struct GoalSettingsView: View {
     @State private var streakAlertTime: Date
     @State private var seasonWeeks: Int
     @State private var seasonNote: String
+    @State private var expectsDaily: Bool
     @State private var saveTrigger = false
 
     /// `prefillWeeklyGoal` (in the metric's native unit) pre-enables the
@@ -55,6 +56,7 @@ struct GoalSettingsView: View {
             initialValue: metric.goalSeasonWeeks ?? GoalSeason.defaultLengthWeeks
         )
         _seasonNote = State(initialValue: metric.goalSeasonNote)
+        _expectsDaily = State(initialValue: metric.binaryGoalRetiredAt == nil)
     }
 
     var body: some View {
@@ -65,7 +67,9 @@ struct GoalSettingsView: View {
                     weeklyGoalSection
                     seasonSection
                 } else {
+                    binaryExpectationSection
                     restDaysSection
+                    seasonSection
                 }
                 reminderSection
                 streakAlertSection
@@ -115,8 +119,22 @@ extension GoalSettingsView {
         }
     }
 
+    /// The binary habit's target made explicit and releasable: on, showing
+    /// up counts toward the day's rings; off, the habit keeps its card and
+    /// history but carries no daily expectation — the binary form of a
+    /// retired goal.
+    private var binaryExpectationSection: some View {
+        Section {
+            Toggle("Expect It Daily", isOn: $expectsDaily)
+        } footer: {
+            Text("When off, the habit keeps its card and history but no longer counts toward the day's rings.")
+        }
+    }
+
     /// Binary metrics have no amount to set, so their "goal" is simply showing
-    /// up each non-rest day — this section configures just that.
+    /// up each non-rest day — this section configures just that. Rest days
+    /// stay editable even when the expectation is off: they keep protecting
+    /// the logged-day streak.
     private var restDaysSection: some View {
         Section {
             restDaysRow
@@ -158,11 +176,20 @@ extension GoalSettingsView {
         )
     }
 
+    /// Whether a season applies to what's currently configured: an amount
+    /// goal for quantity metrics, the live show-up expectation for binary.
+    private var hasSeasonTarget: Bool {
+        metric.measurementType.tracksQuantity
+            ? hasDailyGoal || hasWeeklyGoal
+            : expectsDaily
+    }
+
     /// Every goal is an experiment with an end date: the season's length and
-    /// what it is for. Shown only while a goal is on — no goal, no season.
+    /// what it is for. Shown only while a target is on — no target, no
+    /// season.
     @ViewBuilder
     private var seasonSection: some View {
-        if hasDailyGoal || hasWeeklyGoal {
+        if hasSeasonTarget {
             Section {
                 Picker("Length", selection: $seasonWeeks) {
                     ForEach(GoalSeason.lengthChoices, id: \.self) { weeks in
@@ -252,17 +279,15 @@ extension GoalSettingsView {
         }
     }
 
+    /// What a save changed about the metric's target, for the season rule.
+    private struct GoalChange {
+        let hasTarget: Bool
+        let changed: Bool
+    }
+
     private func save() {
-        let previousDaily = metric.dailyGoal
-        let previousWeekly = metric.weeklyGoal
-        if metric.measurementType.tracksQuantity {
-            saveAmountGoals()
-        } else {
-            metric.dailyGoal = nil
-            metric.weeklyGoal = nil
-            metric.excludedWeekdays = excludedWeekdays.sorted()
-        }
-        saveSeason(previousDaily: previousDaily, previousWeekly: previousWeekly)
+        let change = applyTarget()
+        saveSeason(change)
         metric.reminderTime = hasReminder ? reminderTime : nil
         metric.streakAlertTime = hasStreakAlert ? streakAlertTime : nil
         NotificationService.rescheduleMetric(metric)
@@ -270,21 +295,45 @@ extension GoalSettingsView {
         dismiss()
     }
 
-    /// Seasons ride every goal save: a goal present keeps (or starts) its
+    private func applyTarget() -> GoalChange {
+        guard metric.measurementType.tracksQuantity else {
+            return applyBinaryExpectation()
+        }
+        let previousDaily = metric.dailyGoal
+        let previousWeekly = metric.weeklyGoal
+        saveAmountGoals()
+        return GoalChange(
+            hasTarget: metric.dailyGoal != nil || metric.weeklyGoal != nil,
+            changed: metric.dailyGoal != previousDaily || metric.weeklyGoal != previousWeekly
+        )
+    }
+
+    /// A binary habit's target is the show-up expectation itself: switching
+    /// it off releases it (the card and history stay), switching it back on
+    /// is a new experiment and stamps a fresh season.
+    private func applyBinaryExpectation() -> GoalChange {
+        metric.dailyGoal = nil
+        metric.weeklyGoal = nil
+        metric.excludedWeekdays = excludedWeekdays.sorted()
+        let wasExpected = metric.binaryGoalRetiredAt == nil
+        if expectsDaily != wasExpected {
+            metric.binaryGoalRetiredAt = expectsDaily ? nil : .now
+        }
+        return GoalChange(hasTarget: expectsDaily, changed: expectsDaily != wasExpected)
+    }
+
+    /// Seasons ride every save: a target present keeps (or starts) its
     /// season — so unseasoned legacy goals acquire one here, on their first
-    /// edit — and both goals off ends it. Only an amount change re-stamps
-    /// the start; reminder-only edits never reset the clock.
-    private func saveSeason(previousDaily: TimeInterval?, previousWeekly: TimeInterval?) {
-        guard metric.dailyGoal != nil || metric.weeklyGoal != nil else {
+    /// edit — and no target ends it. Only a target change re-stamps the
+    /// start; reminder-only edits never reset the clock.
+    private func saveSeason(_ change: GoalChange) {
+        guard change.hasTarget else {
             GoalSeason.clearSeason(of: metric)
             return
         }
         metric.goalSeasonWeeks = seasonWeeks
         metric.goalSeasonNote = seasonNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        GoalSeason.stampOnSave(
-            metric,
-            amountsChanged: metric.dailyGoal != previousDaily || metric.weeklyGoal != previousWeekly
-        )
+        GoalSeason.stampOnSave(metric, amountsChanged: change.changed)
     }
 
     private func saveAmountGoals() {

@@ -79,13 +79,29 @@ struct GoalSeasonTests {
         #expect(GoalSeason.phase(of: metric, now: now) == .none)
     }
 
+    /// A binary habit's expectation is a target like any other: seasoned, it
+    /// phases; released, there is no season left to review.
     @Test
-    func binaryMetricsHaveNoSeason() {
-        let metric = seasoned(9)
-        let binary = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
-        binary.goalSeasonStartedAt = metric.goalSeasonStartedAt
-        binary.goalSeasonWeeks = metric.goalSeasonWeeks
-        #expect(GoalSeason.phase(of: binary, now: now) == .none)
+    func binaryHabitSeasonsPhaseWhileExpected() {
+        let habit = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
+        habit.goalSeasonStartedAt = day(63)
+        habit.goalSeasonWeeks = 6
+        #expect(GoalSeason.phase(of: habit, now: now) == .pastSeason(weeksOver: 3))
+
+        habit.binaryGoalRetiredAt = day(1)
+        #expect(GoalSeason.phase(of: habit, now: now) == .none)
+    }
+
+    @Test
+    func binaryReviewRowSaysShowUpDaily() {
+        let habit = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
+        habit.goalSeasonStartedAt = day(42)
+        habit.goalSeasonWeeks = 6
+
+        let row = GoalSeason.reviews(for: [habit], now: now).first
+
+        #expect(row?.goalText == "Show up daily")
+        #expect(row?.phase == .due)
     }
 
     @Test
@@ -189,6 +205,44 @@ struct GoalSeasonTests {
         #expect(metric.excludedWeekdays == [1, 7])
         #expect(metric.reminderTime != nil)
         #expect(metric.streakAlertTime != nil)
+    }
+
+    @Test
+    func retireReleasesBinaryExpectationKeepingEverythingElse() {
+        let habit = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
+        habit.goalSeasonStartedAt = day(42)
+        habit.goalSeasonWeeks = 6
+        addSession(habit, at: day(0))
+        #expect(GoalSummary.isDailyComplete(habit))
+
+        GoalSeason.retire(habit, at: now)
+
+        #expect(habit.binaryGoalRetiredAt == now)
+        #expect(!habit.expectsDailyShowUp)
+        #expect(!GoalSummary.isDailyComplete(habit))
+        #expect(GoalSummary.daily(for: [habit]).total == 0)
+        #expect(habit.goalSeasonStartedAt == nil)
+        #expect(habit.sessions.count == 1)
+    }
+
+    /// The watch mirrors the release: a retired habit leaves the day ring.
+    @Test
+    func watchRingsDropReleasedBinaryHabit() {
+        let live = WatchMetricSnapshot(
+            id: UUID(), name: "Live", measurementType: .binary,
+            unit: nil, icon: nil, colorName: nil, todayTotal: 1
+        )
+        let released = WatchMetricSnapshot(
+            id: UUID(), name: "Released", measurementType: .binary,
+            unit: nil, icon: nil, colorName: nil, todayTotal: 1,
+            binaryGoalRetiredAt: day(1)
+        )
+        let snapshot = WatchSnapshot(metrics: [live, released], day: day(0))
+
+        let summary = ComplicationProgress.dailySummary(in: snapshot)
+
+        #expect(summary.total == 1)
+        #expect(summary.met == 1)
     }
 
     @Test

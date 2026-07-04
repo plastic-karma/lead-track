@@ -51,6 +51,12 @@ final class Metric {
     /// What this season is for, in the user's words — the review row's
     /// framing line. Defaults empty, so existing metrics migrate untouched.
     var goalSeasonNote: String = ""
+    /// When a binary habit's implicit "do it today" expectation was released
+    /// (retired at a season review or switched off in goal settings). nil —
+    /// the default, so existing stores migrate untouched — means the
+    /// expectation is live. Meaningless on quantity metrics, whose pressure
+    /// lives in amount goals.
+    var binaryGoalRetiredAt: Date?
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -197,6 +203,19 @@ extension Metric {
     }
 }
 #endif
+
+// MARK: - Daily Show-Up Expectation
+
+extension Metric {
+    /// Whether the binary habit still carries its implicit "do it today"
+    /// target — true until the expectation is retired. A released habit
+    /// keeps its card, logging, and streak history, but drops out of the
+    /// day's rings and done/left arithmetic, exactly as a quantity metric
+    /// behaves after its amount goal retires.
+    var expectsDailyShowUp: Bool {
+        measurementType == .binary && binaryGoalRetiredAt == nil
+    }
+}
 
 // MARK: - Daily Goal Schedule
 

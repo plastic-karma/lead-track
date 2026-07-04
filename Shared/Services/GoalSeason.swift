@@ -17,7 +17,8 @@ enum GoalSeason {
     static let graceWeeks = 2
 
     enum Phase: Equatable {
-        /// No goal, a binary metric, or an unseasoned (pre-feature) goal.
+        /// No goal, a released binary habit, or an unseasoned (pre-feature)
+        /// goal.
         case none
         case active(weeksRemaining: Int)
         /// The season ended within the grace window; the review offers the
@@ -46,11 +47,14 @@ enum GoalSeason {
         return over < graceWeeks ? .due : .pastSeason(weeksOver: over)
     }
 
-    /// Binary metrics are excluded: their "goal" is the implicit
-    /// show-up-today, with nothing to size or retire.
+    /// A binary habit's target is the implicit show-up-today expectation, so
+    /// its season runs while that expectation is live; quantity metrics need
+    /// an amount goal.
     private static func hasSeasonedGoal(_ metric: Metric) -> Bool {
-        metric.measurementType.tracksQuantity
-            && (metric.dailyGoal != nil || metric.weeklyGoal != nil)
+        if metric.measurementType == .binary {
+            return metric.expectsDailyShowUp
+        }
+        return metric.dailyGoal != nil || metric.weeklyGoal != nil
     }
 
     /// Weeks left, rounded up, never below one while the season is active.
@@ -108,6 +112,7 @@ extension GoalSeason {
     }
 
     private static func goalText(of metric: Metric) -> String {
+        guard metric.measurementType.tracksQuantity else { return "Show up daily" }
         var parts: [String] = []
         if let daily = metric.dailyGoal {
             parts.append(ValueFormatter.format(daily, type: metric.measurementType, unit: metric.unit) + " / day")
@@ -145,12 +150,16 @@ extension GoalSeason {
         metric.goalSeasonStartedAt = date
     }
 
-    /// Retire: a first-class ending — clears both goals and the season, and
-    /// deliberately preserves rest days, reminders, and streak alerts: the
-    /// streak is a logged-day streak the goal amount never entered, so rest
-    /// days keep protecting it, and reminders are about showing up, not the
-    /// target.
-    static func retire(_ metric: Metric) {
+    /// Retire: a first-class ending — clears both goals and the season (for
+    /// a binary habit, releases its show-up expectation instead: the card,
+    /// logging, and history all stay), and deliberately preserves rest days,
+    /// reminders, and streak alerts: the streak is a logged-day streak the
+    /// goal amount never entered, so rest days keep protecting it, and
+    /// reminders are about showing up, not the target.
+    static func retire(_ metric: Metric, at date: Date = .now) {
+        if metric.measurementType == .binary {
+            metric.binaryGoalRetiredAt = date
+        }
         metric.dailyGoal = nil
         metric.weeklyGoal = nil
         clearSeason(of: metric)

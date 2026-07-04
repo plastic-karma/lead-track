@@ -399,7 +399,7 @@ ledger of retired goals is a performance record by another name — precisely
 the score-keeping this feature exists to dissolve; (c) intentions set the
 precedent that lifecycle history is narrative, not aggregate.
 
-**Chosen: three defaulted fields on `Metric`,** one season per metric covering
+**Chosen: four defaulted fields on `Metric`,** one season per metric covering
 its goal settings as a whole (daily + weekly are already edited as one
 screenful in `GoalSettingsView`, and one review question — "is this target
 still serving *Grow wiser*?" — is the right altitude).
@@ -409,6 +409,7 @@ still serving *Grow wiser*?" — is the right altitude).
 | `goalSeasonStartedAt` | `Date?` | stamped when a goal is enabled, its amount changed, or the season renewed. `nil` = unseasoned (all pre-feature goals) |
 | `goalSeasonWeeks` | `Int?` | chosen at creation; default suggestion 6. `nil` with a goal present = unseasoned |
 | `goalSeasonNote` | `String` = `""` | "what this season is for," in the user's words — the review row's framing line |
+| `binaryGoalRetiredAt` | `Date?` | when a binary habit's implicit show-up expectation was released. `nil` (all pre-feature habits) = the expectation is live |
 
 Additive lightweight migration (the `excludedWeekdays`/`countdownDuration`
 precedent). Plain properties outside any `#if` guard — Linux-fine.
@@ -455,8 +456,14 @@ enum GoalSeason {
 }
 ```
 
-Binary metrics are excluded: their "goal" is the implicit show-up-today, with
-nothing to size or retire.
+Binary habits are seasoned through their implicit target: the show-up-today
+expectation. Their season runs while the expectation is live (goal settings
+surface it as an explicit, releasable "Expect It Daily" toggle), the review
+row reads "Show up daily," and retiring stamps `binaryGoalRetiredAt` — the
+habit keeps its card, logging, and streak history but drops out of the day's
+rings and done/left arithmetic, exactly mirroring a retired amount goal. A
+daily habit's chain is the most Goodhart-prone target in the app, so it gets
+the season treatment rather than an exemption.
 
 ### Lapse semantics — flag, never auto-retire
 
@@ -491,7 +498,9 @@ target ("clear your reviews"). The flag is a fact, not a judgment.
     sheet (also used by promotions and Feature 2); saving re-stamps the
     season.
   - **Retire** — confirmation dialog, then clears `dailyGoal`, `weeklyGoal`,
-    and the three season fields. **Preserves `excludedWeekdays`,
+    and the three season fields; a binary habit instead stamps
+    `binaryGoalRetiredAt`, releasing its show-up expectation while the card
+    and history stay. **Preserves `excludedWeekdays`,
     `reminderTime`, and `streakAlertTime`** — rest days keep protecting the
     streak, and reminders are about showing up, not the target.
 - **GoalSettingsView** — the single production write site for

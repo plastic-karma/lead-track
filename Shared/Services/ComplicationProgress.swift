@@ -17,13 +17,20 @@ struct ComplicationMetricProgress: Equatable, Identifiable {
     let dailyGoal: Double?
     let isRestDay: Bool
     let isRunning: Bool
+    /// When a binary habit's show-up expectation was released; nil (the
+    /// default, and everything cached by earlier versions) reads as
+    /// "expected".
+    var binaryGoalRetiredAt: Date? = nil
 }
 
 extension ComplicationMetricProgress {
-    /// Mirrors `GoalSummary`: binary metrics always carry an implicit
-    /// "do it today" target; the others need an amount goal.
+    /// Mirrors `GoalSummary`: binary metrics carry an implicit "do it today"
+    /// target until it is retired; the others need an amount goal.
     var hasDailyTarget: Bool {
-        measurementType == .binary || dailyGoal != nil
+        if measurementType == .binary {
+            return binaryGoalRetiredAt == nil
+        }
+        return dailyGoal != nil
     }
 
     /// Whether the target counts right now — a rest day suspends it.
@@ -118,7 +125,8 @@ enum ComplicationProgress {
             todayTotal: effectiveTotal(of: metric, day: day, at: now, calendar: calendar),
             dailyGoal: metric.dailyGoal,
             isRestDay: !metric.isGoalDay(on: now, calendar: calendar),
-            isRunning: metric.runningSince != nil
+            isRunning: metric.runningSince != nil,
+            binaryGoalRetiredAt: metric.binaryGoalRetiredAt
         )
     }
 
