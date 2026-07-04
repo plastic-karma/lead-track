@@ -96,19 +96,37 @@ extension NotificationService {
 // MARK: - Scheduling
 
 extension NotificationService {
+    /// Schedules the metric's daily reminder(s): the fixed times still ahead
+    /// today, or — for a random window — that many seeded random pings, falling
+    /// through to the next goal day once today's are spent. Up to
+    /// `ReminderSchedule.maxPerDay` one-shots, each rescheduled on the next
+    /// launch or log.
     private static func scheduleReminder(
         for metric: Metric
     ) {
-        guard let time = metric.reminderTime else { return }
-        guard let stableID = metric.stableID else { return }
-        guard !hasLoggedToday(metric) else { return }
-        guard let trigger = goalDayTrigger(
-            for: time, excludedWeekdays: metric.excludedWeekdaySet
-        ) else { return }
+        guard let schedule = metric.reminderSchedule,
+              let stableID = metric.stableID,
+              !hasLoggedToday(metric)
+        else { return }
+        let dates = ReminderPlanner.nextFireDates(
+            for: schedule,
+            seed: stableID.stableSeed,
+            excludedWeekdays: metric.excludedWeekdaySet,
+            now: .now
+        )
+        scheduleReminders(dates, for: metric, stableID: stableID)
+    }
 
+    private static func scheduleReminders(
+        _ dates: [Date],
+        for metric: Metric,
+        stableID: UUID
+    ) {
         let content = reminderContent(for: metric)
-        let id = "reminder-\(stableID.uuidString)"
-        schedule(id: id, content: content, trigger: trigger)
+        for (index, date) in dates.enumerated() {
+            let trigger = calendarTrigger(for: date)
+            schedule(id: reminderID(stableID, index), content: content, trigger: trigger)
+        }
     }
 
     private static func scheduleStreakAlert(
@@ -132,10 +150,13 @@ extension NotificationService {
 
     private static func cancelForMetric(_ metric: Metric) {
         guard let stableID = metric.stableID else { return }
-        let ids = [
+        // The bare "reminder-<id>" clears any reminder scheduled by a
+        // pre-multi-time build; the indexed ids clear the current ones.
+        var ids = [
             "reminder-\(stableID.uuidString)",
             "streak-\(stableID.uuidString)"
         ]
+        ids += (0 ..< ReminderSchedule.maxPerDay).map { reminderID(stableID, $0) }
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
     }
@@ -272,12 +293,23 @@ extension NotificationService {
         guard let date = nextGoalDate(
             for: time, excludedWeekdays: excludedWeekdays
         ) else { return nil }
+        return calendarTrigger(for: date)
+    }
+
+    /// A one-shot trigger firing at the exact given date.
+    private static func calendarTrigger(
+        for date: Date
+    ) -> UNCalendarNotificationTrigger {
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute], from: date
         )
         return UNCalendarNotificationTrigger(
             dateMatching: components, repeats: false
         )
+    }
+
+    private static func reminderID(_ stableID: UUID, _ index: Int) -> String {
+        "reminder-\(stableID.uuidString)-\(index)"
     }
 
     private static func nextGoalDate(
