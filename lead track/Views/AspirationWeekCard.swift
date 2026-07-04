@@ -17,6 +17,10 @@ struct AspirationWeekCard: View {
     /// Records this week's alignment pulse (rating, then optionally a note);
     /// nil (earlier weeks, unmapped aspirations) hides the composer.
     var onCheckIn: ((AlignmentRating, String?) -> Void)?
+    /// Opens the moment composer pre-bound to this aspiration; nil (earlier
+    /// weeks, unmapped aspirations) hides the affordance. Moment *rows* still
+    /// render without it — they are narrative, shown on browsed weeks too.
+    var onKeepMoment: (() -> Void)?
     /// The rating tapped this visit, keeping the note field on stage after
     /// the write flips `week.offersCheckIn` off.
     @State private var pulseRating: AlignmentRating?
@@ -32,6 +36,7 @@ struct AspirationWeekCard: View {
             weekLine
             footer
             intentionsBlock
+            momentsBlock
             pulseBlock
         }
         .cardSurface()
@@ -135,6 +140,74 @@ extension AspirationWeekCard {
         if let onSetIntention {
             Button(action: onSetIntention) {
                 Label("Set an intention", systemImage: "plus.circle")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.borderless)
+        }
+    }
+}
+
+// MARK: - Moments
+
+extension AspirationWeekCard {
+    /// The week's kept moments (content before prompts), then — on the live
+    /// week only — one quiet affordance to keep another. The block is present
+    /// whenever there is a moment to show or a moment to keep; on a browsed
+    /// week with no moments it vanishes entirely.
+    @ViewBuilder
+    private var momentsBlock: some View {
+        if !week.moments.isEmpty || onKeepMoment != nil {
+            Divider()
+            ForEach(week.moments) { line in
+                momentRow(line)
+            }
+            keepMomentButton
+        }
+    }
+
+    private func momentRow(_ line: WeeklyReview.MomentLine) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(line.occurredAt.formatted(.dateTime.weekday(.abbreviated)))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 34, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(line.text)
+                    .font(.subheadline)
+                    .lineLimit(2)
+                momentMeta(line)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private func momentMeta(_ line: WeeklyReview.MomentLine) -> some View {
+        if !trimmedPlace(line).isEmpty || line.hasPhotos {
+            HStack(spacing: 6) {
+                if !trimmedPlace(line).isEmpty {
+                    Label(trimmedPlace(line), systemImage: "mappin")
+                        .labelStyle(.titleAndIcon)
+                        .lineLimit(1)
+                }
+                if line.hasPhotos {
+                    Image(systemName: "photo")
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private func trimmedPlace(_ line: WeeklyReview.MomentLine) -> String {
+        line.placeName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    @ViewBuilder
+    private var keepMomentButton: some View {
+        if let onKeepMoment {
+            Button(action: onKeepMoment) {
+                Label("Keep a moment", systemImage: "plus.circle")
                     .font(.subheadline)
             }
             .buttonStyle(.borderless)

@@ -36,6 +36,13 @@ completable.
 _Avoid_: using "goal" for an Aspiration — they are opposites (target vs
 target-free).
 
+**Goal season**:
+The lifespan a goal is created for — N weeks, then a deliberate renew /
+adjust / retire decision at the Weekly Review. A lapsed season changes
+nothing: the goal keeps working and wears a quiet "past season" tag.
+Retiring a target is a first-class positive act; tracking continues.
+_Avoid_: deadline, expiry (the goal never stops by itself).
+
 **Aspiration**:
 An ongoing, never-"done" theme you pour effort into over a lifetime, with no
 target and no deadline. A lens that aggregates the effort of the metrics and
@@ -62,3 +69,26 @@ contribution with its own unit and total.
 **Lifetime / Recent**:
 The two figures every rollup total is shown as. Lifetime is the cumulative,
 only-grows total; Recent is the trailing 30-day window showing current momentum.
+
+**Intention**:
+A small, week-scoped commitment under exactly one aspiration — the middle
+timescale between the day and the lifetime. Born in a calendar week, closed
+at the next Weekly Review, then history as narrative only: no completion
+rate, streak, or cross-week aggregate is ever computed over outcomes.
+_Avoid_: task, todo, weekly goal.
+
+**Alignment check-in**:
+The weekly, always-skippable pulse on one aspiration — the app's only
+subjective series. Asks "is this effort still serving the why?" on a
+three-point scale (drifting / unsure / serving); never streaked, counted, or
+nagged — absence is silence.
+_Avoid_: rating the week, performance score.
+
+**Moment**:
+A kept piece of testimony under exactly one aspiration: evidence, in the
+user's words (with optional photos and a place), that the becoming is
+happening. It occurs at a user-set time distinct from when it was kept, may
+point at the metric or project where it happened, and is witnessed, never
+measured — no counts, totals, streaks, or prompts anywhere. "Keep" is the
+capture verb.
+_Avoid_: milestone, achievement, win, highlight, memory, journal entry.

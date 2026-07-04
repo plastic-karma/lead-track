@@ -23,6 +23,9 @@ extension WeeklyReviewView {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
+            .sheet(item: $keepingMomentFor) { aspiration in
+                MomentFormView(aspiration: aspiration)
+            }
         }
     }
 
@@ -51,7 +54,8 @@ extension WeeklyReviewView {
             closures: review.intentionClosures.filter { $0.aspirationID == week.id },
             onSetIntention: setIntentionAction(for: aspiration, in: review),
             onClosureAction: { action, id in handle(action, closureID: id) },
-            onCheckIn: checkInAction(for: aspiration, in: review)
+            onCheckIn: checkInAction(for: aspiration, in: review),
+            onKeepMoment: keepMomentAction(for: aspiration, in: review)
         )
     }
 
@@ -73,6 +77,17 @@ extension WeeklyReviewView {
     ) -> ((AlignmentRating, String?) -> Void)? {
         guard review.weeksBack == 0, let aspiration else { return nil }
         return { rating, note in recordCheckIn(rating, note: note, for: aspiration) }
+    }
+
+    /// The card's "Keep a moment" affordance — live review only, and only when
+    /// the card maps back to its model. Moment *rows* need no such gate; they
+    /// show on browsed weeks too.
+    private func keepMomentAction(
+        for aspiration: Aspiration?,
+        in review: WeeklyReview
+    ) -> (() -> Void)? {
+        guard review.weeksBack == 0, let aspiration else { return nil }
+        return { keepingMomentFor = aspiration }
     }
 
     /// Upserts the current week's pulse: one row per aspiration per calendar

@@ -17,6 +17,12 @@ struct AspirationDetailView: View {
     @State private var showingDeleteConfirmation = false
     /// Internal for the "This week" block in `AspirationIntentionSections`.
     @State var showingSetIntention = false
+    /// Internal for the Moments block in `AspirationMomentsSection`: the "Keep"
+    /// composer, the row tapped for editing, and a photo-bearing moment awaiting
+    /// its delete confirmation.
+    @State var showingKeepMoment = false
+    @State var editingMoment: Moment?
+    @State var momentPendingDelete: Moment?
     /// Internal for the Pulse section in `AspirationPulseSection`: the note
     /// draft and the focus the divergence card's Reflect affordance steals.
     @State var pulseNoteDraft = ""
@@ -26,6 +32,7 @@ struct AspirationDetailView: View {
         List {
             coverSection
             whySection
+            momentsSection
             pulseSection
             thisWeekSection
             effortSection(AspirationRollup.compute(for: aspiration))
@@ -55,6 +62,30 @@ struct AspirationDetailView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingKeepMoment) {
+            MomentFormView(aspiration: aspiration)
+        }
+        .sheet(item: $editingMoment) { moment in
+            MomentFormView(aspiration: aspiration, moment: moment)
+        }
+        .confirmationDialog(
+            "Delete this moment?",
+            isPresented: momentDeletePresented,
+            presenting: momentPendingDelete
+        ) { moment in
+            Button("Delete Moment", role: .destructive) { deleteMoment(moment) }
+        } message: { _ in
+            Text("Its photos are deleted with it. This can't be undone.")
+        }
+    }
+
+    /// Drives the photo-bearing-moment delete dialog off the optional the swipe
+    /// action sets.
+    private var momentDeletePresented: Binding<Bool> {
+        Binding(
+            get: { momentPendingDelete != nil },
+            set: { presented in if !presented { momentPendingDelete = nil } }
+        )
     }
 }
 

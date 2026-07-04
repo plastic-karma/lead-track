@@ -114,7 +114,8 @@ private extension View {
         .modelContainer(
             for: [
                 Metric.self, Project.self, Session.self,
-                Aspiration.self, Intention.self, AspirationCheckIn.self
+                Aspiration.self, Intention.self, AspirationCheckIn.self,
+                Moment.self, MomentPhoto.self
             ],
             inMemory: true
         )
