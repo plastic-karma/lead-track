@@ -80,6 +80,12 @@ final class Metric {
     /// metrics migrate untouched.
     var intentions: [Intention] = []
 
+    /// Back-array for the moments logged here as provenance. Plain (no macro):
+    /// the `inverse:` lives on `Moment.metric`, and both sides nullify —
+    /// deleting a metric drops the link and the moment survives. Defaults
+    /// empty, so existing metrics migrate untouched.
+    var moments: [Moment] = []
+
     init(
         name: String,
         measurementType: MeasurementType = .duration,

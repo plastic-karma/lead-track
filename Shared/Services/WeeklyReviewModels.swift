@@ -61,6 +61,10 @@ extension WeeklyReview {
         /// The current week's open intentions, empty when browsing earlier
         /// weeks — intention machinery lives only on the live review.
         let intentions: [IntentionLine]
+        /// The moments whose `occurredAt` fell in this week, ascending — the
+        /// week's chronicle. Pure narrative display, so unlike intentions they
+        /// show on browsed weeks too. Empty is the norm.
+        let moments: [MomentLine]
         /// Whether the card offers this week's alignment pulse — true only on
         /// the live week when the aspiration hasn't checked in yet. Skipping
         /// is structurally invisible: no badge, no queue, no staging change.
@@ -79,6 +83,20 @@ extension WeeklyReview {
         /// "2 of 3" / "4 of 7 days"; nil for reflective intentions, which
         /// deliberately carry no progress value.
         let progressText: String?
+    }
+
+    /// One moment rendered as a row on its aspiration's card: the testimony,
+    /// when it happened, and where — display only, never a count. The card
+    /// shows at most a small photo glyph (`hasPhotos`); the images themselves
+    /// are viewed on the aspiration's own screen.
+    struct MomentLine: Identifiable {
+        /// The moment's stable identity.
+        let id: String
+        let text: String
+        let occurredAt: Date
+        /// The stored place label, empty when no location was kept.
+        let placeName: String
+        let hasPhotos: Bool
     }
 
     /// An aspiration with no logged effort in the period. It keeps its seat

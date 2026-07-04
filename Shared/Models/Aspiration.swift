@@ -68,6 +68,15 @@ final class Aspiration {
     #endif
     var checkIns: [AspirationCheckIn] = []
 
+    // The kept testimony that this aspiration is being lived (see `Moment`).
+    // Cascade for the same reason as intentions and check-ins: a moment is
+    // meaningless without its why, so deleting the aspiration takes its moments
+    // — and their photos, cascaded again — with it.
+    #if canImport(SwiftData)
+    @Relationship(deleteRule: .cascade, inverse: \Moment.aspiration)
+    #endif
+    var moments: [Moment] = []
+
     init(
         title: String,
         detail: String = "",

@@ -75,6 +75,7 @@ extension WeeklyReview {
         aspirations: [Aspiration] = [],
         intentions: [Intention] = [],
         checkIns: [AspirationCheckIn] = [],
+        moments: [Moment] = [],
         weeksBack: Int = 0,
         now: Date = .now,
         calendar: Calendar = .current
@@ -87,7 +88,8 @@ extension WeeklyReview {
         let context = AspirationWeekContext(
             bounds: bounds, now: now, calendar: calendar,
             intentions: intentions, closureOwners: Set(closures.map(\.aspirationID)),
-            checkedInOwners: checkedInOwners(of: checkIns, now: now, calendar: calendar)
+            checkedInOwners: checkedInOwners(of: checkIns, now: now, calendar: calendar),
+            moments: moments
         )
         let aspirationSplit = partitionAspirations(aspirations, context: context)
         return WeeklyReview(

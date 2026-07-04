@@ -11,7 +11,9 @@ enum SharedModelContainer {
             Session.self,
             Aspiration.self,
             Intention.self,
-            AspirationCheckIn.self
+            AspirationCheckIn.self,
+            Moment.self,
+            MomentPhoto.self
         ])
         let config: ModelConfiguration
         if inMemoryOnly {

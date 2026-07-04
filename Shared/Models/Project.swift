@@ -23,6 +23,12 @@ final class Project {
     /// `Aspiration`). Plain, defaults empty — additive, no migration.
     var aspirations: [Aspiration] = []
 
+    /// Back-array for the moments logged here as provenance. Plain (no macro):
+    /// the `inverse:` lives on `Moment.project`, and both sides nullify —
+    /// deleting a project drops the link and the moment survives. Defaults
+    /// empty — additive, no migration.
+    var moments: [Moment] = []
+
     init(
         name: String,
         metric: Metric? = nil,

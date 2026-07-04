@@ -22,6 +22,7 @@
 		D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040001 /* AspirationAlignmentTests.swift */; };
 		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
 		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
+		D1F0010000000000070002 /* MomentWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000070001 /* MomentWeekTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -126,6 +127,7 @@
 		D1F0010000000000040001 /* AspirationAlignmentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationAlignmentTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000070001 /* MomentWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentWeekTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -274,6 +276,7 @@
 				D1F0010000000000040001 /* AspirationAlignmentTests.swift */,
 				D1F0010000000000050001 /* MeasureHealthTests.swift */,
 				D1F0010000000000060001 /* TodayGroupingTests.swift */,
+				D1F0010000000000070001 /* MomentWeekTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
 				0A1CAF010000000000000019 /* ComplicationProgressTests.swift */,
@@ -644,6 +647,7 @@
 				D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */,
 				D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */,
 				D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */,
+				D1F0010000000000070002 /* MomentWeekTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
 				0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */,
@@ -896,6 +900,7 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -940,6 +945,7 @@
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

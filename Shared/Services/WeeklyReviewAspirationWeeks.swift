@@ -19,6 +19,8 @@ extension WeeklyReview {
         let closureOwners: Set<String>
         /// Aspiration IDs that already recorded this week's alignment pulse.
         let checkedInOwners: Set<String>
+        /// Every moment, from which each aspiration's week rows are windowed.
+        let moments: [Moment]
     }
 
     static func partitionAspirations(
@@ -49,7 +51,13 @@ extension WeeklyReview {
     ) -> AspirationWeek? {
         let week = weekData(of: aspiration, context: context)
         let awaitsClosure = context.closureOwners.contains(week.id)
-        guard week.sessionCount > 0 || !week.intentions.isEmpty || awaitsClosure else { return nil }
+        // A moment stages a quiet aspiration exactly as an intention does:
+        // content the user created takes the stage; pending prompts (an
+        // unanswered check-in) never do. A week whose only event is "finished
+        // my first 10k" is the week's most important card.
+        guard week.sessionCount > 0 || !week.intentions.isEmpty
+            || awaitsClosure || !week.moments.isEmpty
+        else { return nil }
         return week
     }
 }
@@ -79,6 +87,7 @@ private extension WeeklyReview {
                 of: sessions, from: context.bounds.start, calendar: context.calendar
             ) { _ in 1 },
             intentions: intentionLines(of: aspiration, context: context),
+            moments: momentLines(of: aspiration, context: context),
             offersCheckIn: context.bounds.isCurrentWeek && !context.checkedInOwners.contains(id),
             narrowing: context.bounds.isCurrentWeek
                 ? MeasureHealth.detectNarrowing(for: aspiration, now: context.now, calendar: context.calendar)
@@ -130,6 +139,43 @@ private extension WeeklyReview {
               intention.isInCurrentWeek(now: context.now, calendar: context.calendar)
         else { return false }
         return intention.aspiration.map { stableID(of: $0) } == aspirationID
+    }
+
+    /// The aspiration's moments whose `occurredAt` fell inside the reviewed
+    /// window, ascending — the week's chronicle. No current-week gate: a moment
+    /// row is pure narrative, shown on browsed weeks too, unlike the intention
+    /// and check-in machinery.
+    static func momentLines(
+        of aspiration: Aspiration,
+        context: AspirationWeekContext
+    ) -> [MomentLine] {
+        let id = stableID(of: aspiration)
+        return context.moments
+            .filter { momentInWindow($0, aspirationID: id, context: context) }
+            .sorted { $0.occurredAt < $1.occurredAt }
+            .map { moment in
+                MomentLine(
+                    id: moment.stableID?.uuidString ?? moment.text,
+                    text: moment.text,
+                    occurredAt: moment.occurredAt,
+                    placeName: moment.placeName,
+                    hasPhotos: !moment.photos.isEmpty
+                )
+            }
+    }
+
+    /// Whether a moment belongs on this aspiration's card: kept inside the
+    /// reviewed window (half-open on `occurredAt`, the same rule as sessions)
+    /// and owned by this aspiration.
+    static func momentInWindow(
+        _ moment: Moment,
+        aspirationID: String,
+        context: AspirationWeekContext
+    ) -> Bool {
+        guard moment.occurredAt >= context.bounds.start,
+              moment.occurredAt < context.bounds.end
+        else { return false }
+        return moment.aspiration.map { stableID(of: $0) } == aspirationID
     }
 }
 
@@ -183,7 +229,8 @@ extension WeeklyReview {
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
         let context = AspirationWeekContext(
             bounds: bounds, now: now, calendar: calendar,
-            intentions: [], closureOwners: [], checkedInOwners: []
+            intentions: [], closureOwners: [], checkedInOwners: [],
+            moments: []
         )
         return AspirationWeekDetail(
             week: weekData(of: aspiration, context: context),

@@ -26,12 +26,17 @@ struct WeeklyReviewView: View {
     /// This week's alignment pulses, so cards offer the check-in only where
     /// it is still open.
     @Query(sort: \AspirationCheckIn.createdAt) var checkIns: [AspirationCheckIn]
+    /// Every kept moment, windowed per aspiration into the reviewed week (see
+    /// `WeeklyReview.build`). Empty until the feature is used — additive.
+    @Query(sort: \Moment.occurredAt) var moments: [Moment]
     @Environment(\.modelContext) var modelContext
     @State private var showingSettings = false
     @State private var currentPage: String?
     @State private var weeksBack = 0
     /// The aspiration a new intention is being set under, if any.
     @State var settingIntentionFor: Aspiration?
+    /// The aspiration a new moment is being kept under, if any.
+    @State var keepingMomentFor: Aspiration?
     /// The goal-settings route shared by promotions, measure-health insights,
     /// and season adjustments — hoisted here so it works with or without
     /// aspirations on stage.
@@ -42,7 +47,7 @@ struct WeeklyReviewView: View {
     var body: some View {
         let review = WeeklyReview.build(
             metrics: metrics, aspirations: aspirations, intentions: intentions,
-            checkIns: checkIns, weeksBack: weeksBack
+            checkIns: checkIns, moments: moments, weeksBack: weeksBack
         )
         return content(review)
             .background(Theme.washedScreen)
