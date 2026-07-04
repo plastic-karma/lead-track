@@ -12,27 +12,30 @@ import UIKit
 /// Passing an existing moment switches to edit; the owning aspiration and
 /// `createdAt` never change.
 struct MomentFormView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
+    // Internal, not private: the composer's behavior lives in its own file
+    // (`MomentFormActions`), which reads and writes this state — the same
+    // cross-file split as `AspirationDetailView`'s section files.
+    @Environment(\.modelContext) var modelContext
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.openURL) var openURL
 
     let aspiration: Aspiration
-    private let editing: Moment?
+    let editing: Moment?
 
     @Query(sort: \Metric.createdAt) private var allMetrics: [Metric]
     @Query(sort: \Project.startedAt) private var allProjects: [Project]
 
-    @State private var text: String
-    @State private var occurredAt: Date
-    @State private var provenance: MomentProvenance
-    @State private var latitude: Double?
-    @State private var longitude: Double?
-    @State private var placeName: String
-    @State private var photoData: [Data]
-    @State private var photoItems: [PhotosPickerItem] = []
-    @State private var locationStatus: LocationStatus = .idle
-    @State private var reader = MomentLocationReader()
-    @State private var saveTrigger = false
+    @State var text: String
+    @State var occurredAt: Date
+    @State var provenance: MomentProvenance
+    @State var latitude: Double?
+    @State var longitude: Double?
+    @State var placeName: String
+    @State var photoData: [Data]
+    @State var photoItems: [PhotosPickerItem] = []
+    @State var locationStatus: LocationStatus = .idle
+    @State var reader = MomentLocationReader()
+    @State var saveTrigger = false
 
     /// Soft cap, enforced here in the composer, never in the schema.
     static let photoCap = 4
