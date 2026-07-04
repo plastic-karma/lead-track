@@ -162,7 +162,7 @@ extension MetricDetailView {
             .listRowSeparator(.hidden)
             descriptionRow
         } footer: {
-            defaultProjectFooter
+            heroFooter
         }
     }
 
@@ -201,13 +201,22 @@ extension MetricDetailView {
         )
     }
 
-    @ViewBuilder
-    private var defaultProjectFooter: some View {
-        if let project = metric.defaultProject {
-            Label(
-                "Logging to \(project.name)",
-                systemImage: "star.fill"
-            )
+    private var heroFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let project = metric.defaultProject {
+                Label(
+                    "Logging to \(project.name)",
+                    systemImage: "star.fill"
+                )
+            }
+            // The quiet "past season" tag: a fact, not a judgment — the goal
+            // keeps working in full (see `GoalSeason`).
+            if case .pastSeason = GoalSeason.phase(of: metric) {
+                Label(
+                    "Goal past its season — review it under Goals",
+                    systemImage: "leaf"
+                )
+            }
         }
     }
 

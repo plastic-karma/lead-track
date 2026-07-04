@@ -7,8 +7,14 @@ import SwiftUI
 struct MetricListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
-    @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
+    /// Internal (not private) so the grouped arrangement in its own file can
+    /// partition under the same query.
+    @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
     @Query(sort: \Intention.createdAt) private var intentions: [Intention]
+    /// Aspiration-first Today (see `TodayGrouping`): cluster the open cards
+    /// under the aspiration they serve. Off by default — the classic
+    /// dashboard is untouched.
+    @AppStorage("todayGroupsByAspiration") private var groupsByAspiration = false
     @Query(filter: Session.isRunningPredicate)
     private var runningSessions: [Session]
     @State private var showingAddSheet = false
@@ -25,7 +31,9 @@ struct MetricListView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 TodayHeaderView(metrics: metrics)
                 TodayIntentionsSection(intentions: intentions)
-                if !leftMetrics.isEmpty {
+                if groupsByAspiration {
+                    groupedMetricSections
+                } else if !leftMetrics.isEmpty {
                     sectionHeader(leftTitle)
                     ForEach(leftMetrics) { metricCard($0) }
                 }
@@ -38,7 +46,11 @@ struct MetricListView: View {
                         )
                     }
                 }
-                TodayAspirationsFooter(aspirations: aspirations)
+                // Grouped mode suppresses the footer: its "Poured Into"
+                // chips would repeat the group headers directly above.
+                if !groupsByAspiration {
+                    TodayAspirationsFooter(aspirations: aspirations)
+                }
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -94,7 +106,8 @@ struct MetricListView: View {
 extension MetricListView {
     /// Metrics still open today — anything without a met daily goal, so a card
     /// stays in reach until its goal is done (or always, for goal-less metrics).
-    private var leftMetrics: [Metric] {
+    /// Internal (not private) for the grouped arrangement in its own file.
+    var leftMetrics: [Metric] {
         metrics.filter { !isDone($0) }
     }
 
@@ -144,7 +157,9 @@ extension MetricListView {
         }
     }
 
-    private func metricCard(_ metric: Metric) -> some View {
+    /// Internal (not private) so the grouped arrangement renders the exact
+    /// same living card.
+    func metricCard(_ metric: Metric) -> some View {
         NavigationLink(value: metric) {
             MetricCardView(
                 metric: metric,

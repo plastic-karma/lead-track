@@ -18,6 +18,10 @@
 		D1F00100000000000000F002 /* AspirationRollupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000000F001 /* AspirationRollupTests.swift */; };
 		D1F0010000000000010002 /* AspirationWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000010001 /* AspirationWeekTests.swift */; };
 		D1F0010000000000020002 /* HealthMetricTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000020001 /* HealthMetricTests.swift */; };
+		D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000030001 /* GoalSeasonTests.swift */; };
+		D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040001 /* AspirationAlignmentTests.swift */; };
+		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
+		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -118,6 +122,10 @@
 		D1F00100000000000000F001 /* AspirationRollupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationRollupTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000010001 /* AspirationWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationWeekTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000020001 /* HealthMetricTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthMetricTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000030001 /* GoalSeasonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalSeasonTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000040001 /* AspirationAlignmentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationAlignmentTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -262,6 +270,10 @@
 				D1F00100000000000000F001 /* AspirationRollupTests.swift */,
 				D1F0010000000000010001 /* AspirationWeekTests.swift */,
 				D1F0010000000000020001 /* HealthMetricTests.swift */,
+				D1F0010000000000030001 /* GoalSeasonTests.swift */,
+				D1F0010000000000040001 /* AspirationAlignmentTests.swift */,
+				D1F0010000000000050001 /* MeasureHealthTests.swift */,
+				D1F0010000000000060001 /* TodayGroupingTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
 				0A1CAF010000000000000019 /* ComplicationProgressTests.swift */,
@@ -628,6 +640,10 @@
 				D1F00100000000000000F002 /* AspirationRollupTests.swift in Sources */,
 				D1F0010000000000010002 /* AspirationWeekTests.swift in Sources */,
 				D1F0010000000000020002 /* HealthMetricTests.swift in Sources */,
+				D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */,
+				D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */,
+				D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */,
+				D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
 				0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */,

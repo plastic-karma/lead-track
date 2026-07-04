@@ -51,10 +51,11 @@ extension GoalSummary {
         return isDailyMet(metric, calendar: calendar)
     }
 
-    /// Binary metrics always carry an implicit "do it today" goal; the others
-    /// only count toward the summary once an amount goal is set.
+    /// Binary metrics carry an implicit "do it today" goal until it is
+    /// retired (see `Metric.expectsDailyShowUp`); the others only count
+    /// toward the summary once an amount goal is set.
     private static func hasDailyTarget(_ metric: Metric) -> Bool {
-        metric.measurementType == .binary || metric.dailyGoal != nil
+        metric.expectsDailyShowUp || metric.dailyGoal != nil
     }
 
     private static func isDailyMet(

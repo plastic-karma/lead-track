@@ -28,6 +28,11 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     /// for a hand-recorded one. Optional so snapshots cached by earlier app
     /// versions still decode.
     var healthSourceRaw: String?
+    /// When a binary habit's show-up expectation was released (mirrors
+    /// `Metric.binaryGoalRetiredAt`). Optional so snapshots cached by
+    /// earlier app versions still decode; nil reads as "expected", the old
+    /// behavior.
+    var binaryGoalRetiredAt: Date?
 
     init(
         id: UUID,
@@ -41,7 +46,8 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
         dailyGoal: Double? = nil,
         excludedWeekdays: [Int]? = nil,
         countdownDuration: TimeInterval? = nil,
-        healthSourceRaw: String? = nil
+        healthSourceRaw: String? = nil,
+        binaryGoalRetiredAt: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -55,6 +61,7 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
         self.excludedWeekdays = excludedWeekdays
         self.countdownDuration = countdownDuration
         self.healthSourceRaw = healthSourceRaw
+        self.binaryGoalRetiredAt = binaryGoalRetiredAt
     }
 }
 
@@ -72,10 +79,13 @@ extension WatchMetricSnapshot {
         healthSourceRaw != nil
     }
 
-    /// Mirrors `GoalSummary`: binary metrics always carry an implicit
-    /// "do it today" target; the others need an amount goal.
+    /// Mirrors `GoalSummary`: binary metrics carry an implicit "do it today"
+    /// target until it is retired; the others need an amount goal.
     var hasDailyTarget: Bool {
-        measurementType == .binary || dailyGoal != nil
+        if measurementType == .binary {
+            return binaryGoalRetiredAt == nil
+        }
+        return dailyGoal != nil
     }
 
     /// Whether the daily goal applies on the given date's weekday, mirroring

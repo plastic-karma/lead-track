@@ -17,11 +17,16 @@ struct AspirationDetailView: View {
     @State private var showingDeleteConfirmation = false
     /// Internal for the "This week" block in `AspirationIntentionSections`.
     @State var showingSetIntention = false
+    /// Internal for the Pulse section in `AspirationPulseSection`: the note
+    /// draft and the focus the divergence card's Reflect affordance steals.
+    @State var pulseNoteDraft = ""
+    @FocusState var pulseNoteFocused: Bool
 
     var body: some View {
         List {
             coverSection
             whySection
+            pulseSection
             thisWeekSection
             effortSection(AspirationRollup.compute(for: aspiration))
             attachedSection

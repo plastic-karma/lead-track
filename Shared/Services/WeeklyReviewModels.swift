@@ -61,6 +61,13 @@ extension WeeklyReview {
         /// The current week's open intentions, empty when browsing earlier
         /// weeks — intention machinery lives only on the live review.
         let intentions: [IntentionLine]
+        /// Whether the card offers this week's alignment pulse — true only on
+        /// the live week when the aspiration hasn't checked in yet. Skipping
+        /// is structurally invisible: no badge, no queue, no staging change.
+        let offersCheckIn: Bool
+        /// The narrowing observation (see `MeasureHealth`), live review only;
+        /// nil is the norm.
+        let narrowing: MeasureHealth.Narrowing?
     }
 
     /// One open intention rendered inside its aspiration's card: the

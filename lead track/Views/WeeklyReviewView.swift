@@ -23,18 +23,26 @@ struct WeeklyReviewView: View {
     /// Internal so the intention decisions can map a closure made on a card
     /// back to its model.
     @Query(sort: \Intention.createdAt) var intentions: [Intention]
+    /// This week's alignment pulses, so cards offer the check-in only where
+    /// it is still open.
+    @Query(sort: \AspirationCheckIn.createdAt) var checkIns: [AspirationCheckIn]
     @Environment(\.modelContext) var modelContext
     @State private var showingSettings = false
     @State private var currentPage: String?
     @State private var weeksBack = 0
     /// The aspiration a new intention is being set under, if any.
     @State var settingIntentionFor: Aspiration?
-    /// The goal-settings route an accepted goal promotion opens.
-    @State var promotionGoal: PromotionGoalRoute?
+    /// The goal-settings route shared by promotions, measure-health insights,
+    /// and season adjustments — hoisted here so it works with or without
+    /// aspirations on stage.
+    @State var goalSettingsRoute: GoalSettingsRoute?
+    /// The metric whose goal season a Retire tap is confirming, if any.
+    @State var retiringSeasonMetric: Metric?
 
     var body: some View {
         let review = WeeklyReview.build(
-            metrics: metrics, aspirations: aspirations, intentions: intentions, weeksBack: weeksBack
+            metrics: metrics, aspirations: aspirations, intentions: intentions,
+            checkIns: checkIns, weeksBack: weeksBack
         )
         return content(review)
             .background(Theme.washedScreen)
@@ -42,6 +50,9 @@ struct WeeklyReviewView: View {
             .toolbar { toolbarItems(review) }
             .sheet(isPresented: $showingSettings) {
                 WeeklyReviewSettingsView()
+            }
+            .sheet(item: $goalSettingsRoute) { route in
+                GoalSettingsView(metric: route.metric, prefillWeeklyGoal: route.prefillWeekly)
             }
     }
 
@@ -84,6 +95,7 @@ extension WeeklyReviewView {
                 WeekOverviewCard(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
                 aspirationSection(review)
+                goalSeasonSection(review)
                 sectionBreak("Metrics")
                     .padding(.horizontal)
                 if review.metricWeeks.isEmpty {
@@ -173,7 +185,9 @@ extension WeeklyReviewView {
     ) -> some View {
         if let metric = metric(for: week.id) {
             NavigationLink(value: metric) {
-                MetricWeekCard(week: week, weekStart: review.start)
+                MetricWeekCard(week: week, weekStart: review.start) {
+                    goalSettingsRoute = GoalSettingsRoute(metric: metric, prefillWeekly: nil)
+                }
             }
             .buttonStyle(.plain)
         } else {

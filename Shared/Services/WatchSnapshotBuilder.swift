@@ -37,7 +37,8 @@ enum WatchSnapshotBuilder {
             dailyGoal: metric.dailyGoal,
             excludedWeekdays: metric.excludedWeekdays,
             countdownDuration: running?.countdownDuration,
-            healthSourceRaw: metric.healthSourceRaw
+            healthSourceRaw: metric.healthSourceRaw,
+            binaryGoalRetiredAt: metric.binaryGoalRetiredAt
         )
     }
 }
