@@ -10,7 +10,7 @@ struct GoalSettingsView: View {
     @State private var hasWeeklyGoal: Bool
     @State private var weeklyGoalValue: Double
     @State private var hasReminder: Bool
-    @State private var reminderTime: Date
+    @State private var reminderSchedule: ReminderSchedule
     @State private var hasStreakAlert: Bool
     @State private var streakAlertTime: Date
     @State private var seasonWeeks: Int
@@ -40,11 +40,10 @@ struct GoalSettingsView: View {
                 ? (weekly ?? 50)
                 : (weekly ?? 18000) / 3600
         )
-        _hasReminder = State(
-            initialValue: metric.reminderTime != nil
-        )
-        _reminderTime = State(
-            initialValue: metric.reminderTime ?? Self.defaultTime(hour: 9)
+        let reminder = metric.reminderSchedule
+        _hasReminder = State(initialValue: reminder != nil)
+        _reminderSchedule = State(
+            initialValue: reminder ?? .makeDefault()
         )
         _hasStreakAlert = State(
             initialValue: metric.streakAlertTime != nil
@@ -218,18 +217,22 @@ extension GoalSettingsView {
 
 extension GoalSettingsView {
     private var reminderSection: some View {
-        Section(footer: Text(
-            "Only notifies if you haven't logged yet."
-        )) {
+        Section(footer: reminderFooter) {
             Toggle("Daily Reminder", isOn: $hasReminder)
             if hasReminder {
-                DatePicker(
-                    "Time",
-                    selection: $reminderTime,
-                    displayedComponents: .hourAndMinute
-                )
+                ReminderScheduleEditor(schedule: $reminderSchedule)
             }
         }
+    }
+
+    private var reminderFooter: some View {
+        Text(reminderFooterText)
+    }
+
+    private var reminderFooterText: String {
+        let base = "Only notifies if you haven't logged yet."
+        guard hasReminder, reminderSchedule.mode == .random else { return base }
+        return "Pings land at random times inside your window. " + base
     }
 
     private var streakAlertSection: some View {
@@ -288,7 +291,7 @@ extension GoalSettingsView {
     private func save() {
         let change = applyTarget()
         saveSeason(change)
-        metric.reminderTime = hasReminder ? reminderTime : nil
+        metric.applyReminderSchedule(hasReminder ? reminderSchedule : nil)
         metric.streakAlertTime = hasStreakAlert ? streakAlertTime : nil
         NotificationService.rescheduleMetric(metric)
         saveTrigger.toggle()

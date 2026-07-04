@@ -22,6 +22,23 @@ final class Metric {
     var weeklyGoal: TimeInterval?
     var reminderTime: Date?
     var streakAlertTime: Date?
+    /// Fixed daily-reminder times (up to `ReminderSchedule.maxPerDay`). When
+    /// non-empty these are the reminder's fire times; when empty the legacy
+    /// single `reminderTime` stands in. Defaults empty, so existing stores
+    /// migrate untouched.
+    var reminderTimes: [Date] = []
+    /// Random-mode window (times of day). With `reminderUsesRandom` on and both
+    /// bounds set, the reminder fires `reminderRandomCount` times at random
+    /// moments inside the window each goal day. Default nil, so existing stores
+    /// migrate untouched.
+    var reminderRandomStart: Date?
+    var reminderRandomEnd: Date?
+    /// Random-mode ping count (1...`ReminderSchedule.maxPerDay`). Defaulted, so
+    /// existing stores migrate untouched.
+    var reminderRandomCount: Int = 2
+    /// Whether the reminder uses the random window rather than fixed times.
+    /// Default false, so existing stores keep their single fixed reminder.
+    var reminderUsesRandom: Bool = false
     var excludedWeekdays: [Int] = []
     /// Raw `HealthDataSource` this metric mirrors, or nil for a hand-recorded
     /// metric. Stored as the raw string (not the enum) so a store written by a
