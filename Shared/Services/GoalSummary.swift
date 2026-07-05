@@ -53,8 +53,10 @@ extension GoalSummary {
 
     /// Binary metrics carry an implicit "do it today" goal until it is
     /// retired (see `Metric.expectsDailyShowUp`); the others only count
-    /// toward the summary once an amount goal is set.
-    private static func hasDailyTarget(_ metric: Metric) -> Bool {
+    /// toward the summary once an amount goal is set. Internal (not
+    /// private): Today's cluster states and day dial share this exact
+    /// definition of "has a daily target".
+    static func hasDailyTarget(_ metric: Metric) -> Bool {
         metric.expectsDailyShowUp || metric.dailyGoal != nil
     }
 

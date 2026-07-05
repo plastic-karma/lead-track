@@ -1,9 +1,10 @@
 import Foundation
 
-/// The optional aspiration-first arrangement of Today: metric cards clustered
-/// under the aspiration they serve, so the first thing read on the day screen
-/// is a reason, not a number. Pure partition logic, unit-tested on Linux; the
-/// default (ungrouped) dashboard never calls it.
+/// The aspiration-first arrangement of Today: metrics clustered under the
+/// aspiration they serve, so the first thing read on the day screen is a
+/// reason, not a number. This file holds the pure partition; the cluster
+/// states and smart ordering built on it live in `TodayClusters.swift`.
+/// Pure logic, unit-tested on Linux.
 enum TodayGrouping {
     /// One aspiration's cluster of today-cards.
     struct Group: Identifiable {
