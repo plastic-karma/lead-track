@@ -100,9 +100,14 @@ extension ClusterMetricRow {
         }
     }
 
+    /// Durations wear the compact form ("of 3m") — the row is dense and the
+    /// remaining seconds live in the insight line, not the target.
     private var goalText: String? {
         guard metric.measurementType.tracksQuantity, let goal = metric.dailyGoal
         else { return nil }
+        if metric.measurementType == .duration {
+            return DurationFormatter.compact(goal)
+        }
         return ValueFormatter.format(goal, type: metric.measurementType, unit: metric.unit)
     }
 
