@@ -1,22 +1,21 @@
 import SwiftData
 import SwiftUI
 
-/// The "Today" dashboard: a scrolling stack of living metric cards under a
-/// date-and-goal-rings header. Cards show today's value and act in place;
-/// tapping a card still navigates to the metric's detail screen.
+/// The "Today" dashboard: aspiration clusters under a segmented day-dial
+/// header. Clusters with something to do today open full, neediest first;
+/// resting, done, and self-filling clusters compress into one-line stubs
+/// (see `TodayClusterSections`), so the screen gets quieter as the day is
+/// completed. Rows act in place; tapping one still navigates to the metric.
 struct MetricListView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
-    /// Internal (not private) so the grouped arrangement in its own file can
-    /// partition under the same query.
+    /// Internal (not private) so the cluster arrangement in its own file can
+    /// render under the same queries.
+    @Query(sort: \Metric.createdAt) var metrics: [Metric]
     @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
-    @Query(sort: \Intention.createdAt) private var intentions: [Intention]
-    /// Aspiration-first Today (see `TodayGrouping`): cluster the open cards
-    /// under the aspiration they serve. Off by default — the classic
-    /// dashboard is untouched.
-    @AppStorage("todayGroupsByAspiration") private var groupsByAspiration = false
-    @Query(filter: Session.isRunningPredicate)
-    private var runningSessions: [Session]
+    @Query(sort: \Intention.createdAt) var intentions: [Intention]
+    @Query(filter: Session.isRunningPredicate) var runningSessions: [Session]
+    /// Which stub clusters are expanded inline — per-cluster and transient
+    /// by design, so tomorrow always starts folded.
+    @State var expandedStubs: Set<String> = []
     @State private var showingAddSheet = false
     /// Raising the responder's review flag slides the app to the Week tab
     /// (see `ContentView`) — the same route a tapped weekly notification
@@ -29,28 +28,8 @@ struct MetricListView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
-                TodayHeaderView(metrics: metrics)
-                TodayIntentionsSection(intentions: intentions)
-                if groupsByAspiration {
-                    groupedMetricSections
-                } else if !leftMetrics.isEmpty {
-                    sectionHeader(leftTitle)
-                    ForEach(leftMetrics) { metricCard($0) }
-                }
-                if !doneMetrics.isEmpty {
-                    sectionHeader("Done Today")
-                    ForEach(doneMetrics) { metric in
-                        DoneMetricRow(
-                            metric: metric,
-                            runningSession: runningSession(for: metric)
-                        )
-                    }
-                }
-                // Grouped mode suppresses the footer: its "Poured Into"
-                // chips would repeat the group headers directly above.
-                if !groupsByAspiration {
-                    TodayAspirationsFooter(aspirations: aspirations)
-                }
+                DayDialView(metrics: metrics)
+                clusterSections
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -88,7 +67,7 @@ struct MetricListView: View {
                 .presentationDragIndicator(.visible)
         }
         .overlay {
-            if metrics.isEmpty {
+            if showsEmptyState {
                 ContentUnavailableView(
                     "Begin Something",
                     systemImage: "mountain.2",
@@ -104,38 +83,10 @@ struct MetricListView: View {
 // MARK: - Pieces
 
 extension MetricListView {
-    /// Metrics still open today — anything without a met daily goal, so a card
-    /// stays in reach until its goal is done (or always, for goal-less metrics).
-    /// Internal (not private) for the grouped arrangement in its own file.
-    var leftMetrics: [Metric] {
-        metrics.filter { !isDone($0) }
-    }
-
-    /// Metrics that have met today's goal, collapsed into the "Done" section.
-    private var doneMetrics: [Metric] {
-        metrics.filter(isDone)
-    }
-
-    private func isDone(_ metric: Metric) -> Bool {
-        GoalSummary.isDailyComplete(metric)
-    }
-
-    private var leftTitle: String {
-        let count = leftMetrics.count
-        let number = count == 1 ? "One" : "\(count)"
-        return "\(number) Left Today"
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Divider()
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .kerning(0.5)
-        }
-        .padding(.top, 4)
+    /// Nothing to cluster at all — no metrics and no open intentions this
+    /// week — so the day opens with the invitation instead.
+    private var showsEmptyState: Bool {
+        metrics.isEmpty && !intentions.contains { $0.isOpen && $0.isInCurrentWeek() }
     }
 
     private var appMenu: some View {
@@ -154,38 +105,6 @@ extension MetricListView {
             }
         } label: {
             Image(systemName: "ellipsis.circle")
-        }
-    }
-
-    /// Internal (not private) so the grouped arrangement renders the exact
-    /// same living card.
-    func metricCard(_ metric: Metric) -> some View {
-        NavigationLink(value: metric) {
-            MetricCardView(
-                metric: metric,
-                runningSession: runningSession(for: metric)
-            )
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button(role: .destructive) {
-                delete(metric)
-            } label: {
-                Label("Delete Metric", systemImage: "trash")
-            }
-        }
-    }
-
-    private func runningSession(for metric: Metric) -> Session? {
-        let id = metric.persistentModelID
-        return runningSessions.first {
-            $0.metric?.persistentModelID == id
-        }
-    }
-
-    private func delete(_ metric: Metric) {
-        withAnimation {
-            modelContext.delete(metric)
         }
     }
 }

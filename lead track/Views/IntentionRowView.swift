@@ -2,17 +2,15 @@ import SwiftData
 import SwiftUI
 
 /// One open intention row — aspiration accent, the title, and a kind-specific
-/// right side. Shared by Today's "This Week" section and the aspiration
-/// detail's "This week" block, so the anatomy never drifts apart.
+/// right side. Shared by the weekly review and the aspiration detail's "This
+/// week" block; Today's cluster cards re-skin the same anatomy with a dot
+/// (see `ClusterIntentionRow`), so the pieces below are shared.
 ///
 /// Reflective rows deliberately carry no completion control of any kind, and
 /// no row ever wears a red state, an overdue style, or a badge — progress is
 /// only ever accumulation.
 struct IntentionRowView: View {
-    @Environment(\.modelContext) private var modelContext
     let intention: Intention
-    @State private var showingRename = false
-    @State private var renameText = ""
 
     var body: some View {
         HStack(spacing: 12) {
@@ -23,15 +21,10 @@ struct IntentionRowView: View {
             Text(intention.title)
                 .font(.subheadline)
             Spacer()
-            trailing
+            IntentionRowTrailing(intention: intention, accent: accent)
         }
         .contentShape(Rectangle())
-        .contextMenu { actions }
-        .alert("Rename Intention", isPresented: $showingRename) {
-            TextField("Title", text: $renameText)
-            Button("Save") { rename() }
-            Button("Cancel", role: .cancel) {}
-        }
+        .intentionRowActions(intention)
     }
 
     private var accent: Color {
@@ -41,9 +34,14 @@ struct IntentionRowView: View {
 
 // MARK: - Kind-specific right side
 
-extension IntentionRowView {
-    @ViewBuilder
-    private var trailing: some View {
+/// The intention row's right side, shared by every skin: tick control and
+/// progress for counted intentions, progress alone for derived ones, and
+/// nothing at all for reflective ones.
+struct IntentionRowTrailing: View {
+    let intention: Intention
+    let accent: Color
+
+    var body: some View {
         switch intention.kind {
         case .reflective:
             EmptyView()
@@ -88,7 +86,24 @@ extension IntentionRowView {
 
 // MARK: - Actions
 
-extension IntentionRowView {
+/// The context menu and rename alert every intention row skin carries, so
+/// undo/rename/let-go/delete never drift between surfaces.
+private struct IntentionRowActions: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
+    let intention: Intention
+    @State private var showingRename = false
+    @State private var renameText = ""
+
+    func body(content: Content) -> some View {
+        content
+            .contextMenu { actions }
+            .alert("Rename Intention", isPresented: $showingRename) {
+                TextField("Title", text: $renameText)
+                Button("Save") { rename() }
+                Button("Cancel", role: .cancel) {}
+            }
+    }
+
     @ViewBuilder
     private var actions: some View {
         if intention.kind == .counted, intention.hasTick() {
@@ -112,5 +127,12 @@ extension IntentionRowView {
         let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         intention.title = trimmed
+    }
+}
+
+extension View {
+    /// Attaches the shared intention context menu and rename alert.
+    func intentionRowActions(_ intention: Intention) -> some View {
+        modifier(IntentionRowActions(intention: intention))
     }
 }

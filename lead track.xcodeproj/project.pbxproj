@@ -23,6 +23,9 @@
 		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
 		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
 		D1F0010000000000070002 /* MomentWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000070001 /* MomentWeekTests.swift */; };
+		D1F0010000000000080002 /* TodayClusterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000080001 /* TodayClusterTests.swift */; };
+		D1F0010000000000090002 /* ReminderPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000090001 /* ReminderPlannerTests.swift */; };
+		D1F00100000000000A0002 /* TodayClusterReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000A0001 /* TodayClusterReadingTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -128,6 +131,9 @@
 		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000070001 /* MomentWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentWeekTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000080001 /* TodayClusterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayClusterTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000090001 /* ReminderPlannerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReminderPlannerTests.swift; sourceTree = "<group>"; };
+		D1F00100000000000A0001 /* TodayClusterReadingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayClusterReadingTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -277,6 +283,9 @@
 				D1F0010000000000050001 /* MeasureHealthTests.swift */,
 				D1F0010000000000060001 /* TodayGroupingTests.swift */,
 				D1F0010000000000070001 /* MomentWeekTests.swift */,
+				D1F0010000000000080001 /* TodayClusterTests.swift */,
+				D1F0010000000000090001 /* ReminderPlannerTests.swift */,
+				D1F00100000000000A0001 /* TodayClusterReadingTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
 				0A1CAF010000000000000019 /* ComplicationProgressTests.swift */,
@@ -648,6 +657,9 @@
 				D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */,
 				D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */,
 				D1F0010000000000070002 /* MomentWeekTests.swift in Sources */,
+				D1F0010000000000080002 /* TodayClusterTests.swift in Sources */,
+				D1F0010000000000090002 /* ReminderPlannerTests.swift in Sources */,
+				D1F00100000000000A0002 /* TodayClusterReadingTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
 				0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */,
