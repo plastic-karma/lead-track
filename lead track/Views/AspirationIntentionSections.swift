@@ -1,91 +1,33 @@
 import SwiftData
 import SwiftUI
 
-/// The intention blocks of the aspiration detail: the current week's
-/// commitments (same row anatomy as Today) and, at the bottom, the narrative
-/// history — a story, not a statistic. No aggregates, no charts, no counts of
-/// dones, ever.
+/// The "This week" card of the aspiration detail: the current week's
+/// commitments (same row anatomy as Today), the quiet doorway to set another,
+/// and — past a hairline — the pulse block (see `AspirationPulseSection`).
+/// No aggregates, no charts, no counts of dones, ever; the narrative history
+/// waits behind the detail's "Past intentions" disclosure row (see
+/// `AspirationPastIntentionsView`).
 extension AspirationDetailView {
-    /// "This week", between the why and the effort: the open commitments and
-    /// the second doorway (after the review) for setting one.
-    var thisWeekSection: some View {
-        Section("This Week") {
+    var thisWeekCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            cardHeader("This week")
             ForEach(currentWeekIntentions) { intention in
                 IntentionRowView(intention: intention)
+                    .padding(.vertical, 11)
+                cardDivider(inset: 36)
             }
-            Button { showingSetIntention = true } label: {
-                Label("Set an intention", systemImage: "plus.circle")
-            }
+            plusRow("Set an intention") { showingSetIntention = true }
+            cardDivider()
+            pulseBlock
         }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.cardShape())
     }
 
-    /// Past intentions, newest week first. Rows are deletable (the data is
-    /// the user's) but never editable — closures are final.
-    @ViewBuilder
-    var pastIntentionsSection: some View {
-        if !pastIntentions.isEmpty {
-            Section("Past Intentions") {
-                ForEach(pastIntentions) { intention in
-                    historyRow(intention)
-                }
-                .onDelete(perform: deletePastIntentions)
-            }
-        }
-    }
-}
-
-// MARK: - Rows
-
-extension AspirationDetailView {
     private var currentWeekIntentions: [Intention] {
         aspiration.intentions
             .filter { $0.isOpen && $0.isInCurrentWeek() }
             .sorted { $0.createdAt < $1.createdAt }
-    }
-
-    private var pastIntentions: [Intention] {
-        aspiration.intentions
-            .filter { !($0.isOpen && $0.isInCurrentWeek()) }
-            .sorted {
-                ($0.weekStart, $0.createdAt) > ($1.weekStart, $1.createdAt)
-            }
-    }
-
-    private func historyRow(_ intention: Intention) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Week of \(intention.weekStart.formatted(.dateTime.month(.abbreviated).day()))")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            HStack {
-                Text(intention.title)
-                    .font(.subheadline)
-                Spacer()
-                Text(historyDetail(intention))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    /// The narrative ending: the outcome word, or the final accumulation
-    /// standing as fact, or "unclosed" — never a judgment.
-    private func historyDetail(_ intention: Intention) -> String {
-        if let progress = IntentionProgress.compute(for: intention) {
-            return progress.text
-        }
-        if intention.isSourceRemoved {
-            return "source removed"
-        }
-        return intention.outcome?.label ?? "unclosed"
-    }
-
-    private func deletePastIntentions(_ offsets: IndexSet) {
-        let targets = offsets.map { pastIntentions[$0] }
-        withAnimation {
-            for intention in targets {
-                modelContext.delete(intention)
-            }
-        }
     }
 }

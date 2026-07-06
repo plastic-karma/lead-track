@@ -1,26 +1,37 @@
 import SwiftData
 import SwiftUI
 
-/// The Pulse of the aspiration detail — the app's only subjective series:
-/// this week's alignment check-in, the honest twelve-week strip once enough
-/// lifetime pulses exist, and (rarely) the divergence card, the Goodhart
-/// alarm asking what changed. No streaks, no completion rate, no nagging:
-/// absence is silence, never debt.
+/// The pulse block closing the "This week" card — the app's only subjective
+/// series: this week's alignment check-in, the honest twelve-week strip once
+/// enough lifetime pulses exist, and (rarely) the divergence card, the
+/// Goodhart alarm asking what changed. No streaks, no completion rate, no
+/// nagging: absence is silence, never debt.
 extension AspirationDetailView {
-    var pulseSection: some View {
-        Section("Pulse") {
-            pulseComposerRow
-            if aspiration.checkIns.count >= AspirationAlignment.minimumCheckIns {
-                pulseHistoryRow
-                divergenceRow
-            } else {
-                Text("Check in a few weeks running to see the shape.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+    var pulseBlock: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            pulseComposer
+            pulseShape
+            divergenceRow
             narrowingRow
         }
+        .padding(.top, 13)
+        .padding(.bottom, 15)
         .onAppear { pulseNoteDraft = currentCheckIn?.note ?? "" }
+    }
+
+    /// The twelve-week strip once enough lifetime pulses exist, the patient
+    /// hint until then.
+    @ViewBuilder
+    private var pulseShape: some View {
+        if aspiration.checkIns.count >= AspirationAlignment.minimumCheckIns {
+            pulseHistoryStrip
+                .padding(.top, 13)
+        } else {
+            Text("Check in a few weeks running to see the shape.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 13)
+        }
     }
 }
 
@@ -31,7 +42,7 @@ extension AspirationDetailView {
         AspirationAlignment.currentWeekCheckIn(of: aspiration)
     }
 
-    private var pulseComposerRow: some View {
+    private var pulseComposer: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Is this effort still serving the why?")
                 .font(.subheadline)
@@ -45,7 +56,6 @@ extension AspirationDetailView {
                 .focused($pulseNoteFocused)
                 .onSubmit(commitPulseNote)
         }
-        .padding(.vertical, 4)
     }
 
     private func pulseRatingButton(_ rating: AlignmentRating) -> some View {
@@ -58,7 +68,7 @@ extension AspirationDetailView {
         }
         .buttonStyle(.bordered)
         .buttonBorderShape(.capsule)
-        .tint(currentCheckIn?.rating == rating ? aspiration.displayColor : nil)
+        .tint(currentCheckIn?.rating == rating ? tint : nil)
     }
 
     /// Upserts this calendar week's row — at most one, the latest edit wins.
@@ -90,30 +100,40 @@ extension AspirationDetailView {
 
 extension AspirationDetailView {
     /// One dot per trailing week, three fill levels, hollow when skipped —
-    /// no axis, no numbers, no percentage: the honest shape and nothing more.
-    private var pulseHistoryRow: some View {
-        let weeks = AspirationAlignment.trailingWeekStarts(
+    /// no axis, no numbers, no percentage: the honest shape and nothing more,
+    /// the window's span named at the trailing edge.
+    private var pulseHistoryStrip: some View {
+        HStack(spacing: 6) {
+            ForEach(trailingWeeks, id: \.self) { week in
+                pulseDot(rating: weekRatings[week])
+            }
+            Spacer(minLength: 8)
+            Text("\(AspirationAlignment.historyWeeks) weeks")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityLabel("Last twelve weeks of check-ins")
+    }
+
+    private var trailingWeeks: [Date] {
+        AspirationAlignment.trailingWeekStarts(
             weeks: AspirationAlignment.historyWeeks, now: .now, calendar: .current
         )
-        let ratings = Dictionary(
+    }
+
+    private var weekRatings: [Date: Int] {
+        Dictionary(
             AspirationAlignment.series(from: aspiration.checkIns)
                 .map { ($0.weekStart, $0.rating) },
             uniquingKeysWith: { _, latest in latest }
         )
-        return HStack(spacing: 6) {
-            ForEach(weeks, id: \.self) { week in
-                pulseDot(rating: ratings[week])
-            }
-        }
-        .padding(.vertical, 2)
-        .accessibilityLabel("Last twelve weeks of check-ins")
     }
 
     @ViewBuilder
     private func pulseDot(rating: Int?) -> some View {
         if let rating {
             Circle()
-                .fill(aspiration.displayColor.opacity(dotOpacity(rating)))
+                .fill(tint.opacity(dotOpacity(rating)))
                 .frame(width: 10, height: 10)
         } else {
             Circle()
@@ -152,7 +172,7 @@ extension AspirationDetailView {
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
             }
-            .padding(.vertical, 4)
+            .padding(.top, 14)
         }
     }
 
@@ -179,7 +199,7 @@ extension AspirationDetailView {
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
             }
-            .padding(.vertical, 4)
+            .padding(.top, 14)
         }
     }
 }
