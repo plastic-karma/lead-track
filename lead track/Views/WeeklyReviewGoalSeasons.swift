@@ -11,7 +11,7 @@ extension WeeklyReviewView {
     @ViewBuilder
     func goalSeasonSection(_ review: WeeklyReview) -> some View {
         if !review.goalSeasonReviews.isEmpty {
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 sectionBreak("Goal Seasons")
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(review.goalSeasonReviews) { row in
@@ -99,12 +99,11 @@ extension WeeklyReviewView {
 
     private func seasonButton(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(.caption.weight(.medium))
-                .frame(maxWidth: .infinity)
+            ActionChip(voice: .decision(.accentColor)) {
+                Text(label)
+            }
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
+        .buttonStyle(.plain)
     }
 }
 

@@ -83,6 +83,9 @@ extension WeeklyReview {
         /// "2 of 3" / "4 of 7 days"; nil for reflective intentions, which
         /// deliberately carry no progress value.
         let progressText: String?
+        /// The accumulated share of the target for the row's thin progress
+        /// track, capped at 1; nil wherever `progressText` is nil.
+        let progressFraction: Double?
     }
 
     /// One moment rendered as a row on its aspiration's card: the testimony,

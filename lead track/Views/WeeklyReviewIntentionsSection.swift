@@ -140,12 +140,11 @@ extension IntentionClosureRow {
 
     private func decisionButton(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(.caption.weight(.medium))
-                .frame(maxWidth: .infinity)
+            ActionChip(voice: .decision(.accentColor)) {
+                Text(label)
+            }
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

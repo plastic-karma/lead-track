@@ -17,6 +17,14 @@ struct IntentionProgress: Equatable {
     let target: Double
     /// The factual reading: "2 of 3", "4 of 7 days", "1h 40m of 4h 00m".
     let text: String
+
+    /// The accumulated share of the target for a progress track, capped at a
+    /// full bar — exceeding a target reads "5 of 3" in text, never as an
+    /// overflowing fill. Nil when the target is zero (nothing to fill toward).
+    var fraction: Double? {
+        guard target > 0 else { return nil }
+        return min(value / target, 1)
+    }
 }
 
 // MARK: - Computation

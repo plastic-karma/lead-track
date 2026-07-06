@@ -120,10 +120,12 @@ private extension WeeklyReview {
             .filter { belongsOnCard($0, aspirationID: id, context: context) }
             .sorted { $0.createdAt < $1.createdAt }
             .map { intention in
-                IntentionLine(
+                let progress = IntentionProgress.compute(for: intention, calendar: context.calendar)
+                return IntentionLine(
                     id: intention.stableID?.uuidString ?? intention.title,
                     title: intention.title,
-                    progressText: IntentionProgress.compute(for: intention, calendar: context.calendar)?.text
+                    progressText: progress?.text,
+                    progressFraction: progress?.fraction
                 )
             }
     }
