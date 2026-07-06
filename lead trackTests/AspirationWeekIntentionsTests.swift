@@ -85,6 +85,7 @@ extension AspirationWeekIntentionsTests {
         #expect(week.sessionCount == 0)
         #expect(week.intentions.map(\.title) == ["3 deep sessions"])
         #expect(week.intentions.first?.progressText == "1 of 3")
+        #expect(week.intentions.first?.progressFraction == 1.0 / 3.0)
     }
 
     @Test
@@ -113,6 +114,7 @@ extension AspirationWeekIntentionsTests {
         let week = try #require(buildReview(of: aspiration, intentions: [reflective]).aspirationWeeks.first)
 
         #expect(week.intentions.first?.progressText == nil)
+        #expect(week.intentions.first?.progressFraction == nil)
     }
 
     @Test

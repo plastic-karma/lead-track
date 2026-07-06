@@ -241,3 +241,25 @@ extension IntentionProgressTests {
         #expect(progress?.text == "40 of 50 pages")
     }
 }
+
+// MARK: - Fraction
+
+extension IntentionProgressTests {
+    @Test
+    func fractionIsTheAccumulatedShareOfTheTarget() {
+        let progress = IntentionProgress(value: 2, target: 3, text: "2 of 3")
+        #expect(progress.fraction == 2.0 / 3.0)
+    }
+
+    @Test
+    func fractionCapsAtAFullBarWhenTheTargetIsExceeded() {
+        let progress = IntentionProgress(value: 5, target: 3, text: "5 of 3")
+        #expect(progress.fraction == 1)
+    }
+
+    @Test
+    func fractionIsNilWithoutATargetToFillToward() {
+        let progress = IntentionProgress(value: 2, target: 0, text: "2 of 0")
+        #expect(progress.fraction == nil)
+    }
+}

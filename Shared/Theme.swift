@@ -27,11 +27,13 @@ enum Theme {
     /// Quiet warm chip behind card icons.
     static let chipFill = warmNeutral(dark: 0.16, light: 0.93)
 
-    /// A soft copper atmosphere washing the top of a screen, echoing the
-    /// aspiration create sheet. Fades to clear so cards sit on the base.
-    static func wash(_ tint: Color) -> LinearGradient {
+    /// A soft atmosphere washing down from the top of a surface, echoing the
+    /// aspiration create sheet. Fades to clear so content sits on the base;
+    /// `peak` sets how strongly it opens — 0.16 for a whole screen, quieter
+    /// for a card.
+    static func wash(_ tint: Color, peak: Double = 0.16) -> LinearGradient {
         LinearGradient(
-            colors: [tint.opacity(0.16), .clear],
+            colors: [tint.opacity(peak), .clear],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -72,17 +74,32 @@ enum Theme {
 }
 
 #if os(iOS)
+extension Theme {
+    /// The card's rounded surface, optionally opening with a soft wash of an
+    /// identity color across its top — how an aspiration card wears its
+    /// color without inking the content.
+    static func cardShape(washTint: Color? = nil) -> some View {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(cardBackground)
+            .overlay(alignment: .top) {
+                if let washTint {
+                    wash(washTint, peak: 0.1)
+                        .frame(height: 68)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: cardShadow, radius: 10, y: 2)
+    }
+}
+
 extension View {
     /// The standard elevated card: 16pt padded content on the rounded
-    /// surface with the soft shadow, full width unless constrained.
-    func cardSurface(alignment: Alignment = .topLeading) -> some View {
+    /// surface with the soft shadow, full width unless constrained. A
+    /// `washTint` opens the card with a soft wash of that color.
+    func cardSurface(alignment: Alignment = .topLeading, washTint: Color? = nil) -> some View {
         padding(16)
             .frame(maxWidth: .infinity, alignment: alignment)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Theme.cardBackground)
-                    .shadow(color: Theme.cardShadow, radius: 10, y: 2)
-            )
+            .background(Theme.cardShape(washTint: washTint))
     }
 }
 #endif

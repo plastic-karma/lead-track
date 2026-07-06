@@ -2,20 +2,21 @@ import SwiftData
 import SwiftUI
 
 /// The aspiration lens of the weekly review — its center stage. Each active
-/// aspiration gets one card carrying its week and its intentions, and tapping
-/// a card drills into the day-by-day distribution. It renders nothing when no
-/// aspirations exist, so a zero-aspiration review stays byte-identical to
-/// before — additive, never a fork.
+/// aspiration gets one card carrying its week, its intentions, and its
+/// action row, and tapping a card drills into the day-by-day distribution.
+/// It renders nothing when no aspiration is on stage, so a zero-aspiration
+/// review stays byte-identical to before — additive, never a fork. (The
+/// resting aspirations close the whole review as one line instead — see
+/// `WeeklyReviewView.restingLine`.)
 extension WeeklyReviewView {
     @ViewBuilder
     func aspirationSection(_ review: WeeklyReview) -> some View {
-        if !review.aspirationWeeks.isEmpty || !review.quietAspirations.isEmpty {
-            VStack(spacing: 12) {
+        if !review.aspirationWeeks.isEmpty {
+            VStack(spacing: 16) {
                 sectionBreak("Aspirations")
                 ForEach(review.aspirationWeeks) { week in
                     aspirationCard(week, review: review)
                 }
-                quietAspirationsCard(review.quietAspirations)
             }
             .padding(.horizontal)
             .sheet(item: $settingIntentionFor) { aspiration in
@@ -106,56 +107,6 @@ extension WeeklyReviewView {
             note: note ?? ""
         )
         modelContext.insert(checkIn)
-    }
-
-    @ViewBuilder
-    private func quietAspirationsCard(
-        _ quiet: [WeeklyReview.QuietAspiration]
-    ) -> some View {
-        if !quiet.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Resting this week")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                ForEach(quiet) { aspiration in
-                    quietAspirationRow(aspiration)
-                }
-            }
-            .cardSurface()
-        }
-    }
-
-    @ViewBuilder
-    private func quietAspirationRow(
-        _ quiet: WeeklyReview.QuietAspiration
-    ) -> some View {
-        if let aspiration = aspiration(for: quiet.id) {
-            NavigationLink(value: aspiration) {
-                quietAspirationContent(quiet)
-            }
-            .buttonStyle(.plain)
-        } else {
-            quietAspirationContent(quiet)
-        }
-    }
-
-    /// Name and icon only — a resting aspiration carries no figures here; its
-    /// totals wait behind the tap.
-    private func quietAspirationContent(
-        _ quiet: WeeklyReview.QuietAspiration
-    ) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: quiet.icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            Text(quiet.title)
-                .font(.subheadline)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .contentShape(Rectangle())
     }
 
     private func aspiration(for id: String) -> Aspiration? {
