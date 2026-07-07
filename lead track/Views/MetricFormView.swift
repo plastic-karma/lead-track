@@ -22,6 +22,7 @@ struct MetricFormView: View {
     @State private var healthSource: HealthDataSource
     @State private var healthExport: HealthExportTarget?
     @State private var unit: String
+    @State private var countLogStyle: CountLogStyle
     @State private var saveTrigger = false
 
     init(metric: Metric? = nil) {
@@ -35,6 +36,7 @@ struct MetricFormView: View {
         _healthSource = State(initialValue: metric?.healthSource ?? .activeCalories)
         _healthExport = State(initialValue: metric?.healthExportTarget)
         _unit = State(initialValue: metric?.unit ?? "")
+        _countLogStyle = State(initialValue: metric?.countLogStyle ?? .askAmount)
     }
 
     private var isEditing: Bool {
@@ -69,6 +71,7 @@ struct MetricFormView: View {
                 nameSection
                 descriptionSection
                 typePicker
+                countLogSection
                 healthExportSection
                 iconPicker
                 colorPicker
@@ -157,6 +160,9 @@ struct MetricFormView: View {
         if !metric.isHealthLinked {
             metric.unit = kind == .count ? unit : nil
         }
+        if kind == .count {
+            metric.countLogStyle = countLogStyle
+        }
         if metric.supportsHealthExport {
             metric.setHealthExport(healthExport)
         }
@@ -236,6 +242,35 @@ extension MetricFormView {
             Text("Type")
         } footer: {
             typeFooter
+        }
+    }
+
+    /// Count metrics choose what the log button does — ask for the amount,
+    /// or add one right away. Stays editable on edit, unlike the type.
+    @ViewBuilder
+    private var countLogSection: some View {
+        if kind == .count {
+            Section {
+                Picker("Log Button", selection: $countLogStyle) {
+                    Text("Ask Amount").tag(CountLogStyle.askAmount)
+                    Text("Add 1").tag(CountLogStyle.incrementByOne)
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Logging")
+            } footer: {
+                Text(countLogFooter)
+            }
+        }
+    }
+
+    private var countLogFooter: String {
+        switch countLogStyle {
+        case .askAmount:
+            return "Logging asks how many to add — for amounts that vary, like words written."
+        case .incrementByOne:
+            return "Logging adds 1 right away — for one-at-a-time moments, like a prayer."
+                + " The menu keeps custom amounts."
         }
     }
 

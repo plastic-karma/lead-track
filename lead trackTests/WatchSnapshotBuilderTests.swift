@@ -104,6 +104,20 @@ struct WatchSnapshotBuilderTests {
     }
 
     @Test
+    func snapshotCarriesCountLogStyle() throws {
+        let container = try SharedModelContainer.create(inMemoryOnly: true)
+        let context = ModelContext(container)
+        let metric = Metric(name: "Prayers", measurementType: .count)
+        metric.countLogStyle = .incrementByOne
+        context.insert(metric)
+
+        let snapshot = WatchSnapshotBuilder.snapshot(from: [metric])
+
+        let entry = try #require(snapshot.metrics.first)
+        #expect(entry.countLogStyle == .incrementByOne)
+    }
+
+    @Test
     func binaryMetricShipsImplicitTargetWithoutAmountGoal() throws {
         let container = try SharedModelContainer.create(inMemoryOnly: true)
         let context = ModelContext(container)

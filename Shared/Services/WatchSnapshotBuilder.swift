@@ -38,7 +38,8 @@ enum WatchSnapshotBuilder {
             excludedWeekdays: metric.excludedWeekdays,
             countdownDuration: running?.countdownDuration,
             healthSourceRaw: metric.healthSourceRaw,
-            binaryGoalRetiredAt: metric.binaryGoalRetiredAt
+            binaryGoalRetiredAt: metric.binaryGoalRetiredAt,
+            countLogStyleRaw: metric.countLogStyleRaw
         )
     }
 }

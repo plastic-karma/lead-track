@@ -176,21 +176,38 @@ extension MetricCardView {
         }
     }
 
-    /// Tap opens the custom-amount sheet — logging a single unit is rarely
-    /// what's wanted; the menu keeps the quick +1 for when it is.
+    /// Tap follows the metric's log style — open the custom-amount sheet, or
+    /// add one right away — and the menu keeps the other route.
     private var countButton: some View {
         Menu {
+            countMenuAlternative
+        } label: {
+            actionLabel("plus", metric.logsOneUnitImmediately ? "Log +1" : "Log")
+        } primaryAction: {
+            if metric.logsOneUnitImmediately {
+                logOne()
+            } else {
+                showingCountEntry = true
+            }
+        }
+        .accessibilityLabel("Log \(metric.unit ?? "amount")")
+    }
+
+    @ViewBuilder
+    private var countMenuAlternative: some View {
+        if metric.logsOneUnitImmediately {
+            Button {
+                showingCountEntry = true
+            } label: {
+                Label("Log Amount…", systemImage: "square.and.pencil")
+            }
+        } else {
             Button {
                 logOne()
             } label: {
                 Label("Log +1", systemImage: "plus")
             }
-        } label: {
-            actionLabel("plus", "Log")
-        } primaryAction: {
-            showingCountEntry = true
         }
-        .accessibilityLabel("Log \(metric.unit ?? "amount")")
     }
 
     /// The fill is the deeper prominent variant, not the identity tint, so
