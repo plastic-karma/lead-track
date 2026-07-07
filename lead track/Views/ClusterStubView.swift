@@ -1,11 +1,13 @@
 import SwiftData
 import SwiftUI
 
-/// A resting, done, or self-filling cluster compressed to one quiet line —
-/// plus its intention rows, which never fold. Tapping the header (or its
-/// chevron) expands the cluster inline into its full card; the expansion is
-/// per-cluster, transient, and never persisted. The screen earns its calm as
-/// the day is completed.
+/// One cluster's collapsible today-card. Folded, the cluster compresses to
+/// one quiet line — plus its intention rows, which never fold. Tapping the
+/// header (or its chevron) expands the cluster inline into its full card;
+/// the expansion is per-cluster, transient, and never persisted. Needy
+/// clusters arrive expanded, everything else folded (see
+/// `TodayClusterSections`), so the screen earns its calm as the day is
+/// completed.
 struct ClusterStubView: View {
     let cluster: TodayGrouping.Cluster
     let runningSessions: [Session]
@@ -73,7 +75,7 @@ extension ClusterStubView {
 // MARK: - Status Line
 
 extension ClusterStubView {
-    /// The one-line reason this cluster rests as a stub.
+    /// The folded cluster's one-line reading of where the day stands.
     @ViewBuilder
     private var statusLine: some View {
         switch cluster.state {
@@ -84,8 +86,17 @@ extension ClusterStubView {
         case .selfFilling:
             selfFillingStatus
         case .needsYou:
-            EmptyView()
+            openStatus
         }
+    }
+
+    /// What a folded needy cluster still holds: "1m 18s left" or
+    /// "2 still open".
+    private var openStatus: some View {
+        Text(TodayGrouping.openSummary(for: cluster.metrics))
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
     }
 
     private var doneStatus: some View {

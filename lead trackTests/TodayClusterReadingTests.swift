@@ -206,6 +206,31 @@ struct TodayClusterReadingTests {
         #expect(TodayGrouping.remainingToday(for: kept) == nil)
     }
 
+    @Test
+    func openSummaryNamesTheLoneMeasurableGap() {
+        let reading = makeMetric("Reading", dailyGoal: 180)
+        logToday(reading, seconds: 102)
+        let done = makeMetric("Done", dailyGoal: 60)
+        logToday(done, seconds: 60)
+
+        #expect(TodayGrouping.openSummary(for: [reading, done]) == "1m 18s left")
+    }
+
+    @Test
+    func openSummaryCountsSeveralOpenMembers() {
+        let reading = makeMetric("Reading", dailyGoal: 180)
+        let scripture = makeMetric("Scripture", type: .binary)
+
+        #expect(TodayGrouping.openSummary(for: [reading, scripture]) == "2 still open")
+    }
+
+    @Test
+    func openSummaryDropsTheCountWithoutARemainder() {
+        let scripture = makeMetric("Scripture", type: .binary)
+
+        #expect(TodayGrouping.openSummary(for: [scripture]) == "still open")
+    }
+
     // MARK: - Urgency
 
     @Test
