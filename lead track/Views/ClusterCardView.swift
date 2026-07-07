@@ -1,17 +1,17 @@
 import SwiftData
 import SwiftUI
 
-/// One aspiration's full cluster card on Today: the aspiration is the card,
+/// One aspiration's full cluster card on Today — the expanded form of every
+/// collapsible cluster (see `ClusterStubView`): the aspiration is the card,
 /// its metrics are rows inside it — living rows that act in place, done rows
 /// resting quietly where they are — followed by this week's intentions and a
-/// closing insight line. Also the expanded form of a stub, whose header then
-/// collapses instead of navigating.
+/// closing insight line. The header folds the cluster back to one line.
 struct ClusterCardView: View {
     let cluster: TodayGrouping.Cluster
     let runningSessions: [Session]
-    /// Present when the card is an expanded stub: the header carries the
-    /// rotated chevron and folds the cluster back to one line.
-    var onCollapse: (() -> Void)?
+    /// The header carries the rotated chevron and folds the cluster back to
+    /// its stub.
+    let onCollapse: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -36,28 +36,18 @@ struct ClusterCardView: View {
 // MARK: - Header
 
 extension ClusterCardView {
-    /// The full card's opening line. Navigates to the aspiration — or, on an
-    /// expanded stub, collapses it back (the rotated chevron says so). The
-    /// unaligned pseudo-cluster stays quiet: no navigation at all.
-    @ViewBuilder
+    /// The full card's opening line: folds the cluster back to its stub (the
+    /// rotated chevron says so). The aspiration itself is reached from the
+    /// Aspirations tab, not from here.
     private var header: some View {
-        if let onCollapse {
-            Button(action: onCollapse) {
-                headerLabel(chevron: true)
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Collapse")
-        } else if let aspiration = cluster.aspiration {
-            NavigationLink(value: aspiration) {
-                headerLabel(chevron: false)
-            }
-            .buttonStyle(.plain)
-        } else {
-            headerLabel(chevron: false)
+        Button(action: onCollapse) {
+            headerLabel
         }
+        .buttonStyle(.plain)
+        .accessibilityHint("Collapse")
     }
 
-    private func headerLabel(chevron: Bool) -> some View {
+    private var headerLabel: some View {
         ClusterHeaderLabel(cluster: cluster) {
             if let why {
                 Text(why)
@@ -65,12 +55,10 @@ extension ClusterCardView {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            if chevron {
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .rotationEffect(.degrees(180))
-            }
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(180))
         }
     }
 

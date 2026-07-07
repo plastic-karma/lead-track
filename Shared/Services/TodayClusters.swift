@@ -211,6 +211,25 @@ extension TodayGrouping {
         return today < goal ? goal - today : nil
     }
 
+    /// The folded needsYou stub's status: the lone unmet metric's measurable
+    /// remainder ("1m 18s left"), or how many members still wait ("2 still
+    /// open"); a single member without a remainder drops the count.
+    static func openSummary(
+        for metrics: [Metric],
+        calendar: Calendar = .current
+    ) -> String {
+        let open = metrics.filter { metricState($0, calendar: calendar) == .needsYou }
+        if open.count == 1, let metric = open.first {
+            guard let remaining = remainingToday(for: metric, calendar: calendar)
+            else { return "still open" }
+            let amount = ValueFormatter.format(
+                remaining, type: metric.measurementType, unit: metric.unit
+            )
+            return "\(amount) left"
+        }
+        return "\(open.count) still open"
+    }
+
     /// The done stub's testimony, from the day's sessions: "all done ·
     /// 3m 12s reading · scripture kept" — one fragment per met metric.
     static func doneSummary(
