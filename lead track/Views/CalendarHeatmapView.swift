@@ -4,7 +4,9 @@ struct CalendarHeatmapView: View {
     let dailyTotals: [DailyTotal]
     var tint: Color = .accentColor
 
-    private static let weekCount = 16
+    /// How many trailing weeks the grid shows — internal so the Activity
+    /// fold's "16 weeks" label can never drift from the grid itself.
+    static let weekCount = 16
     private static let cellSize: CGFloat = 16
     private static let spacing: CGFloat = 3
 
