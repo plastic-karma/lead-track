@@ -4,10 +4,11 @@ import SwiftUI
 /// The Week tab: the week's headline folded into a bare header strip, then
 /// the aspiration cards at center stage — each carrying its week, its
 /// intentions, and one calm action row of chips (moment · intention ·
-/// check-in) — then every metric as one row of a single ledger card, the
-/// quiet ones dimmed at its foot, with the resting aspirations closing the
-/// screen as one centered line. Chevrons on the header strip browse earlier
-/// weeks; the aspiration cards and ledger rows drill into their screens.
+/// check-in), each foldable to its header line — then every metric as one
+/// row of a single ledger card, the quiet ones dimmed at its foot, with the
+/// resting aspirations closing the screen as one centered line. Chevrons on
+/// the header strip browse earlier weeks; the aspiration cards and ledger
+/// rows drill into their screens.
 ///
 /// Formerly a notification-triggered sheet; it now anchors the middle
 /// timescale of the app's three tabs (day / week / lifetime), and the review
@@ -36,6 +37,10 @@ struct WeeklyReviewView: View {
     @State var settingIntentionFor: Aspiration?
     /// The aspiration a new moment is being kept under, if any.
     @State var keepingMomentFor: Aspiration?
+    /// The aspiration cards folded to their header line — per-card, transient,
+    /// never persisted, like the Today tab's stub expansion. Internal so the
+    /// aspiration section in its own file can drive it.
+    @State var collapsedAspirations: Set<String> = []
     /// The goal-settings route shared by promotions, measure-health insights,
     /// and season adjustments — hoisted here so it works with or without
     /// aspirations on stage.

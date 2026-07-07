@@ -9,6 +9,8 @@ import SwiftUI
 /// expands its composer in place (see `AspirationWeekCardActions`). The
 /// day-by-day rhythm waits behind a tap on the week detail screen, so the
 /// card itself stays calm under its soft wash of the aspiration's color.
+/// The header folds the card to one summary line and back — its body keeps
+/// the drill-in tap, the way a Today stub's header folds its cluster.
 struct AspirationWeekCard: View {
     let week: WeeklyReview.AspirationWeek
     /// Last week's unclosed intentions, decided right on the card.
@@ -24,6 +26,10 @@ struct AspirationWeekCard: View {
     /// weeks, unmapped aspirations) hides the chip. Moment *chips* still
     /// render without it — they are narrative, shown on browsed weeks too.
     var onKeepMoment: (() -> Void)?
+    /// Whether the card is folded to its header line. The review screen owns
+    /// the flag — per-card, transient, never persisted — so sibling cards
+    /// fold independently, like the Today tab's stubs.
+    @Binding var isCollapsed: Bool
     /// Whether the check-in chip has opened its composer. Internal (not
     /// private) so the action row in its own file can drive it.
     @State var pulseExpanded = false
@@ -41,9 +47,11 @@ struct AspirationWeekCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            weekLine
-            commitmentsBlock
-            actionBlock
+            if !isCollapsed {
+                weekLine
+                commitmentsBlock
+                actionBlock
+            }
         }
         .cardSurface(washTint: tint)
     }
@@ -52,7 +60,20 @@ struct AspirationWeekCard: View {
 // MARK: - Effort pieces
 
 extension AspirationWeekCard {
+    /// The card's fold handle: tapping the header folds the card to this one
+    /// line and back (the rotating chevron says so), leaving the body below
+    /// as the card's drill-in surface.
     private var header: some View {
+        Button {
+            withAnimation(.snappy) { isCollapsed.toggle() }
+        } label: {
+            headerLabel
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(isCollapsed ? "Expand" : "Collapse")
+    }
+
+    private var headerLabel: some View {
         HStack(spacing: 12) {
             MetricIcon(systemName: week.icon, tint: tint)
             VStack(alignment: .leading, spacing: 1) {
@@ -61,34 +82,51 @@ extension AspirationWeekCard {
                 headerCaption
             }
             Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption)
+            Image(systemName: "chevron.down")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
+                .rotationEffect(.degrees(isCollapsed ? 0 : 180))
         }
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
     private var headerCaption: some View {
-        if week.sessionCount > 0 {
-            Text("\(ValueFormatter.sessions(week.sessionCount)) · \(week.activeDays) days active")
+        if let line = captionLine {
+            Text(line)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
+    }
+
+    /// Folded, the caption carries the week's one figure so the line still
+    /// reviews; expanded, the figure sits on `weekLine` and the caption
+    /// counts the engagement.
+    private var captionLine: String? {
+        if isCollapsed { return totalsText ?? "Quiet this week" }
+        guard week.sessionCount > 0 else { return nil }
+        return "\(ValueFormatter.sessions(week.sessionCount)) · \(week.activeDays) days active"
+    }
+
+    /// The week's totals joined into one line, nil when nothing landed.
+    private var totalsText: String? {
+        week.totals.isEmpty ? nil : week.totals.map(\.text).joined(separator: " · ")
     }
 
     /// The reviewed week's effort is the card's one figure — the aspiration's
     /// lifetime totals live on its own screen, never in the review.
     @ViewBuilder
     private var weekLine: some View {
-        if week.totals.isEmpty {
-            Text("Quiet this week")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-        } else {
-            Text(week.totals.map(\.text).joined(separator: " · "))
+        if let totalsText {
+            Text(totalsText)
                 .numeralStyle(.value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
+        } else {
+            Text("Quiet this week")
+                .font(.title3)
+                .foregroundStyle(.secondary)
         }
     }
 }
