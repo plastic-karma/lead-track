@@ -1,6 +1,12 @@
 import SwiftData
 import SwiftUI
 
+/// The metric detail as one calm column under a wash of the metric's color:
+/// the title row wearing the icon and aspiration links, the ring instrument
+/// (today nested in the week, pace as a notch), a quiet all-time line, and
+/// the fold rows — Activity, History, Projects — that expand in place. The
+/// record dock floats at the bottom; everything occasional lives behind the
+/// toolbar's ellipsis menu.
 struct MetricDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
@@ -11,7 +17,6 @@ struct MetricDetailView: View {
     @State private var showingGoalSettings = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
-    @State private var showingAllSessions = false
     @State private var showingEdit = false
     @State private var sessionToMove: Session?
 
@@ -26,32 +31,41 @@ struct MetricDetailView: View {
         )
     }
 
+    var body: some View {
+        page
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbar }
+            .safeAreaInset(edge: .bottom) { dock }
+            .sheet(isPresented: $showingProjectForm) { ProjectFormView(metric: metric) }
+            .sheet(isPresented: $showingDetailedStats) { detailedStats }
+            .sheet(isPresented: $showingGoalSettings) { GoalSettingsView(metric: metric) }
+            .sheet(isPresented: $showingEdit) { editSheet }
+            .sheet(isPresented: $showingCountEntry) { CountEntryView(metric: metric, project: nil) }
+            .sheet(isPresented: $showingDurationEntry) { DurationEntryView(metric: metric, project: nil) }
+            .sheet(item: $sessionToMove) { MoveSessionView(session: $0) }
+            .recordingFeedback(isActive: activeSession != nil)
+            .task(id: metric.stableID) {
+                await refreshHealth()
+            }
+    }
+
+    private var tint: Color {
+        metric.displayColor
+    }
+}
+
+// MARK: - Data
+
+extension MetricDetailView {
     private var activeSession: Session? {
-        sessions.first { $0.isRunning }
-    }
-
-    private var activeProjects: [Project] {
-        metric.projects
-            .filter { $0.status == .active }
-            .sorted { $0.startedAt < $1.startedAt }
-    }
-
-    private var finishedProjects: [Project] {
-        metric.projects
-            .filter { $0.status == .finished }
-            .sorted { ($0.finishedAt ?? .distantPast) > ($1.finishedAt ?? .distantPast) }
+        sessions.first(where: \.isRunning)
     }
 
     private var directSessions: [Session] {
         sessions
             .filter { $0.project == nil && !$0.isRunning }
             .sorted { $0.startedAt > $1.startedAt }
-    }
-
-    private var visibleDirectSessions: [Session] {
-        showingAllSessions
-            ? directSessions
-            : Array(directSessions.prefix(SessionStatistics.sessionListPreviewLimit))
     }
 
     private var dailyTotals: [DailyTotal] {
@@ -69,250 +83,154 @@ struct MetricDetailView: View {
             aspiration.metrics.contains(where: { $0 === metric })
         }
     }
+}
 
-    var body: some View {
+// MARK: - Page
+
+extension MetricDetailView {
+    private var page: some View {
+        ScrollView {
+            column
+        }
+        .background(washBackground)
+    }
+
+    private var column: some View {
         let totals = dailyTotals
-        List {
-            heroSection(totals)
-            aspirationsSection
-            statisticsSection
-            ActivitySection(dailyTotals: totals, tint: metric.displayColor)
-            if !activeProjects.isEmpty {
-                projectsSection("Active Projects", activeProjects)
-            }
-            if metric.isHealthLinked {
-                healthSections(totals)
-            } else if !directSessions.isEmpty {
-                directSessionsSections
-            }
-            if !finishedProjects.isEmpty {
-                projectsSection("Finished", finishedProjects)
-            }
+        return VStack(alignment: .leading, spacing: 14) {
+            titleBlock
+            ringCard(totals)
+            MetricQuietLines(metric: metric, dailyTotals: totals)
+            foldsCard(totals)
         }
-        .navigationTitle(metric.name)
-        .toolbar {
-            if !metric.isHealthLinked {
-                ToolbarItem {
-                    Button { showingProjectForm = true } label: {
-                        Label("Add Project", systemImage: "folder.badge.plus")
-                    }
-                }
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .padding(.bottom, 24)
+    }
+
+    private func ringCard(_ totals: [DailyTotal]) -> some View {
+        MetricRingCard(
+            metric: metric,
+            activeSession: activeSession,
+            todayTotal: SessionStatistics.todayTotal(from: totals),
+            weekTotal: SessionStatistics.currentWeekTotal(from: totals)
+        )
+    }
+
+    private func foldsCard(_ totals: [DailyTotal]) -> some View {
+        MetricFoldsCard(
+            metric: metric,
+            dailyTotals: totals,
+            directSessions: directSessions,
+            onMoveSession: { sessionToMove = $0 }
+        )
+    }
+
+    /// The metric's color washing down from the top, the same atmosphere the
+    /// aspiration screens open with.
+    private var washBackground: some View {
+        Theme.screenBackground
+            .overlay(alignment: .top) {
+                Theme.wash(tint, peak: 0.14)
+                    .frame(height: 280)
             }
-            ToolbarItem {
-                Button { showingGoalSettings = true } label: {
-                    Label("Goals", systemImage: "target")
-                }
-            }
-            ToolbarItem {
-                Button { showingEdit = true } label: {
-                    Label("Edit Metric", systemImage: "pencil")
-                }
-            }
-        }
-        .sheet(isPresented: $showingProjectForm) {
-            ProjectFormView(metric: metric)
-        }
-        .sheet(isPresented: $showingDetailedStats) {
-            DetailedStatisticsView(
-                dailyTotals: dailyTotals,
-                measurementType: metric.measurementType,
-                unit: metric.unit,
-                dailyGoal: metric.dailyGoal,
-                weeklyGoal: metric.weeklyGoal,
-                excludedWeekdays: metric.excludedWeekdays,
-                tint: metric.displayColor
+            .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private var dock: some View {
+        if !metric.isHealthLinked {
+            MetricRecordDock(
+                metric: metric,
+                activeSession: activeSession,
+                onLogManually: showManualEntry
             )
-        }
-        .sheet(isPresented: $showingGoalSettings) {
-            GoalSettingsView(metric: metric)
-        }
-        .sheet(isPresented: $showingEdit) {
-            MetricFormView(metric: metric)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showingCountEntry) {
-            CountEntryView(metric: metric, project: nil)
-        }
-        .sheet(isPresented: $showingDurationEntry) {
-            DurationEntryView(metric: metric, project: nil)
-        }
-        .sheet(item: $sessionToMove) { session in
-            MoveSessionView(session: session)
-        }
-        .recordingFeedback(isActive: activeSession != nil)
-        .task(id: metric.stableID) {
-            await refreshHealth()
         }
     }
 }
 
-// MARK: - Sections
+// MARK: - Title Block
 
 extension MetricDetailView {
-    private func heroSection(_ totals: [DailyTotal]) -> some View {
-        Section {
-            MetricHeroView(
-                metric: metric,
-                activeSession: activeSession,
-                todayTotal: SessionStatistics.todayTotal(from: totals),
-                onLogManually: showManualEntry
-            )
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            descriptionRow
-        } footer: {
-            heroFooter
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                MetricIcon(systemName: metric.displayIcon, tint: tint, size: 40)
+                Text(metric.name)
+                    .font(.title2.weight(.bold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 8)
+                if let aspiration = connectedAspirations.first, connectedAspirations.count == 1 {
+                    chipLink(aspiration)
+                }
+            }
+            if connectedAspirations.count > 1 {
+                AspirationChipsRow(aspirations: connectedAspirations)
+            }
+            description
         }
+        .padding(.horizontal, 4)
+    }
+
+    private func chipLink(_ aspiration: Aspiration) -> some View {
+        NavigationLink(value: aspiration) {
+            AspirationChip(aspiration: aspiration)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private var descriptionRow: some View {
+    private var description: some View {
         if let text = metric.metricDescription, !text.isEmpty {
             Text(text)
                 .font(.callout)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-        }
-    }
-
-    @ViewBuilder
-    private var aspirationsSection: some View {
-        if !connectedAspirations.isEmpty {
-            Section("Poured Into") {
-                AspirationChipsRow(aspirations: connectedAspirations)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            }
-        }
-    }
-
-    private var statisticsSection: some View {
-        StatisticsView(
-            sessions: sessions,
-            measurementType: metric.measurementType,
-            unit: metric.unit,
-            weeklyGoal: metric.weeklyGoal,
-            excludedWeekdays: metric.excludedWeekdays,
-            showingDetailedStats: $showingDetailedStats,
-            tint: metric.displayColor
-        )
-    }
-
-    private var heroFooter: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let project = metric.defaultProject {
-                Label(
-                    "Logging to \(project.name)",
-                    systemImage: "star.fill"
-                )
-            }
-            // The quiet "past season" tag: a fact, not a judgment — the goal
-            // keeps working in full (see `GoalSeason`).
-            if case .pastSeason = GoalSeason.phase(of: metric) {
-                Label(
-                    "Goal past its season — review it under Goals",
-                    systemImage: "leaf"
-                )
-            }
-        }
-    }
-
-    private func projectsSection(
-        _ title: String,
-        _ projects: [Project]
-    ) -> some View {
-        Section(title) {
-            ForEach(projects) { project in
-                NavigationLink(value: project) {
-                    projectRow(project)
-                }
-            }
-            .onDelete { offsets in
-                deleteProjects(offsets, from: projects)
-            }
-        }
-    }
-
-    /// A health metric's history is read-only: mirrored day rows instead of
-    /// editable sessions, plus where the numbers come from.
-    @ViewBuilder
-    private func healthSections(_ totals: [DailyTotal]) -> some View {
-        HealthHistorySection(metric: metric, dailyTotals: totals)
-        HealthLinkSection(
-            metric: metric,
-            hasRecentData: SessionStatistics.windowedTotal(days: 30, from: totals) > 0
-        )
-    }
-
-    @ViewBuilder
-    private var directSessionsSections: some View {
-        ForEach(SessionDayGrouping.group(visibleDirectSessions)) { group in
-            sessionDaySection(group)
-        }
-        expandSection
-    }
-
-    private func sessionDaySection(_ group: SessionDayGroup) -> some View {
-        Section(SessionDayGrouping.label(for: group.day)) {
-            ForEach(group.sessions) { session in
-                sessionRow(session)
-            }
-            .onDelete { offsets in
-                deleteSessions(offsets, in: group)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var expandSection: some View {
-        if directSessions.count > SessionStatistics.sessionListPreviewLimit {
-            Section {
-                SessionListExpandButton(
-                    totalCount: directSessions.count,
-                    isExpanded: $showingAllSessions
-                )
-            }
         }
     }
 }
 
-// MARK: - Helpers
+// MARK: - Toolbar & Sheets
 
 extension MetricDetailView {
-    private func projectRow(_ project: Project) -> some View {
-        HStack {
-            Text(project.name)
-            if project.isDefault {
-                Image(systemName: "star.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Default project")
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem {
+            Menu {
+                Button("Edit Metric", systemImage: "pencil") { showingEdit = true }
+                Button("Goals & Reminders", systemImage: "target") { showingGoalSettings = true }
+                if !dailyTotals.isEmpty {
+                    Button("All Statistics", systemImage: "chart.bar.xaxis") {
+                        showingDetailedStats = true
+                    }
+                }
+                if !metric.isHealthLinked {
+                    Button("Add Project", systemImage: "folder.badge.plus") {
+                        showingProjectForm = true
+                    }
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
             }
-            Spacer()
-            if project.sessions.contains(where: \.isRunning) {
-                Image(systemName: "record.circle")
-                    .foregroundStyle(metric.displayColor)
-                    .symbolEffect(.pulse)
-            }
-            Text("\(project.sessions.count) sessions")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
-    private func sessionRow(_ session: Session) -> some View {
-        SessionRowView(session: session, showsDate: false)
-            .swipeActions(edge: .leading) {
-                if !metric.projects.isEmpty {
-                    Button { sessionToMove = session } label: {
-                        Label("Move", systemImage: "folder")
-                    }
-                    .tint(.blue)
-                }
-            }
+    private var detailedStats: some View {
+        DetailedStatisticsView(
+            dailyTotals: dailyTotals,
+            measurementType: metric.measurementType,
+            unit: metric.unit,
+            dailyGoal: metric.dailyGoal,
+            weeklyGoal: metric.weeklyGoal,
+            excludedWeekdays: metric.excludedWeekdays,
+            tint: metric.displayColor
+        )
+    }
+
+    private var editSheet: some View {
+        MetricFormView(metric: metric)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
     }
 
     private func showManualEntry() {
@@ -330,27 +248,5 @@ extension MetricDetailView {
         await HealthMetricSyncService.shared.refreshMetric(
             metricID: id, container: modelContext.container
         )
-    }
-
-    private func deleteProjects(
-        _ offsets: IndexSet,
-        from projects: [Project]
-    ) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(projects[index])
-            }
-        }
-    }
-
-    private func deleteSessions(
-        _ offsets: IndexSet,
-        in group: SessionDayGroup
-    ) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(group.sessions[index])
-            }
-        }
     }
 }
