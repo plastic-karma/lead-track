@@ -210,11 +210,14 @@ extension MetricRingCard {
 // MARK: - Legend & Coach
 
 extension MetricRingCard {
+    /// One dot per visible ring, so a week-only cluster never advertises a
+    /// today ring it doesn't draw.
     private var legend: some View {
-        HStack(spacing: 6) {
-            legendDot(tint, label: "today")
+        HStack(spacing: 18) {
+            if dailyFraction != nil {
+                legendDot(tint, label: "today")
+            }
             legendDot(tint.opacity(0.45), label: "week")
-                .padding(.leading, 12)
         }
         .accessibilityHidden(true)
     }
