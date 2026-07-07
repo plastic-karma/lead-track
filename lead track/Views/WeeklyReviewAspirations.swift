@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The aspiration lens of the weekly review — its center stage. Each active
 /// aspiration gets one card carrying its week, its intentions, and its
-/// action row, and tapping a card drills into the day-by-day distribution.
+/// action row; tapping a card's body drills into the day-by-day
+/// distribution, while its header folds the card to one line and back.
 /// It renders nothing when no aspiration is on stage, so a zero-aspiration
 /// review stays byte-identical to before — additive, never a fork. (The
 /// resting aspirations close the whole review as one line instead — see
@@ -56,7 +57,23 @@ extension WeeklyReviewView {
             onSetIntention: setIntentionAction(for: aspiration, in: review),
             onClosureAction: { action, id in handle(action, closureID: id) },
             onCheckIn: checkInAction(for: aspiration, in: review),
-            onKeepMoment: keepMomentAction(for: aspiration, in: review)
+            onKeepMoment: keepMomentAction(for: aspiration, in: review),
+            isCollapsed: collapseBinding(week.id)
+        )
+    }
+
+    /// The transient fold flag for one aspiration's card, backed by the set
+    /// in `WeeklyReviewView` so sibling cards fold independently.
+    private func collapseBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { collapsedAspirations.contains(id) },
+            set: { collapsed in
+                if collapsed {
+                    collapsedAspirations.insert(id)
+                } else {
+                    collapsedAspirations.remove(id)
+                }
+            }
         )
     }
 
