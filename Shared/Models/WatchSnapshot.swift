@@ -33,6 +33,11 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     /// earlier app versions still decode; nil reads as "expected", the old
     /// behavior.
     var binaryGoalRetiredAt: Date?
+    /// Raw `CountLogStyle` deciding what tapping a count row does (mirrors
+    /// `Metric.countLogStyleRaw`). Optional so snapshots cached by earlier
+    /// app versions still decode; nil reads as asking for the amount, the
+    /// old behavior.
+    var countLogStyleRaw: String?
 
     init(
         id: UUID,
@@ -47,7 +52,8 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
         excludedWeekdays: [Int]? = nil,
         countdownDuration: TimeInterval? = nil,
         healthSourceRaw: String? = nil,
-        binaryGoalRetiredAt: Date? = nil
+        binaryGoalRetiredAt: Date? = nil,
+        countLogStyleRaw: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -62,6 +68,7 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
         self.countdownDuration = countdownDuration
         self.healthSourceRaw = healthSourceRaw
         self.binaryGoalRetiredAt = binaryGoalRetiredAt
+        self.countLogStyleRaw = countLogStyleRaw
     }
 }
 
@@ -77,6 +84,13 @@ extension WatchMetricSnapshot {
     /// renders it read-only: health data is recorded by sensors, not taps.
     var isHealthLinked: Bool {
         healthSourceRaw != nil
+    }
+
+    /// What tapping a count row does, mirroring `Metric.countLogStyle`.
+    /// nil (snapshots from older phones) and unknown raw values read as
+    /// asking for the amount.
+    var countLogStyle: CountLogStyle {
+        countLogStyleRaw.flatMap(CountLogStyle.init(rawValue:)) ?? .askAmount
     }
 
     /// Mirrors `GoalSummary`: binary metrics carry an implicit "do it today"

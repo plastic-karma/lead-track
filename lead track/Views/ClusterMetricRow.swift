@@ -186,20 +186,38 @@ extension ClusterMetricRow {
         }
     }
 
-    /// Tap opens the custom-amount sheet; the menu keeps the quick +1.
+    /// Tap follows the metric's log style — open the custom-amount sheet, or
+    /// add one right away — and the menu keeps the other route.
     private var countButton: some View {
         Menu {
+            countMenuAlternative
+        } label: {
+            actionCircle("plus")
+        } primaryAction: {
+            if metric.logsOneUnitImmediately {
+                logOne()
+            } else {
+                showingCountEntry = true
+            }
+        }
+        .accessibilityLabel("Log \(metric.unit ?? "amount")")
+    }
+
+    @ViewBuilder
+    private var countMenuAlternative: some View {
+        if metric.logsOneUnitImmediately {
+            Button {
+                showingCountEntry = true
+            } label: {
+                Label("Log Amount…", systemImage: "square.and.pencil")
+            }
+        } else {
             Button {
                 logOne()
             } label: {
                 Label("Log +1", systemImage: "plus")
             }
-        } label: {
-            actionCircle("plus")
-        } primaryAction: {
-            showingCountEntry = true
         }
-        .accessibilityLabel("Log \(metric.unit ?? "amount")")
     }
 
     private var binaryButton: some View {

@@ -21,7 +21,7 @@ struct MetricRecordDock: View {
                 countdownButton
             }
             if metric.measurementType.tracksQuantity {
-                manualLogButton
+                secondaryLogButton
             }
         }
         .padding(.horizontal, 20)
@@ -52,13 +52,24 @@ extension MetricRecordDock {
                 action: toggleTimer
             )
         case .count:
-            pill("Log +1", systemImage: "plus", action: logOne)
+            countPill
         case .binary:
             pill(
                 isDoneToday ? "Done" : "Mark Done",
                 systemImage: isDoneToday ? "checkmark.circle.fill" : "circle",
                 action: toggleDone
             )
+        }
+    }
+
+    /// The count pill follows the metric's log style — ask for the amount,
+    /// or add one on the spot. The glass circle beside it keeps the other.
+    @ViewBuilder
+    private var countPill: some View {
+        if metric.logsOneUnitImmediately {
+            pill("Log +1", systemImage: "plus", action: logOne)
+        } else {
+            pill("Log", systemImage: "square.and.pencil", action: onLogManually)
         }
     }
 
@@ -99,6 +110,27 @@ extension MetricRecordDock {
         .glassCircleButtonStyle()
         .tint(metric.displayColor)
         .accessibilityLabel("Start Countdown")
+    }
+
+    /// A count metric whose primary pill asks for the amount keeps the quick
+    /// +1 here instead of a second way into the same sheet; everything else
+    /// keeps the manual-entry pencil.
+    @ViewBuilder
+    private var secondaryLogButton: some View {
+        if metric.measurementType == .count, !metric.logsOneUnitImmediately {
+            quickLogOneButton
+        } else {
+            manualLogButton
+        }
+    }
+
+    private var quickLogOneButton: some View {
+        Button(action: logOne) {
+            circleLabel("plus")
+        }
+        .glassCircleButtonStyle()
+        .tint(metric.displayColor)
+        .accessibilityLabel("Log +1")
     }
 
     private var manualLogButton: some View {

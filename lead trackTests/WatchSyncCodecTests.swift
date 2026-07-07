@@ -12,7 +12,8 @@ struct WatchSyncCodecTests {
         todayTotal: Double = 0,
         dailyGoal: Double? = nil,
         excludedWeekdays: [Int]? = nil,
-        countdownDuration: TimeInterval? = nil
+        countdownDuration: TimeInterval? = nil,
+        countLogStyleRaw: String? = nil
     ) -> WatchMetricSnapshot {
         WatchMetricSnapshot(
             id: metricID,
@@ -25,7 +26,8 @@ struct WatchSyncCodecTests {
             todayTotal: todayTotal,
             dailyGoal: dailyGoal,
             excludedWeekdays: excludedWeekdays,
-            countdownDuration: countdownDuration
+            countdownDuration: countdownDuration,
+            countLogStyleRaw: countLogStyleRaw
         )
     }
 
@@ -99,6 +101,18 @@ struct WatchSyncCodecTests {
     }
 
     @Test
+    func countLogStyleSurvivesRoundTrip() throws {
+        let snapshot = WatchSnapshot(metrics: [
+            sampleMetric(countLogStyleRaw: CountLogStyle.incrementByOne.rawValue)
+        ])
+        let decoded = try #require(
+            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
+        )
+        #expect(decoded == snapshot)
+        #expect(decoded.metrics.first?.countLogStyle == .incrementByOne)
+    }
+
+    @Test
     func legacyCacheWithoutGoalFieldsStillDecodes() throws {
         let legacy = """
         {"metrics":[{"id":"11111111-2222-3333-4444-555555555555",
@@ -112,6 +126,7 @@ struct WatchSyncCodecTests {
         #expect(metric.todayTotal == 120)
         #expect(metric.dailyGoal == nil)
         #expect(metric.excludedWeekdays == nil)
+        #expect(metric.countLogStyle == .askAmount)
     }
 
     @Test

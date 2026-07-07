@@ -74,6 +74,12 @@ final class Metric {
     /// expectation is live. Meaningless on quantity metrics, whose pressure
     /// lives in amount goals.
     var binaryGoalRetiredAt: Date?
+    /// Raw `CountLogStyle` deciding what a count metric's primary log action
+    /// does. Stored as the raw string (not the enum) for the same
+    /// forward-compatibility reason as `healthSourceRaw`. Defaults to asking
+    /// for the amount — the behavior before the setting existed — so existing
+    /// stores migrate untouched. Meaningless on non-count metrics.
+    var countLogStyleRaw: String = CountLogStyle.askAmount.rawValue
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -173,6 +179,24 @@ extension Metric {
             healthExportEnabledAt = date
         }
         healthExportRaw = target.rawValue
+    }
+}
+
+// MARK: - Count Logging
+
+extension Metric {
+    /// What the primary log action does on a count metric: ask how many to
+    /// add, or add a single unit on the spot. A stored value this app
+    /// version doesn't know (written by a newer one) reads as asking, the
+    /// safe interpretation.
+    var countLogStyle: CountLogStyle {
+        get { CountLogStyle(rawValue: countLogStyleRaw) ?? .askAmount }
+        set { countLogStyleRaw = newValue.rawValue }
+    }
+
+    /// Whether the primary count action logs one unit without asking.
+    var logsOneUnitImmediately: Bool {
+        countLogStyle == .incrementByOne
     }
 }
 

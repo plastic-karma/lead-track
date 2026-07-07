@@ -2,8 +2,9 @@ import SwiftUI
 import WatchKit
 
 /// One list row per metric: duration metrics toggle their timer on tap, count
-/// metrics open a quick-log screen, binary metrics check today off, and
-/// health-linked metrics just show today's figure.
+/// metrics log one or open a quick-log screen per their log style, binary
+/// metrics check today off, and health-linked metrics just show today's
+/// figure.
 struct WatchMetricRow: View {
     let metric: WatchMetricSnapshot
 
@@ -21,18 +22,45 @@ struct WatchMetricRow: View {
         case .duration:
             WatchTimerRow(metric: metric)
         case .count:
-            NavigationLink {
-                WatchLogView(metric: metric)
-            } label: {
-                WatchMetricLabel(
-                    metric: metric,
-                    accessory: "plus.circle.fill",
-                    accessoryColor: metric.displayColor
-                )
-            }
+            WatchCountRow(metric: metric)
         case .binary:
             WatchBinaryRow(metric: metric)
         }
+    }
+}
+
+/// A count row follows the metric's log style: +1 metrics log a single unit
+/// right on the tap, ask-amount metrics push the crown-driven quick-log
+/// screen.
+struct WatchCountRow: View {
+    @Environment(WatchSyncController.self) private var sync
+    let metric: WatchMetricSnapshot
+
+    var body: some View {
+        if metric.countLogStyle == .incrementByOne {
+            Button(action: logOne) {
+                label
+            }
+        } else {
+            NavigationLink {
+                WatchLogView(metric: metric)
+            } label: {
+                label
+            }
+        }
+    }
+
+    private var label: some View {
+        WatchMetricLabel(
+            metric: metric,
+            accessory: "plus.circle.fill",
+            accessoryColor: metric.displayColor
+        )
+    }
+
+    private func logOne() {
+        sync.perform(WatchAction(kind: .logValue, metricID: metric.id, value: 1))
+        WKInterfaceDevice.current().play(.success)
     }
 }
 
