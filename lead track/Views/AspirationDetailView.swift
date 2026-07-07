@@ -1,86 +1,72 @@
 import SwiftData
 import SwiftUI
 
-/// The aspiration detail: a cover header, the "why" text, the live rollup
-/// (lifetime + recent), and the editable list of attached metrics and projects,
-/// each tappable through to its own screen. Edit sits in the toolbar; delete
-/// hides behind the ellipsis menu and a confirmation, so the destructive
-/// action is never one accidental tap away.
+/// The aspiration detail as an album page: the full-bleed cover wearing the
+/// title, the "why" as a serif lede, the "This week" card (open commitments
+/// and the pulse), the "Story so far" card (kept moments and the effort
+/// ledger), and two disclosure rows into the attached items and the intention
+/// history. Edit sits in the toolbar; delete hides behind the ellipsis menu
+/// and a confirmation, so the destructive action is never one accidental tap
+/// away.
 struct AspirationDetailView: View {
-    /// Internal so the intention sections in their own file can write
-    /// deletions through it.
+    /// Internal so the card blocks in their own files can write through it.
     @Environment(\.modelContext) var modelContext
     @Environment(\.dismiss) private var dismiss
     let aspiration: Aspiration
     @State private var showingEdit = false
-    @State private var showingAttach = false
     @State private var showingDeleteConfirmation = false
-    /// Internal for the "This week" block in `AspirationIntentionSections`.
+    /// Internal for the "This week" card in `AspirationIntentionSections`.
     @State var showingSetIntention = false
-    /// Internal for the Moments block in `AspirationMomentsSection`: the "Keep"
-    /// composer, the row tapped for editing, and a photo-bearing moment awaiting
-    /// its delete confirmation.
+    /// Internal for the story card in `AspirationMomentsSection`: the "Keep"
+    /// composer, the row tapped for editing, and a photo-bearing moment
+    /// awaiting its delete confirmation.
     @State var showingKeepMoment = false
     @State var editingMoment: Moment?
     @State var momentPendingDelete: Moment?
-    /// Internal for the Pulse section in `AspirationPulseSection`: the note
+    /// Internal for the pulse block in `AspirationPulseSection`: the note
     /// draft and the focus the divergence card's Reflect affordance steals.
     @State var pulseNoteDraft = ""
     @FocusState var pulseNoteFocused: Bool
 
     var body: some View {
-        List {
-            coverSection
-            whySection
-            momentsSection
-            pulseSection
-            thisWeekSection
-            effortSection(AspirationRollup.compute(for: aspiration))
-            attachedSection
-            pastIntentionsSection
-        }
-        .navigationTitle(aspiration.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbar }
-        .confirmationDialog(
-            "Delete \(aspiration.title)?",
-            isPresented: $showingDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Aspiration", role: .destructive, action: deleteAspiration)
-        } message: {
-            Text("Its metrics and projects stay in your library. Its intentions go with it.")
-        }
-        .sheet(isPresented: $showingEdit) {
-            AspirationFormView(aspiration: aspiration)
-        }
-        .sheet(isPresented: $showingAttach) {
-            AspirationAttachSheet(aspiration: aspiration)
-        }
-        .sheet(isPresented: $showingSetIntention) {
-            IntentionFormView(aspiration: aspiration)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showingKeepMoment) {
-            MomentFormView(aspiration: aspiration)
-        }
-        .sheet(item: $editingMoment) { moment in
-            MomentFormView(aspiration: aspiration, moment: moment)
-        }
-        .confirmationDialog(
-            "Delete this moment?",
-            isPresented: momentDeletePresented,
-            presenting: momentPendingDelete
-        ) { moment in
-            Button("Delete Moment", role: .destructive) { deleteMoment(moment) }
-        } message: { _ in
-            Text("Its photos are deleted with it. This can't be undone.")
-        }
+        page
+            .toolbar { toolbar }
+            .confirmationDialog(
+                "Delete \(aspiration.title)?",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Aspiration", role: .destructive, action: deleteAspiration)
+            } message: {
+                Text("Its metrics and projects stay in your library. Its intentions go with it.")
+            }
+            .sheet(isPresented: $showingEdit) {
+                AspirationFormView(aspiration: aspiration)
+            }
+            .sheet(isPresented: $showingSetIntention) {
+                IntentionFormView(aspiration: aspiration)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingKeepMoment) {
+                MomentFormView(aspiration: aspiration)
+            }
+            .sheet(item: $editingMoment) { moment in
+                MomentFormView(aspiration: aspiration, moment: moment)
+            }
+            .confirmationDialog(
+                "Delete this moment?",
+                isPresented: momentDeletePresented,
+                presenting: momentPendingDelete
+            ) { moment in
+                Button("Delete Moment", role: .destructive) { deleteMoment(moment) }
+            } message: { _ in
+                Text("Its photos are deleted with it. This can't be undone.")
+            }
     }
 
-    /// Drives the photo-bearing-moment delete dialog off the optional the swipe
-    /// action sets.
+    /// Drives the photo-bearing-moment delete dialog off the optional the
+    /// context-menu action sets.
     private var momentDeletePresented: Binding<Bool> {
         Binding(
             get: { momentPendingDelete != nil },
@@ -89,120 +75,156 @@ struct AspirationDetailView: View {
     }
 }
 
-// MARK: - Sections
+// MARK: - Page
 
 extension AspirationDetailView {
-    private var coverSection: some View {
-        Section {
-            AspirationCoverBanner(aspiration: aspiration)
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
+    /// The cover runs under the status bar; the nav bar carries no title of
+    /// its own (the cover wears it) so only the floating glass controls sit
+    /// on the photo.
+    private var page: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                AspirationCoverBanner(aspiration: aspiration)
+                content
+            }
         }
+        .ignoresSafeArea(edges: .top)
+        .background(Theme.screenBackground.ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            whyLede
+            thisWeekCard
+            storyCard
+            disclosureCard
+        }
+        .padding(.horizontal)
+        .padding(.top, 20)
+        .padding(.bottom, 24)
+    }
+
+    /// The why, set as a serif lede — the one piece of the screen that reads
+    /// like a book rather than an instrument.
     @ViewBuilder
-    private var whySection: some View {
+    private var whyLede: some View {
         if !aspiration.detail.isEmpty {
-            Section {
-                Text(aspiration.detail)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func effortSection(_ rollup: AspirationRollup) -> some View {
-        if rollup.attachmentCount == 0 {
-            Section {
-                Text("Nothing attached yet — add metrics or projects below.")
-                    .foregroundStyle(.secondary)
-            }
-        } else {
-            Section("Effort") {
-                if rollup.hasData {
-                    AspirationRollupHeader(rollup: rollup)
-                } else {
-                    Text("Nothing logged yet")
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var attachedSection: some View {
-        Section("Attached") {
-            ForEach(sortedMetrics) { metric in
-                metricRow(metric)
-            }
-            .onDelete(perform: detachMetrics)
-            ForEach(sortedProjects) { project in
-                projectRow(project)
-            }
-            .onDelete(perform: detachProjects)
-            Button { showingAttach = true } label: {
-                Label("Add metric or project", systemImage: "plus.circle")
-            }
+            Text(aspiration.detail)
+                .font(.system(size: 19, design: .serif))
+                .lineSpacing(5)
+                .padding(.bottom, 12)
         }
     }
 }
 
-// MARK: - Rows
+// MARK: - Card grammar
 
 extension AspirationDetailView {
-    private var sortedMetrics: [Metric] {
-        aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
+    /// The aspiration's identity color, worn by every accent on the screen.
+    var tint: Color {
+        aspiration.displayColor
     }
 
-    private var sortedProjects: [Project] {
-        aspiration.projects.sorted { $0.startedAt < $1.startedAt }
+    /// A card's uppercase eyebrow.
+    func cardHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .textCase(.uppercase)
+            .kerning(1.2)
+            .foregroundStyle(.secondary)
+            .padding(.top, 14)
+            .padding(.bottom, 4)
     }
 
-    private func metricRow(_ metric: Metric) -> some View {
-        NavigationLink(value: metric) {
-            attachmentRow(
-                name: metric.name,
-                icon: metric.displayIcon,
-                tint: metric.displayColor,
-                detail: AspirationRollup.itemSummary(for: metric) ?? "Nothing logged yet"
-            )
+    /// The hairline between card rows; `inset` pushes it past an icon column
+    /// so it starts where the row's text does.
+    func cardDivider(inset: CGFloat = 0) -> some View {
+        Divider().padding(.leading, inset)
+    }
+
+    /// A quiet plus-affordance row in the aspiration's color — the card
+    /// grammar for "add one more".
+    func plusRow(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "plus.circle")
+                    .font(.subheadline)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+            }
+            .foregroundStyle(tint)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
+}
 
-    private func projectRow(_ project: Project) -> some View {
-        NavigationLink(value: project) {
-            attachmentRow(
-                name: project.name,
-                icon: "folder",
-                tint: MetricColor.color(named: project.metric?.colorName),
-                detail: projectDetail(project)
-            )
+// MARK: - Disclosure rows
+
+extension AspirationDetailView {
+    /// Everything list-like waits behind these two rows, so the page itself
+    /// stays an album: membership on the first, the intention history on the
+    /// second (present only once history exists).
+    private var disclosureCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            disclosureRow("Attached", detail: attachedSummary) {
+                AspirationAttachedListView(aspiration: aspiration)
+            }
+            if pastWeekCount > 0 {
+                cardDivider()
+                disclosureRow("Past intentions", detail: weeksText(pastWeekCount)) {
+                    AspirationPastIntentionsView(aspiration: aspiration)
+                }
+            }
         }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.cardShape())
     }
 
-    private func attachmentRow(
-        name: String,
-        icon: String,
-        tint: Color,
-        detail: String
+    private func disclosureRow(
+        _ title: String,
+        detail: String,
+        @ViewBuilder destination: () -> some View
     ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(tint)
-                .frame(width: 24)
-            Text(name)
-            Spacer()
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        NavigationLink(destination: destination()) {
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(.subheadline)
+                Spacer(minLength: 8)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 13)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
-    /// A project whose parent metric is also attached is folded into that metric
-    /// for totals, so its row says so instead of repeating the effort.
-    private func projectDetail(_ project: Project) -> String {
-        if let metric = project.metric, aspiration.metrics.contains(where: { $0 === metric }) {
-            return "Included in \(metric.name)"
-        }
-        return AspirationRollup.itemSummary(for: project) ?? "Nothing logged yet"
+    /// The attached row's trailing summary: the names in display order, or
+    /// the quiet invitation when nothing is attached yet.
+    private var attachedSummary: String {
+        let names = aspiration.metrics.sorted { $0.createdAt < $1.createdAt }.map(\.name)
+            + aspiration.projects.sorted { $0.startedAt < $1.startedAt }.map(\.name)
+        return names.isEmpty ? "None yet" : names.joined(separator: ", ")
+    }
+
+    /// How many distinct weeks the intention history spans — the disclosure
+    /// row's only figure: a span, never a completion count.
+    private var pastWeekCount: Int {
+        Set(AspirationPastIntentionsView.pastIntentions(of: aspiration).map(\.weekStart)).count
+    }
+
+    private func weeksText(_ count: Int) -> String {
+        count == 1 ? "1 week" : "\(count) weeks"
     }
 }
 
@@ -221,24 +243,6 @@ extension AspirationDetailView {
                 }
             } label: {
                 Label("More", systemImage: "ellipsis.circle")
-            }
-        }
-    }
-
-    private func detachMetrics(_ offsets: IndexSet) {
-        let targets = offsets.map { sortedMetrics[$0] }
-        withAnimation {
-            for metric in targets {
-                aspiration.metrics.removeAll { $0 === metric }
-            }
-        }
-    }
-
-    private func detachProjects(_ offsets: IndexSet) {
-        let targets = offsets.map { sortedProjects[$0] }
-        withAnimation {
-            for project in targets {
-                aspiration.projects.removeAll { $0 === project }
             }
         }
     }
