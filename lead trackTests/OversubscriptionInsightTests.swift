@@ -59,7 +59,9 @@ struct OversubscriptionInsightTests {
 
     /// Runs the same daily amounts for each of the last three completed days.
     private func logEachDay(_ range: ClosedRange<Int>, _ body: (Date) -> Void) {
-        for offset in range { body(day(offset)) }
+        for offset in range {
+            body(day(offset))
+        }
     }
 
     // MARK: - Guards
