@@ -27,6 +27,10 @@ struct WeeklyReview {
     /// Goal seasons awaiting their renew/adjust/retire decision — live review
     /// only, and empty while the feature is unused (see `GoalSeason`).
     let goalSeasonReviews: [GoalSeason.Review]
+    /// The load check-in when the daily goals rarely all land together across
+    /// the last three weeks — live review only, `nil` when there is nothing to
+    /// raise (see `OversubscriptionInsight`).
+    let oversubscription: OversubscriptionInsight.CheckIn?
     /// Completed sessions per day across all metrics, oldest first.
     let sessionSeries: [Double]
 }
@@ -104,6 +108,9 @@ extension WeeklyReview {
             goalSeasonReviews: bounds.isCurrentWeek
                 ? GoalSeason.reviews(for: metrics, aspirations: aspirations, now: now, calendar: calendar)
                 : [],
+            oversubscription: bounds.isCurrentWeek
+                ? OversubscriptionInsight.checkIn(for: metrics, now: now, calendar: calendar)
+                : nil,
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
         )
     }
