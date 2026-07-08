@@ -10,17 +10,20 @@ import SwiftUI
 extension AspirationDetailView {
     var thisWeekCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            cardHeader("This week")
-            ForEach(currentWeekIntentions) { intention in
-                IntentionRowView(intention: intention)
-                    .padding(.vertical, 11)
-                cardDivider(inset: 36)
+            collapsibleCardHeader("This week", isExpanded: $thisWeekExpanded)
+            if thisWeekExpanded {
+                ForEach(currentWeekIntentions) { intention in
+                    IntentionRowView(intention: intention)
+                        .padding(.vertical, 11)
+                    cardDivider(inset: 36)
+                }
+                plusRow("Set an intention") { showingSetIntention = true }
+                cardDivider()
+                pulseBlock
             }
-            plusRow("Set an intention") { showingSetIntention = true }
-            cardDivider()
-            pulseBlock
         }
         .padding(.horizontal, 16)
+        .padding(.bottom, thisWeekExpanded ? 0 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.cardShape())
     }

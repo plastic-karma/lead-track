@@ -27,6 +27,10 @@ struct AspirationDetailView: View {
     /// draft and the focus the divergence card's Reflect affordance steals.
     @State var pulseNoteDraft = ""
     @FocusState var pulseNoteFocused: Bool
+    /// Whether the two narrative cards are open. Both start expanded; the
+    /// "This week" and "The story so far" eyebrows double as collapse controls.
+    @State var thisWeekExpanded = true
+    @State var storyExpanded = true
 
     var body: some View {
         page
@@ -136,6 +140,34 @@ extension AspirationDetailView {
             .foregroundStyle(.secondary)
             .padding(.top, 14)
             .padding(.bottom, 4)
+    }
+
+    /// The same eyebrow as `cardHeader`, but doubling as a collapse control:
+    /// a full-width tap target with a chevron that lies flat when the section
+    /// is open and points to it when closed.
+    func collapsibleCardHeader(_ title: String, isExpanded: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.25)) { isExpanded.wrappedValue.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .textCase(.uppercase)
+                    .kerning(1.2)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.top, 14)
+            .padding(.bottom, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
+        .accessibilityHint("Double tap to \(isExpanded.wrappedValue ? "collapse" : "expand")")
     }
 
     /// The hairline between card rows; `inset` pushes it past an icon column

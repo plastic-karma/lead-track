@@ -9,14 +9,17 @@ import UIKit
 extension AspirationDetailView {
     var storyCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            cardHeader("The story so far")
-            momentsBlock
-            plusRow("Keep a moment") { showingKeepMoment = true }
-            allMomentsRow
-            cardDivider()
-            effortLedger
+            collapsibleCardHeader("The story so far", isExpanded: $storyExpanded)
+            if storyExpanded {
+                momentsBlock
+                plusRow("Keep a moment") { showingKeepMoment = true }
+                allMomentsRow
+                cardDivider()
+                effortLedger
+            }
         }
         .padding(.horizontal, 16)
+        .padding(.bottom, storyExpanded ? 0 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.cardShape())
     }
