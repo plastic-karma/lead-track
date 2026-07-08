@@ -30,6 +30,9 @@ struct WeeklyReviewView: View {
     @Query(sort: \Moment.occurredAt) var moments: [Moment]
     @State private var showingSettings = false
     @State private var weeksBack = 0
+    /// The aspiration group cards folded to their header line — per-card,
+    /// transient, never persisted, like the Today tab's cluster stubs.
+    @State private var collapsedGroups: Set<String> = []
     /// The goal-settings route shared by measure-health insights and season
     /// adjustments — hoisted here so it works with or without goal seasons due.
     @State var goalSettingsRoute: GoalSettingsRoute?
@@ -132,7 +135,23 @@ extension WeeklyReviewView {
             ),
             weeks: group.weeks,
             quiet: group.quiet,
-            metric: metric(for:)
+            metric: metric(for:),
+            collapse: collapseBinding(group.id)
+        )
+    }
+
+    /// The transient fold flag for one group card, backed by the set above so
+    /// sibling cards fold independently.
+    private func collapseBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { collapsedGroups.contains(id) },
+            set: { collapsed in
+                if collapsed {
+                    collapsedGroups.insert(id)
+                } else {
+                    collapsedGroups.remove(id)
+                }
+            }
         )
     }
 

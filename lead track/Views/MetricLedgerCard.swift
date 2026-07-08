@@ -19,6 +19,10 @@ struct MetricLedgerCard: View {
     /// Maps a row back to its model for the drill-in link; rows that no
     /// longer resolve render without navigation.
     var metric: (String) -> Metric?
+    /// When set, the header folds the card to its one line and back; the
+    /// chevron says which way. Nil leaves the card always open (the bare
+    /// ledger has no header to fold from).
+    var collapse: Binding<Bool>?
 
     /// One group's heading: the aspiration's name in its own ink, or gray for
     /// the unaligned group (nil color, no icon).
@@ -29,18 +33,21 @@ struct MetricLedgerCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        let collapsed = collapse?.wrappedValue ?? false
+        return VStack(spacing: 0) {
             if let header {
                 headerRow(header)
-                Divider()
+                if !collapsed { Divider() }
             }
-            ForEach(weeks) { week in
-                linkedRow(week.id) { activeRow(week) }
-                divider(after: week.id)
-            }
-            ForEach(quiet) { metric in
-                linkedRow(metric.id) { quietRow(metric) }
-                divider(after: metric.id)
+            if !collapsed {
+                ForEach(weeks) { week in
+                    linkedRow(week.id) { activeRow(week) }
+                    divider(after: week.id)
+                }
+                ForEach(quiet) { metric in
+                    linkedRow(metric.id) { quietRow(metric) }
+                    divider(after: metric.id)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -53,7 +60,24 @@ struct MetricLedgerCard: View {
 // MARK: - Header
 
 extension MetricLedgerCard {
+    /// A plain heading with no fold affordance, or a button that toggles the
+    /// card's fold when a `collapse` binding is present.
+    @ViewBuilder
     private func headerRow(_ header: Header) -> some View {
+        if let collapse {
+            Button {
+                withAnimation(.snappy) { collapse.wrappedValue.toggle() }
+            } label: {
+                headerLabel(header, collapsed: collapse.wrappedValue, foldable: true)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(collapse.wrappedValue ? "Expand" : "Collapse")
+        } else {
+            headerLabel(header, collapsed: false, foldable: false)
+        }
+    }
+
+    private func headerLabel(_ header: Header, collapsed: Bool, foldable: Bool) -> some View {
         HStack(spacing: 8) {
             if let icon = header.icon {
                 Image(systemName: icon)
@@ -67,8 +91,15 @@ extension MetricLedgerCard {
                 .foregroundStyle(headerTint(header))
                 .lineLimit(1)
             Spacer(minLength: 8)
+            if foldable {
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(collapsed ? 0 : 180))
+            }
         }
         .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 
     /// The unaligned group's gray heading is itself the gentle nudge; an

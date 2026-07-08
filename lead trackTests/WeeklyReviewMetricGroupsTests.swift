@@ -28,9 +28,14 @@ struct WeeklyReviewMetricGroupsTests {
         )!
     }
 
-    private func makeMetric(_ name: String, weeklyGoal: TimeInterval? = nil) -> Metric {
+    private func makeMetric(
+        _ name: String,
+        weeklyGoal: TimeInterval? = nil,
+        dailyGoal: TimeInterval? = nil
+    ) -> Metric {
         let metric = Metric(name: name)
         metric.weeklyGoal = weeklyGoal
+        metric.dailyGoal = dailyGoal
         #if canImport(SwiftData)
         context.insert(metric)
         #endif
@@ -124,7 +129,7 @@ struct WeeklyReviewMetricGroupsTests {
     // MARK: - Weekly-goal dial
 
     @Test
-    func dialSegmentsOnlyForMetricsWithWeeklyGoals() {
+    func dialSegmentForWeeklyGoalAndNoneForAGoallessMetric() {
         let tracked = makeMetric("Reading", weeklyGoal: 3600)
         addDuration(1800, to: tracked, at: day(1))
         let goalless = makeMetric("Chores")
@@ -133,6 +138,18 @@ struct WeeklyReviewMetricGroupsTests {
         let segments = WeeklyReview.weeklyGoalSegments(metrics: [tracked, goalless])
 
         #expect(segments.map(\.id) == [tracked.stableID?.uuidString])
+        #expect(segments.first?.fraction == 0.5)
+    }
+
+    @Test
+    func dialSegmentForADailyGoalSpreadOverTheWeek() {
+        // 600s/day × 7 scheduled days = 4200s week target; 2100 logged = half.
+        let daily = makeMetric("Pushups", dailyGoal: 600)
+        addDuration(2100, to: daily, at: day(1))
+
+        let segments = WeeklyReview.weeklyGoalSegments(metrics: [daily])
+
+        #expect(segments.count == 1)
         #expect(segments.first?.fraction == 0.5)
     }
 
