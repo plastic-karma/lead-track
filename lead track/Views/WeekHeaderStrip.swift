@@ -9,6 +9,9 @@ import SwiftUI
 struct WeekHeaderStrip: View {
     let review: WeeklyReview
     @Binding var weeksBack: Int
+    /// One arc per metric with a weekly goal, filled by this week's progress —
+    /// the Week header's answer to Today's day dial. Empty hides the dial.
+    var goalSegments: [WeeklyReview.GoalDialSegment] = []
 
     var body: some View {
         VStack(spacing: 10) {
@@ -78,10 +81,14 @@ extension WeekHeaderStrip {
 // MARK: - Hero line
 
 extension WeekHeaderStrip {
-    /// Total time leads when any duration metric logged time; otherwise the
-    /// session count carries the week.
+    /// The weekly-goal dial (when any weekly goal is set) leads the row, then
+    /// the headline number, then the day-by-day pulse — the same circle · number
+    /// · flame-graph shape the Today header wears.
     private var heroRow: some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .center, spacing: 16) {
+            if !goalArcs.isEmpty {
+                SegmentedGoalDial(arcs: goalArcs)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(heroText)
                     .numeralStyle(.value)
@@ -91,6 +98,18 @@ extension WeekHeaderStrip {
             }
             Spacer()
             miniBars
+        }
+    }
+
+    /// The weekly-goal segments mapped to the shared dial's arcs, each wearing
+    /// its metric's color.
+    private var goalArcs: [GoalDialArc] {
+        goalSegments.enumerated().map { index, segment in
+            GoalDialArc(
+                id: index,
+                tint: MetricColor.color(named: segment.colorName),
+                fraction: segment.fraction
+            )
         }
     }
 
