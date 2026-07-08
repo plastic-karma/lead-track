@@ -1,12 +1,21 @@
 import SwiftUI
 
+/// The goal-settings sheet route, shared by its two callers: a measure-health
+/// insight's "Review goal" chip and a goal season's Adjust decision. A weekly
+/// prefill seeds the goal picker when one is offered.
+struct GoalSettingsRoute: Identifiable {
+    let id = UUID()
+    let metric: Metric
+    let prefillWeekly: Double?
+}
+
 /// The goal-seasons block of the weekly review: each due target gets one row
 /// framed against the aspirations its metric serves, with the three
 /// decisions — renew, adjust, retire — sitting visually equal. Decisions
-/// about targets belong with the why-zone, so the block sits between the
-/// aspirations and the metric pages. Live review only; ignoring it changes
-/// no goal behavior, ever — after the grace weeks the row just wears the
-/// factual "past season" tag.
+/// about targets belong with the why-zone, so the block sits below the
+/// metric groups. Live review only; ignoring it changes no goal behavior,
+/// ever — after the grace weeks the row just wears the factual "past
+/// season" tag.
 extension WeeklyReviewView {
     @ViewBuilder
     func goalSeasonSection(_ review: WeeklyReview) -> some View {

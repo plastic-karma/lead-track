@@ -6,15 +6,34 @@ import SwiftUI
 /// stayed quiet sit dimmed at the bottom of the same ledger. Each row
 /// drills into its metric; everything beyond the total waits behind that
 /// tap, so the review's metric zone reads in one breath.
+///
+/// With a `header` it becomes one aspiration's compact group on the Week tab —
+/// the aspiration's identity over its metrics' weeks — so the Week tab groups
+/// by aspiration the way Today does. Without one it stays the bare ledger.
 struct MetricLedgerCard: View {
+    /// The aspiration identity drawn atop the card, turning the ledger into one
+    /// compact group; nil renders the plain ledger.
+    var header: Header?
     let weeks: [WeeklyReview.MetricWeek]
     let quiet: [WeeklyReview.QuietMetric]
     /// Maps a row back to its model for the drill-in link; rows that no
     /// longer resolve render without navigation.
     var metric: (String) -> Metric?
 
+    /// One group's heading: the aspiration's name in its own ink, or gray for
+    /// the unaligned group (nil color, no icon).
+    struct Header {
+        let title: String
+        let icon: String?
+        let colorName: String?
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            if let header {
+                headerRow(header)
+                Divider()
+            }
             ForEach(weeks) { week in
                 linkedRow(week.id) { activeRow(week) }
                 divider(after: week.id)
@@ -28,6 +47,34 @@ struct MetricLedgerCard: View {
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
         .background(Theme.cardShape())
+    }
+}
+
+// MARK: - Header
+
+extension MetricLedgerCard {
+    private func headerRow(_ header: Header) -> some View {
+        HStack(spacing: 8) {
+            if let icon = header.icon {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(MetricColor.color(named: header.colorName))
+            }
+            Text(header.title)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .kerning(0.5)
+                .foregroundStyle(headerTint(header))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+        }
+        .padding(.vertical, 10)
+    }
+
+    /// The unaligned group's gray heading is itself the gentle nudge; an
+    /// aspiration wears its own color.
+    private func headerTint(_ header: Header) -> Color {
+        header.colorName == nil ? .secondary : MetricColor.color(named: header.colorName)
     }
 }
 
