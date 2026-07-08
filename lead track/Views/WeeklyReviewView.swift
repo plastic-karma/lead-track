@@ -104,6 +104,7 @@ extension WeeklyReviewView {
                 WeekHeaderStrip(review: review, weeksBack: $weeksBack)
                     .padding(.horizontal)
                 aspirationSection(review)
+                oversubscriptionSection(review)
                 goalSeasonSection(review)
                 sectionBreak("Metrics")
                     .padding(.horizontal)

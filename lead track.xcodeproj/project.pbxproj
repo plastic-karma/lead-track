@@ -19,6 +19,7 @@
 		D1F0010000000000010002 /* AspirationWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000010001 /* AspirationWeekTests.swift */; };
 		D1F0010000000000020002 /* HealthMetricTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000020001 /* HealthMetricTests.swift */; };
 		D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000030001 /* GoalSeasonTests.swift */; };
+		D1F00100000000000B0002 /* OversubscriptionInsightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */; };
 		D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040001 /* AspirationAlignmentTests.swift */; };
 		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
 		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
@@ -127,6 +128,7 @@
 		D1F0010000000000010001 /* AspirationWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationWeekTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000020001 /* HealthMetricTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthMetricTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000030001 /* GoalSeasonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalSeasonTests.swift; sourceTree = "<group>"; };
+		D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OversubscriptionInsightTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000040001 /* AspirationAlignmentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationAlignmentTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
@@ -286,6 +288,7 @@
 				D1F0010000000000080001 /* TodayClusterTests.swift */,
 				D1F0010000000000090001 /* ReminderPlannerTests.swift */,
 				D1F00100000000000A0001 /* TodayClusterReadingTests.swift */,
+				D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */,
 				0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */,
 				0A1CAF010000000000000016 /* WatchActionHandlerTests.swift */,
 				0A1CAF010000000000000019 /* ComplicationProgressTests.swift */,
@@ -660,6 +663,7 @@
 				D1F0010000000000080002 /* TodayClusterTests.swift in Sources */,
 				D1F0010000000000090002 /* ReminderPlannerTests.swift in Sources */,
 				D1F00100000000000A0002 /* TodayClusterReadingTests.swift in Sources */,
+				D1F00100000000000B0002 /* OversubscriptionInsightTests.swift in Sources */,
 				0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */,
 				0A1CAF010000000000000017 /* WatchActionHandlerTests.swift in Sources */,
 				0A1CAF010000000000000020 /* ComplicationProgressTests.swift in Sources */,
