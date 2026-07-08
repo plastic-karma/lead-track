@@ -3,11 +3,12 @@ import SwiftUI
 
 /// The Week tab, laid out like Today one timescale up: a header strip whose
 /// weekly-goal dial and day-by-day flame graph sit beside the headline number,
-/// then the metrics grouped into one compact card per aspiration (their weeks,
-/// the quiet ones dimmed at each card's foot), then the goal seasons due, and
-/// the resting aspirations closing the screen as one centered line. Chevrons on
-/// the header strip browse earlier weeks; the metric rows drill into their
-/// screens.
+/// then the metrics grouped into one compact card per aspiration — each folded
+/// to its header by default for a calmer, more focused screen, tap to expand
+/// its weeks with the quiet ones dimmed at the foot — then the goal seasons
+/// due, and the resting aspirations closing the screen as one centered line.
+/// Chevrons on the header strip browse earlier weeks; the metric rows drill
+/// into their screens.
 ///
 /// Formerly a notification-triggered sheet; it now anchors the middle
 /// timescale of the app's three tabs (day / week / lifetime), and the review
@@ -30,9 +31,11 @@ struct WeeklyReviewView: View {
     @Query(sort: \Moment.occurredAt) var moments: [Moment]
     @State private var showingSettings = false
     @State private var weeksBack = 0
-    /// The aspiration group cards folded to their header line — per-card,
-    /// transient, never persisted, like the Today tab's cluster stubs.
-    @State private var collapsedGroups: Set<String> = []
+    /// The aspiration group cards the user has expanded from their default
+    /// folded state — per-card, transient, never persisted, like the Today
+    /// tab's cluster stubs. Empty (the default) means every card is folded to
+    /// its header line for a calmer, more focused screen.
+    @State private var expandedGroups: Set<String> = []
     /// The goal-settings route shared by measure-health insights and season
     /// adjustments — hoisted here so it works with or without goal seasons due.
     @State var goalSettingsRoute: GoalSettingsRoute?
@@ -141,15 +144,16 @@ extension WeeklyReviewView {
     }
 
     /// The transient fold flag for one group card, backed by the set above so
-    /// sibling cards fold independently.
+    /// sibling cards fold independently. Cards start collapsed, so a card reads
+    /// as folded unless the user has expanded it.
     private func collapseBinding(_ id: String) -> Binding<Bool> {
         Binding(
-            get: { collapsedGroups.contains(id) },
+            get: { !expandedGroups.contains(id) },
             set: { collapsed in
                 if collapsed {
-                    collapsedGroups.insert(id)
+                    expandedGroups.remove(id)
                 } else {
-                    collapsedGroups.remove(id)
+                    expandedGroups.insert(id)
                 }
             }
         )

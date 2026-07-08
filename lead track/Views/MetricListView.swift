@@ -2,11 +2,10 @@ import SwiftData
 import SwiftUI
 
 /// The "Today" dashboard: aspiration clusters under a segmented day-dial
-/// header. Every cluster folds (see `TodayClusterSections`): clusters with
-/// something to do today start expanded, neediest first; resting, done, and
-/// self-filling clusters start as one-line stubs, so the screen gets quieter
-/// as the day is completed. Rows act in place; tapping one still navigates
-/// to the metric.
+/// header. Every cluster folds (see `TodayClusterSections`) and starts folded
+/// to a one-line stub — neediest first — so the screen opens calm and focused;
+/// tap a header to expand a cluster inline. Rows act in place; tapping one
+/// still navigates to the metric.
 struct MetricListView: View {
     /// Internal (not private) so the cluster arrangement in its own file can
     /// render under the same queries.
@@ -14,9 +13,9 @@ struct MetricListView: View {
     @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
     @Query(sort: \Intention.createdAt) var intentions: [Intention]
     @Query(filter: Session.isRunningPredicate) var runningSessions: [Session]
-    /// Explicit fold/unfold choices by cluster id, overriding the state
-    /// defaults (expanded while needy, folded once not) — per-cluster and
-    /// transient by design, so tomorrow always starts from the defaults.
+    /// Explicit expand choices by cluster id, overriding the folded default —
+    /// per-cluster and transient by design, so tomorrow always starts with
+    /// every cluster folded again.
     @State var expansionOverrides: [String: Bool] = [:]
     @State private var showingAddSheet = false
     /// Raising the responder's review flag slides the app to the Week tab
