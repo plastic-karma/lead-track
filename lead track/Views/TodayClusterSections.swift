@@ -2,10 +2,10 @@ import SwiftData
 import SwiftUI
 
 /// Today's smart-ordered cluster arrangement (see `TodayGrouping.clusters`):
-/// every cluster is one collapsible card. Clusters that need the user start
-/// expanded, neediest first; resting, done, and self-filling clusters start
-/// folded into stubs. Once nothing needs the user anymore, a closing caption
-/// sends the day off.
+/// every cluster is one collapsible card, all folded to their one-line stubs
+/// by default so the screen opens calm and focused; tap a header to expand a
+/// cluster inline. The neediest clusters still sort first, and once nothing
+/// needs the user anymore, a closing caption sends the day off.
 extension MetricListView {
     @ViewBuilder
     var clusterSections: some View {
@@ -29,16 +29,14 @@ extension MetricListView {
     }
 
     /// The transient expansion flag for one cluster, backed by the override
-    /// map in `MetricListView`. The default follows the state — expanded
-    /// while the cluster needs the user, folded once it doesn't — and only
-    /// deviations are stored, so a cluster still folds on its own the moment
-    /// its last goal completes.
+    /// map in `MetricListView`. Every cluster starts folded for a calmer,
+    /// more focused screen; only the clusters the user opens are stored, so
+    /// the day always reopens with everything folded again.
     private func expansion(of cluster: TodayGrouping.Cluster) -> Binding<Bool> {
         let id = cluster.id
-        let opensByDefault = cluster.state == .needsYou
         return Binding(
-            get: { expansionOverrides[id] ?? opensByDefault },
-            set: { expansionOverrides[id] = $0 == opensByDefault ? nil : $0 }
+            get: { expansionOverrides[id] ?? false },
+            set: { expansionOverrides[id] = $0 ? true : nil }
         )
     }
 }
