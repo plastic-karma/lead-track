@@ -10,6 +10,7 @@ enum SharedModelContainer {
             Project.self,
             Session.self,
             Aspiration.self,
+            Principle.self,
             Intention.self,
             AspirationCheckIn.self,
             Moment.self,

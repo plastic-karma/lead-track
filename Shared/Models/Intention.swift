@@ -55,6 +55,16 @@ final class Intention {
     /// why.
     var aspiration: Aspiration?
 
+    // The principle this intention serves, if it names one — always one of
+    // the owning aspiration's own vows, a mutable tag rather than a birth
+    // invariant (rows retag freely). Nullify both ways, the `metric` pattern:
+    // deleting the principle leaves the intention standing untagged, and
+    // deleting the intention never touches the principle.
+    #if canImport(SwiftData)
+    @Relationship(deleteRule: .nullify, inverse: \Principle.intentions)
+    #endif
+    var principle: Principle?
+
     /// Raw `IntentionOutcome`; nil while open, and nil forever on an
     /// intention closed by renewal — the numbers stood on their own.
     var outcomeRaw: String?
