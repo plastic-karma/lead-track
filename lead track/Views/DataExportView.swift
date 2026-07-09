@@ -109,7 +109,7 @@ extension DataExportView {
 // MARK: - Export Section
 
 extension DataExportView {
-    @ViewBuilder private var exportSection: some View {
+    private var exportSection: some View {
         Section {
             switch format {
             case .markdown: markdownLink

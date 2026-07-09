@@ -62,7 +62,7 @@ extension MarkdownExporter {
         calendar: Calendar
     ) -> [String] {
         let generated = MarkdownExportDates.fullDate(now)
-        let span: String = if let cutoff = range.cutoff(now: now, calendar: calendar) {
+        let span = if let cutoff = range.cutoff(now: now, calendar: calendar) {
             "\(MarkdownExportDates.fullDate(cutoff)) – \(generated)"
         } else {
             "everything through \(generated)"
