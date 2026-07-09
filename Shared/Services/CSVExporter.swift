@@ -3,14 +3,6 @@ import Foundation
 import SwiftData
 #endif
 
-enum ExportTimeRange: String, CaseIterable {
-    case last7Days = "Last 7 Days"
-    case lastMonth = "Last Month"
-    case yearToDate = "Year to Date"
-    case lastYear = "Last Year"
-    case all = "All Time"
-}
-
 #if canImport(SwiftData)
 enum ExportScope: Hashable {
     case all
@@ -38,34 +30,6 @@ enum CSVExporter {
             lines.append(row(for: session))
         }
         return lines.joined(separator: "\n")
-    }
-
-    static func cutoffDate(
-        for timeRange: ExportTimeRange
-    ) -> Date? {
-        let cal = Calendar.current
-        let now = Date.now
-        switch timeRange {
-        case .last7Days:
-            return cal.date(
-                byAdding: .day, value: -6,
-                to: cal.startOfDay(for: now)
-            )
-        case .lastMonth:
-            return cal.date(
-                byAdding: .month, value: -1, to: now
-            )
-        case .yearToDate:
-            return cal.date(
-                from: cal.dateComponents([.year], from: now)
-            )
-        case .lastYear:
-            return cal.date(
-                byAdding: .year, value: -1, to: now
-            )
-        case .all:
-            return nil
-        }
     }
 
     #if canImport(SwiftData)

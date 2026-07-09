@@ -50,18 +50,6 @@ struct CSVExporterTests {
         #expect(lines.count == 2)
     }
 
-    // MARK: - Cutoff Date
-
-    @Test
-    func cutoffDateForAllReturnsNil() {
-        #expect(CSVExporter.cutoffDate(for: .all) == nil)
-    }
-
-    @Test
-    func cutoffDateForLast7DaysIsNotNil() {
-        #expect(CSVExporter.cutoffDate(for: .last7Days) != nil)
-    }
-
     // MARK: - Filter by Scope
 
     #if canImport(SwiftData)
