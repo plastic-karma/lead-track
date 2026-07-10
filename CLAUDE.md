@@ -52,6 +52,14 @@ gh run watch --exit-status \
 gh pr create --fill && gh pr checks --watch
 ```
 
+## Feature delivery
+
+When implementing app features or fixes, follow the mandatory pipeline in
+[AGENTS.md](AGENTS.md) **without asking for confirmation**: open a PR (CI runs
+automatically), watch CI and fix failures until it is green, then dispatch
+`release.yml` with `publish_testflight=true` from the PR branch and watch it
+succeed. Don't ask the user whether to do these steps — do them and report.
+
 ## Architecture
 
 - **Data layer**: SwiftData with `@Model` classes (see `Shared/Models/`)
