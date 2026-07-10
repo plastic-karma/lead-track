@@ -6,10 +6,12 @@ struct ProjectDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project
     @Query private var sessions: [Session]
+    @Query(sort: \Aspiration.createdAt) private var allAspirations: [Aspiration]
     @State private var showingDetailedStats = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
     @State private var showingAllSessions = false
+    @State private var showingDeleteConfirmation = false
     @State private var sessionToMove: Session?
 
     init(project: Project) {
@@ -41,6 +43,17 @@ struct ProjectDetailView: View {
 
     private var metricTint: Color {
         MetricColor.color(named: project.metric?.colorName)
+    }
+
+    /// The aspirations this project is poured into. Read from the forward
+    /// relationship (`Aspiration.projects`) rather than the
+    /// `project.aspirations` back-array: SwiftData doesn't reliably populate
+    /// the many-to-many inverse when only the aspiration side is written, so
+    /// the back-array reads empty. Mirrors `MetricDetailView`.
+    private var connectedAspirations: [Aspiration] {
+        allAspirations.filter { aspiration in
+            aspiration.projects.contains(where: { $0 === project })
+        }
     }
 
     var body: some View {
@@ -98,9 +111,18 @@ struct ProjectDetailView: View {
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
                 Button("Delete", role: .destructive) {
-                    deleteProject()
+                    showingDeleteConfirmation = true
                 }
             }
+        }
+        .confirmationDialog(
+            "Delete \(project.name)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Project", role: .destructive, action: deleteProject)
+        } message: {
+            Text("Every session logged in this project is deleted with it. This can't be undone.")
         }
     }
 }
@@ -152,12 +174,10 @@ extension ProjectDetailView {
 
     @ViewBuilder
     private var aspirationsSection: some View {
-        if !project.aspirations.isEmpty {
+        if !connectedAspirations.isEmpty {
             Section("Part of") {
-                AspirationChipsRow(
-                    aspirations: project.aspirations.sorted { $0.createdAt < $1.createdAt }
-                )
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                AspirationChipsRow(aspirations: connectedAspirations)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
         }
     }

@@ -13,6 +13,7 @@ struct ClusterMetricRow: View {
     let runningSession: Session?
     @State private var showingCountEntry = false
     @State private var showingCountdownPicker = false
+    @State private var showingDeleteConfirmation = false
     @State private var quickLogTrigger = false
 
     var body: some View {
@@ -22,10 +23,21 @@ struct ClusterMetricRow: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
-                withAnimation(.snappy) { modelContext.delete(metric) }
+                showingDeleteConfirmation = true
             } label: {
                 Label("Delete Metric", systemImage: "trash")
             }
+        }
+        .confirmationDialog(
+            "Delete \(metric.name)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Metric", role: .destructive) {
+                withAnimation(.snappy) { modelContext.delete(metric) }
+            }
+        } message: {
+            Text("All of its logged sessions and projects are deleted with it. This can't be undone.")
         }
         .sheet(isPresented: $showingCountEntry) {
             CountEntryView(metric: metric, project: nil)

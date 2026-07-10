@@ -78,6 +78,7 @@ struct GoalSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
+                        .disabled(!goalsAreValid)
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -280,6 +281,16 @@ extension GoalSettingsView {
             )
             .labelsHidden()
         }
+    }
+
+    /// An enabled amount goal must be a positive number before Save unlocks:
+    /// the field's `.number` format accepts zero and negatives, and a
+    /// non-positive `dailyGoal`/`weeklyGoal` would read as permanently met
+    /// (`GoalSummary` treats any non-nil goal as an active target).
+    private var goalsAreValid: Bool {
+        guard metric.measurementType.tracksQuantity else { return true }
+        return (!hasDailyGoal || dailyGoalValue > 0)
+            && (!hasWeeklyGoal || weeklyGoalValue > 0)
     }
 
     /// What a save changed about the metric's target, for the season rule.
