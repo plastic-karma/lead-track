@@ -10,9 +10,11 @@ import Foundation
 /// A day only counts when the goals were actually worked on (at least one
 /// active daily goal logged something), so days before the user began, full
 /// off days, and vacations never read as misses; a miss is a day you showed up
-/// for the goals but couldn't complete them all. Rest days (excluded weekdays)
-/// drop out per metric via `Metric.isGoalDay`. Pure Foundation math, so it is
-/// unit-tested on Linux like the rest of the review assembly.
+/// for the goals but couldn't complete them all. Each metric weighs in only
+/// from the day it began (creation, or earlier imported history), so a goal
+/// added today never turns earlier weeks into failures. Rest days (excluded
+/// weekdays) drop out per metric via `Metric.isGoalDay`. Pure Foundation math,
+/// so it is unit-tested on Linux like the rest of the review assembly.
 enum OversubscriptionInsight {
     /// Days looked back over — three weeks, the window the user asked about.
     static let windowDays = 21
@@ -104,11 +106,26 @@ private extension OversubscriptionInsight {
         calendar: Calendar
     ) -> (active: Int, missed: Int) {
         let today = calendar.startOfDay(for: now)
+        let live = metrics.map { (metric: $0, from: firstLiveDay(of: $0, calendar: calendar)) }
         let days = (1 ... windowDays)
             .compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
-            .map { outcome(of: metrics, on: $0, calendar: calendar) }
+            .map { day in
+                outcome(of: live.filter { day >= $0.from }.map { $0.metric }, on: day, calendar: calendar)
+            }
             .filter { $0.engaged }
         return (days.count, days.count { $0.fellShort })
+    }
+
+    /// The first day a metric's goal can be judged: its creation day, pulled
+    /// back to its earliest logged session when history predates the row
+    /// (imports). Days before a goal existed must never read as misses — a
+    /// goal added today cannot rewrite the past three weeks into failures.
+    static func firstLiveDay(of metric: Metric, calendar: Calendar) -> Date {
+        let firstSession = metric.sessions
+            .filter { !$0.isRunning }
+            .map(\.startedAt)
+            .min()
+        return calendar.startOfDay(for: min(metric.createdAt, firstSession ?? metric.createdAt))
     }
 
     /// Whether any applicable goal was worked on that day, and whether any went
