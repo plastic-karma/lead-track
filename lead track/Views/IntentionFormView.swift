@@ -17,6 +17,7 @@ struct IntentionFormView: View {
     @State private var perDay = false
     @State private var targetCount = 3
     @State private var amountText = ""
+    @State private var principle: Principle?
     @State private var showingAttach = false
 
     var body: some View {
@@ -28,6 +29,9 @@ struct IntentionFormView: View {
                     metricSection
                 }
                 shapeSection
+                if !heldPrinciples.isEmpty {
+                    servesSection
+                }
             }
             .navigationTitle("Set an Intention")
             .navigationBarTitleDisplayMode(.inline)
@@ -120,6 +124,21 @@ extension IntentionFormView {
         }
     }
 
+    /// Present only once the aspiration holds any principles — the why
+    /// threaded through the commitment, never a required field.
+    private var servesSection: some View {
+        Section {
+            Picker("Serves", selection: $principle) {
+                Text("The why itself").tag(Principle?.none)
+                ForEach(heldPrinciples) { held in
+                    Text(held.text).tag(Principle?.some(held))
+                }
+            }
+        } footer: {
+            Text("The principle this intention lives out, if it names one.")
+        }
+    }
+
     @ViewBuilder
     private var targetField: some View {
         if kind == .derived, mode == .valueSum {
@@ -144,6 +163,10 @@ extension IntentionFormView {
 extension IntentionFormView {
     private var attachedMetrics: [Metric] {
         aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private var heldPrinciples: [Principle] {
+        aspiration.principles.sorted { $0.createdAt < $1.createdAt }
     }
 
     private var perDayAllowed: Bool {
@@ -193,6 +216,7 @@ extension IntentionFormView {
             perDay: perDay,
             target: storedTarget
         ) else { return }
+        intention.principle = principle
         modelContext.insert(intention)
         dismiss()
     }

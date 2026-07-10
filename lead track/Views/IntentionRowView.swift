@@ -6,25 +6,54 @@ import SwiftUI
 /// week" block; Today's cluster cards re-skin the same anatomy with a dot
 /// (see `ClusterIntentionRow`), so the pieces below are shared.
 ///
+/// Two skins: the classic row wears the aspiration's glyph; with
+/// `showsPrinciple` (the aspiration detail, where the page is the
+/// aspiration) the glyph goes and a serif "serves …" line beneath the title
+/// carries the identity instead — the why threaded through the row.
+///
 /// Reflective rows deliberately carry no completion control of any kind, and
 /// no row ever wears a red state, an overdue style, or a badge — progress is
 /// only ever accumulation.
 struct IntentionRowView: View {
     let intention: Intention
+    var showsPrinciple = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: intention.aspiration?.displayIcon ?? "mountain.2")
-                .font(.subheadline)
-                .foregroundStyle(accent)
-                .frame(width: 24)
-            Text(intention.title)
-                .font(.subheadline)
+        HStack(alignment: servesLine == nil ? .center : .top, spacing: 12) {
+            if !showsPrinciple {
+                Image(systemName: intention.aspiration?.displayIcon ?? "mountain.2")
+                    .font(.subheadline)
+                    .foregroundStyle(accent)
+                    .frame(width: 24)
+            }
+            titleBlock
             Spacer()
             IntentionRowTrailing(intention: intention, accent: accent)
         }
         .contentShape(Rectangle())
         .intentionRowActions(intention)
+    }
+
+    private var servesLine: String? {
+        guard showsPrinciple else { return nil }
+        return intention.principle?.text
+    }
+
+    @ViewBuilder
+    private var titleBlock: some View {
+        if let serves = servesLine {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(intention.title)
+                    .font(.subheadline)
+                Text("serves \(serves)")
+                    .font(.system(size: 12.5, design: .serif))
+                    .italic()
+                    .foregroundStyle(accent)
+            }
+        } else {
+            Text(intention.title)
+                .font(.subheadline)
+        }
     }
 
     private var accent: Color {
@@ -115,12 +144,39 @@ private struct IntentionRowActions: ViewModifier {
             renameText = intention.title
             showingRename = true
         }
+        servesMenu
         Button("Let Go", systemImage: "leaf") {
             withAnimation { intention.letGo() }
         }
         Button("Delete", systemImage: "trash", role: .destructive) {
             withAnimation { modelContext.delete(intention) }
         }
+    }
+
+    /// Retags which of the aspiration's principles this intention serves —
+    /// present only once any are held, so pre-principle rows stay quiet.
+    @ViewBuilder
+    private var servesMenu: some View {
+        let held = (intention.aspiration?.principles ?? []).sorted { $0.createdAt < $1.createdAt }
+        if !held.isEmpty {
+            Menu {
+                Picker("Serves", selection: servesSelection) {
+                    Text("The why itself").tag(Principle?.none)
+                    ForEach(held) { principle in
+                        Text(principle.text).tag(Principle?.some(principle))
+                    }
+                }
+            } label: {
+                Label("Serves", systemImage: "text.quote")
+            }
+        }
+    }
+
+    private var servesSelection: Binding<Principle?> {
+        Binding(
+            get: { intention.principle },
+            set: { principle in withAnimation { intention.principle = principle } }
+        )
     }
 
     private func rename() {

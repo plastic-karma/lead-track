@@ -28,6 +28,7 @@ struct MomentFormView: View {
     @State var text: String
     @State var occurredAt: Date
     @State var provenance: MomentProvenance
+    @State var principle: Principle?
     @State var latitude: Double?
     @State var longitude: Double?
     @State var placeName: String
@@ -48,6 +49,7 @@ struct MomentFormView: View {
         _provenance = State(
             initialValue: MomentProvenance(metric: moment?.metric, project: moment?.project)
         )
+        _principle = State(initialValue: moment?.principle)
         _latitude = State(initialValue: moment?.latitude)
         _longitude = State(initialValue: moment?.longitude)
         _placeName = State(initialValue: moment?.placeName ?? "")
@@ -66,6 +68,9 @@ struct MomentFormView: View {
                 locationSection
                 photosSection
                 provenanceSection
+                if !heldPrinciples.isEmpty {
+                    livesSection
+                }
             }
             .navigationTitle(editing == nil ? "Keep a Moment" : "Edit Moment")
             .navigationBarTitleDisplayMode(.inline)
@@ -295,5 +300,31 @@ extension MomentFormView {
 
     private func isAttachedProject(_ project: Project) -> Bool {
         aspiration.projects.contains { $0 === project }
+    }
+}
+
+// MARK: - Lives
+
+extension MomentFormView {
+    /// Present only once the aspiration holds any principles: the vow this
+    /// testimony is evidence of. Provenance, never a score — a tagged moment
+    /// lights no strip (see `PrincipleLiving`).
+    private var livesSection: some View {
+        Section {
+            Picker("Principle", selection: $principle) {
+                Text("None").tag(Principle?.none)
+                ForEach(heldPrinciples) { held in
+                    Text(held.text).tag(Principle?.some(held))
+                }
+            }
+        } header: {
+            Text("Lives a principle")
+        } footer: {
+            Text("Optional — the vow this moment is evidence of.")
+        }
+    }
+
+    private var heldPrinciples: [Principle] {
+        aspiration.principles.sorted { $0.createdAt < $1.createdAt }
     }
 }

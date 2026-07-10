@@ -87,6 +87,7 @@ extension MomentFormView {
         moment.occurredAt = occurredAt
         moment.metric = provenance.metric
         moment.project = provenance.project
+        moment.principle = principle
         moment.latitude = latitude
         moment.longitude = longitude
         moment.placeName = placeName

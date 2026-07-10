@@ -63,6 +63,14 @@ final class Moment {
     #endif
     var project: Project?
 
+    // The principle this testimony lives, if it names one — provenance in the
+    // creed, not membership, and never aggregated (a moment lights no strip;
+    // see `PrincipleLiving`). Nullify both ways, the `metric` pattern.
+    #if canImport(SwiftData)
+    @Relationship(deleteRule: .nullify, inverse: \Principle.moments)
+    #endif
+    var principle: Principle?
+
     // The moment's photos, ordered by `sortIndex`. Cascade — a photo dies with
     // its moment. A child model rather than a `[Data]` attribute so each photo
     // is its own lazily-loaded external blob: moments accrue for a lifetime,

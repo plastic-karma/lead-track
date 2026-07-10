@@ -2,12 +2,12 @@ import SwiftData
 import SwiftUI
 
 /// The aspiration detail as an album page: the full-bleed cover wearing the
-/// title, the "why" as a serif lede, the "This week" card (open commitments
-/// and the pulse), the "Story so far" card (kept moments and the effort
-/// ledger), and two disclosure rows into the attached items and the intention
-/// history. Edit sits in the toolbar; delete hides behind the ellipsis menu
-/// and a confirmation, so the destructive action is never one accidental tap
-/// away.
+/// title, the "why" as a serif lede, the "Held as principles" card (the vows
+/// with their lived underlines), the "This week" card (open commitments),
+/// the "Story so far" card (kept moments and the effort ledger), and two
+/// disclosure rows into the attached items and the intention history. Edit
+/// sits in the toolbar; delete hides behind the ellipsis menu and a
+/// confirmation, so the destructive action is never one accidental tap away.
 struct AspirationDetailView: View {
     /// Internal so the card blocks in their own files can write through it.
     @Environment(\.modelContext) var modelContext
@@ -23,12 +23,14 @@ struct AspirationDetailView: View {
     @State var showingKeepMoment = false
     @State var editingMoment: Moment?
     @State var momentPendingDelete: Moment?
-    /// Internal for the pulse block in `AspirationPulseSection`: the note
-    /// draft and the focus the divergence card's Reflect affordance steals.
-    @State var pulseNoteDraft = ""
-    @FocusState var pulseNoteFocused: Bool
-    /// Whether the two narrative cards are open. Both start expanded; the
-    /// "This week" and "The story so far" eyebrows double as collapse controls.
+    /// Internal for the principles card in `AspirationPrinciplesSection`:
+    /// the hold-a-principle alert and its draft.
+    @State var showingHoldPrinciple = false
+    @State var principleDraft = ""
+    /// Whether the three narrative cards are open. All start expanded; the
+    /// "Held as principles", "This week", and "The story so far" eyebrows
+    /// double as collapse controls.
+    @State var principlesExpanded = true
     @State var thisWeekExpanded = true
     @State var storyExpanded = true
 
@@ -101,6 +103,7 @@ extension AspirationDetailView {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             whyLede
+            principlesCard
             thisWeekCard
             storyCard
             disclosureCard

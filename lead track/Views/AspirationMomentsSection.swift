@@ -157,9 +157,9 @@ extension AspirationDetailView {
 // MARK: - Shared row
 
 /// One moment as it reads on the aspiration's surfaces: the testimony, then
-/// the day and place on one quiet line, and a thumbnail strip when
-/// photographed. Extracted so the detail and the full timeline render moments
-/// identically.
+/// the day, the place, and the principle it lives on one quiet line, and a
+/// thumbnail strip when photographed. Extracted so the detail and the full
+/// timeline render moments identically.
 struct MomentRowContent: View {
     let moment: Moment
 
@@ -185,8 +185,14 @@ struct MomentRowContent: View {
 
     private var metaText: String {
         let day = moment.occurredAt.formatted(.dateTime.month(.abbreviated).day().year())
-        guard let place = moment.placeLabel else { return day }
-        return "\(day) · \(place)"
+        return [day, moment.placeLabel, livesTag]
+            .compactMap { $0 }
+            .joined(separator: " · ")
+    }
+
+    /// The principle this testimony lives, quoted — provenance in the creed.
+    private var livesTag: String? {
+        moment.principle.map { "lives “\($0.text)”" }
     }
 
     private var thumbs: some View {
