@@ -42,8 +42,21 @@ extension ReminderSchedule {
     }
 
     /// A date carrying just an hour and minute, for the time-of-day pickers.
+    ///
+    /// This is the one place the app's "hour/minute-only Date" idiom is
+    /// minted (`Metric.reminderTime(s)`, the random-window bounds, and
+    /// `Intention.questionWindowStart/End` all store its results): the
+    /// components resolve against the calendar and time zone at write time,
+    /// and every consumer re-extracts hour/minute the same way. Known,
+    /// accepted limit: after a time-zone change the extracted wall-clock
+    /// time shifts by the zone delta until the user re-saves the time —
+    /// re-anchoring three persisted fields across two models would need a
+    /// schema migration for marginal benefit at reminder precision. The
+    /// fallback is midnight (a deterministic time-of-day), never the
+    /// current instant.
     static func time(hour: Int, minute: Int = 0, calendar: Calendar = .current) -> Date {
-        calendar.date(from: DateComponents(hour: hour, minute: minute)) ?? .now
+        calendar.date(from: DateComponents(hour: hour, minute: minute))
+            ?? calendar.startOfDay(for: .now)
     }
 
     /// Fixed times trimmed to the allowed count.

@@ -1,4 +1,6 @@
-#if canImport(ActivityKit)
+// canImport(ActivityKit) is true on macOS, but the API is unavailable
+// there — the macOS overlay build must skip this file's contents.
+#if canImport(ActivityKit) && !os(macOS)
 import ActivityKit
 import Foundation
 

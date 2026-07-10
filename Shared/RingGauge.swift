@@ -1,4 +1,6 @@
-#if canImport(SwiftUI)
+// UIKit-gated to match Theme.inactive's availability: the macOS overlay
+// compiles Shared/ but has no consumer of this view.
+#if canImport(SwiftUI) && canImport(UIKit)
 import SwiftUI
 
 /// The shared progress ring: a neutral track plus a trimmed, round-capped

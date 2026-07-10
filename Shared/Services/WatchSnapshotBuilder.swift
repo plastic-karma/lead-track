@@ -23,7 +23,7 @@ enum WatchSnapshotBuilder {
             let metrics = try context.fetch(FetchDescriptor<Metric>())
             return snapshot(
                 from: metrics,
-                index: sessionIndex(in: context, at: now, calendar: calendar),
+                index: try sessionIndex(in: context, at: now, calendar: calendar),
                 at: now,
                 calendar: calendar
             )

@@ -1,4 +1,4 @@
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !os(macOS)
 import ActivityKit
 #endif
 import Foundation
@@ -247,7 +247,7 @@ enum SessionService {
     /// system only lets foreground apps start Live Activities), so the app
     /// calls this whenever it becomes active.
     static func syncLiveActivity(in context: ModelContext) {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
         let descriptor = FetchDescriptor<Session>(
             predicate: Session.isRunningPredicate
         )
@@ -272,7 +272,7 @@ enum SessionService {
         project: Project?,
         session: Session
     ) {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
             projectName: project?.name,
@@ -296,7 +296,7 @@ enum SessionService {
     }
 
     private static func stopLiveActivity() {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
         Task {
             for activity in Activity<TimerActivityAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
