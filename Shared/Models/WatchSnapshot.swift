@@ -6,7 +6,12 @@ import Foundation
 struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     let id: UUID
     let name: String
-    let measurementType: MeasurementType
+    /// The raw `MeasurementType` as it traveled over the wire. Kept raw —
+    /// like every field added after the first release — so a snapshot from a
+    /// newer phone with an unknown type still decodes: that one metric
+    /// degrades to a read-only row instead of failing the whole snapshot.
+    /// Encodes under the original `measurementType` key.
+    var measurementTypeRaw: String
     let unit: String?
     let icon: String?
     let colorName: String?
@@ -29,8 +34,8 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     /// versions still decode.
     var healthSourceRaw: String?
     /// When a binary habit's show-up expectation was released (mirrors
-    /// `Metric.binaryGoalRetiredAt`). Optional so snapshots cached by
-    /// earlier app versions still decode; nil reads as "expected", the old
+    /// `Metric.binaryGoalRetiredAt`). Optional so snapshots cached by earlier
+    /// app versions still decode; nil reads as "expected", the old
     /// behavior.
     var binaryGoalRetiredAt: Date?
     /// Raw `CountLogStyle` deciding what tapping a count row does (mirrors
@@ -38,6 +43,23 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     /// app versions still decode; nil reads as asking for the amount, the
     /// old behavior.
     var countLogStyleRaw: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case measurementTypeRaw = "measurementType"
+        case unit
+        case icon
+        case colorName
+        case runningSince
+        case todayTotal
+        case dailyGoal
+        case excludedWeekdays
+        case countdownDuration
+        case healthSourceRaw
+        case binaryGoalRetiredAt
+        case countLogStyleRaw
+    }
 
     init(
         id: UUID,
@@ -57,7 +79,7 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
     ) {
         self.id = id
         self.name = name
-        self.measurementType = measurementType
+        measurementTypeRaw = measurementType.rawValue
         self.unit = unit
         self.icon = icon
         self.colorName = colorName
@@ -73,6 +95,20 @@ struct WatchMetricSnapshot: Codable, Equatable, Identifiable {
 }
 
 extension WatchMetricSnapshot {
+    /// The decoded measurement type, or nil when the snapshot came from a
+    /// newer app version whose type this build doesn't know — consumers
+    /// render such a metric read-only.
+    var measurementType: MeasurementType? {
+        MeasurementType(rawValue: measurementTypeRaw)
+    }
+
+    /// The SF Symbol the watch surfaces show: the metric's own icon, else
+    /// the shared type-aware fallback; an unknown type reads as a dashed
+    /// circle.
+    var displayIcon: String {
+        icon ?? measurementType?.fallbackIcon ?? "circle.dashed"
+    }
+
     /// The range a running countdown animates across, or nil when the metric
     /// isn't running or counts up.
     var countdownInterval: ClosedRange<Date>? {
@@ -102,10 +138,13 @@ extension WatchMetricSnapshot {
         return dailyGoal != nil
     }
 
-    /// Whether the daily goal applies on the given date's weekday, mirroring
-    /// `Metric.isGoalDay(on:calendar:)` over the shipped weekday set.
+    /// Whether the daily goal applies on the given date's weekday.
     func isGoalDay(on date: Date, calendar: Calendar = .current) -> Bool {
-        !(excludedWeekdays ?? []).contains(calendar.component(.weekday, from: date))
+        GoalDayRule.isGoalDay(
+            on: date,
+            excludedWeekdays: excludedWeekdays ?? [],
+            calendar: calendar
+        )
     }
 }
 
@@ -118,11 +157,26 @@ struct WatchSnapshot: Codable, Equatable {
     /// caches written before this field existed; those totals are trusted
     /// as current, preserving the old behavior.
     var day: Date?
+    /// When the phone built this snapshot. The watch ignores payloads older
+    /// than the one it holds, so a stale application-context replay on
+    /// activation (or a delayed reply racing a newer push) can no longer
+    /// roll back optimistic state. nil in payloads from app versions that
+    /// predate the field; those are always accepted, the old behavior.
+    var builtAt: Date?
 
-    init(metrics: [WatchMetricSnapshot], day: Date? = nil) {
+    init(metrics: [WatchMetricSnapshot], day: Date? = nil, builtAt: Date? = nil) {
         self.metrics = metrics
         self.day = day
+        self.builtAt = builtAt
     }
 
     static let empty = WatchSnapshot(metrics: [])
+}
+
+extension WatchSnapshot {
+    /// Whether two snapshots carry the same content, ignoring when they were
+    /// built — the phone's dedup for skipping no-op context pushes.
+    func hasSameContent(as other: WatchSnapshot) -> Bool {
+        metrics == other.metrics && day == other.day
+    }
 }

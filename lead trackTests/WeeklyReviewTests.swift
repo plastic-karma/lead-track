@@ -90,7 +90,9 @@ struct WeeklyReviewTests {
 
         #expect(review.metricWeeks.map(\.name) == ["Active"])
         #expect(review.quietMetrics.map(\.name) == ["Stale", "Silent"])
-        #expect(review.quietMetrics.last?.icon == "clock")
+        // The shared type-aware icon fallback: an icon-less duration metric
+        // reads as a timer on every surface.
+        #expect(review.quietMetrics.last?.icon == "timer")
         #expect(review.quietMetrics.last?.id == silent.stableID?.uuidString)
     }
 

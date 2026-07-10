@@ -81,13 +81,16 @@ enum SessionStatistics {
     }
 
     /// Today's completed total in one pass over the sessions, without
-    /// building the full per-day history first.
+    /// building the full per-day history first. "Today" is the day of `now`,
+    /// so callers building a snapshot against one instant stay internally
+    /// consistent across midnight.
     static func todayTotal(
         from sessions: [Session],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        now: Date = .now
     ) -> TimeInterval {
         sessions
-            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: .now) }
+            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: now) }
             .reduce(0) { $0 + $1.trackingValue }
     }
 

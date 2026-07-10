@@ -19,7 +19,7 @@ struct WatchMetricLabel: View {
 
     private var details: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Label(metric.name, systemImage: metric.icon ?? defaultIcon)
+            Label(metric.name, systemImage: metric.displayIcon)
                 .font(.headline)
                 .lineLimit(1)
             subtitle
@@ -43,19 +43,13 @@ struct WatchMetricLabel: View {
         if metric.measurementType == .binary {
             return metric.todayTotal > 0 ? "Done today" : "Not done yet"
         }
+        // An unknown type (snapshot from a newer phone) reads as a count:
+        // the row is display-only, so a plain figure is the safest rendering.
         let total = ValueFormatter.format(
             metric.todayTotal,
-            type: metric.measurementType,
+            type: metric.measurementType ?? .count,
             unit: metric.unit
         )
         return "\(total) today"
-    }
-
-    private var defaultIcon: String {
-        switch metric.measurementType {
-        case .duration: "timer"
-        case .count: "number"
-        case .binary: "checkmark.circle"
-        }
     }
 }

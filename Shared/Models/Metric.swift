@@ -219,9 +219,9 @@ extension Metric {
 
 extension Metric {
     /// The SF Symbol every surface shows for the metric, with the shared
-    /// fallback for metrics saved before icons existed.
+    /// type-aware fallback for metrics saved before icons existed.
     var displayIcon: String {
-        icon ?? "clock"
+        icon ?? measurementType.fallbackIcon
     }
 }
 

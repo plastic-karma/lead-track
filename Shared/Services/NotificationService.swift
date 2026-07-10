@@ -334,8 +334,11 @@ extension NotificationService {
         excludedWeekdays: Set<Int>
     ) -> Bool {
         guard date > now else { return false }
-        let weekday = Calendar.current.component(.weekday, from: date)
-        return !excludedWeekdays.contains(weekday)
+        return GoalDayRule.isGoalDay(
+            on: date,
+            excludedWeekdays: excludedWeekdays,
+            calendar: Calendar.current
+        )
     }
 
     private static func goalCandidate(

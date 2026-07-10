@@ -25,6 +25,15 @@ struct WatchMetricRow: View {
             WatchCountRow(metric: metric)
         case .binary:
             WatchBinaryRow(metric: metric)
+        case nil:
+            // A snapshot from a newer phone can carry a measurement type
+            // this build doesn't know. Render it read-only rather than
+            // guessing what a tap should record.
+            WatchMetricLabel(
+                metric: metric,
+                accessory: "circle.dashed",
+                accessoryColor: .secondary
+            )
         }
     }
 }

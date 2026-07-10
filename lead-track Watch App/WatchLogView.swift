@@ -9,6 +9,10 @@ struct WatchLogView: View {
     let metric: WatchMetricSnapshot
     @State private var amount = 1.0
 
+    /// One set of bounds for the crown, the +/- buttons, and the
+    /// accessibility adjustable action, so they can't diverge.
+    private static let amountRange: ClosedRange<Double> = 1 ... 999
+
     var body: some View {
         VStack(spacing: 12) {
             amountPicker
@@ -39,8 +43,8 @@ struct WatchLogView: View {
         .focusable()
         .digitalCrownRotation(
             $amount,
-            from: 1,
-            through: 999,
+            from: Self.amountRange.lowerBound,
+            through: Self.amountRange.upperBound,
             by: 1,
             sensitivity: .medium,
             isContinuous: false,
@@ -51,8 +55,8 @@ struct WatchLogView: View {
         .accessibilityValue(accessibilityAmount)
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: amount = min(amount + 1, 999)
-            case .decrement: amount = max(amount - 1, 1)
+            case .increment: adjust(by: 1)
+            case .decrement: adjust(by: -1)
             @unknown default: break
             }
         }
@@ -63,12 +67,19 @@ struct WatchLogView: View {
         return "\(Int(amount)) \(unit)"
     }
 
+    private func adjust(by change: Double) {
+        amount = min(
+            max(amount + change, Self.amountRange.lowerBound),
+            Self.amountRange.upperBound
+        )
+    }
+
     private func adjustButton(
         _ icon: String,
         change: Double
     ) -> some View {
         Button {
-            amount = min(max(amount + change, 1), 999)
+            adjust(by: change)
         } label: {
             Image(systemName: icon)
                 .font(.headline)

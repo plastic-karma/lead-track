@@ -261,9 +261,8 @@ struct HealthWatchBehaviorTests {
     @Test
     func healthSourceSurvivesCodecRoundTrip() throws {
         let snapshot = healthSnapshot()
-        let decoded = try #require(
-            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
-        )
+        let context = try #require(WatchSyncCodec.context(for: snapshot))
+        let decoded = try #require(WatchSyncCodec.snapshot(from: context))
         #expect(decoded == snapshot)
         #expect(decoded.metrics.first?.isHealthLinked == true)
     }

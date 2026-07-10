@@ -15,4 +15,15 @@ extension MeasurementType {
     var tracksQuantity: Bool {
         self != .binary
     }
+
+    /// The SF Symbol standing in when a metric has no icon of its own — the
+    /// one fallback policy every surface (phone, watch app, complications)
+    /// shares.
+    var fallbackIcon: String {
+        switch self {
+        case .duration: "timer"
+        case .count: "number"
+        case .binary: "checkmark.circle"
+        }
+    }
 }

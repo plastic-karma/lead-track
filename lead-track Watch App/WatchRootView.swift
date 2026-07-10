@@ -5,22 +5,29 @@ struct WatchRootView: View {
 
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("LeadStone")
+            // The complications zero totals that went stale overnight; the
+            // in-app list resolves against the clock the same way, so both
+            // agree when the app opens after midnight with the phone
+            // unreachable (yesterday's "Done today" must not carry over).
+            TimelineView(.everyMinute) { timeline in
+                content(at: timeline.date)
+            }
+            .navigationTitle("LeadStone")
         }
     }
 
     @ViewBuilder
-    private var content: some View {
-        if sync.snapshot.metrics.isEmpty {
+    private func content(at date: Date) -> some View {
+        let snapshot = WatchSnapshotReducer.rolledForward(sync.snapshot, to: date)
+        if snapshot.metrics.isEmpty {
             emptyState
         } else {
-            metricList
+            metricList(snapshot.metrics)
         }
     }
 
-    private var metricList: some View {
-        List(sync.snapshot.metrics) { metric in
+    private func metricList(_ metrics: [WatchMetricSnapshot]) -> some View {
+        List(metrics) { metric in
             WatchMetricRow(metric: metric)
         }
     }

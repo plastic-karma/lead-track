@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-"lead track" is a SwiftUI + SwiftData iOS app with a companion watchOS app. It uses a NavigationSplitView-based master-detail UI for managing timestamped items. The watchOS companion lets you start/stop timer metrics and log count metrics from the wrist; it keeps no SwiftData store of its own and syncs with the phone over WatchConnectivity.
+"lead track" (shipped to users as **LeadStone**) is a SwiftUI + SwiftData iOS app with a companion watchOS app. The iOS app is a page-style three-tab shell (Today / Week / Aspirations) for tracking effort: metrics, projects, and timestamped sessions, plus aspirations, intentions, moments, and principles. The watchOS companion lets you start/stop timer metrics and log count metrics from the wrist; it keeps no SwiftData store of its own and syncs with the phone over WatchConnectivity.
 
 ## Build & Run
 
@@ -84,7 +84,7 @@ swiftformat .
 ```
 
 Both tools ship official Linux binaries, so lint runs locally even on a non-Mac
-dev box (use the same major versions CI installs via brew): download
+dev box (use the same versions CI pins in `.github/workflows/ios.yml`): download
 `swiftlint_linux_arm64.zip` (use `swiftlint-static`) from realm/SwiftLint and
 `swiftformat_linux_aarch64.zip` from nicklockwood/SwiftFormat releases into
 `~/.local/bin`. Run both before pushing — CI fails on any SwiftFormat diff.

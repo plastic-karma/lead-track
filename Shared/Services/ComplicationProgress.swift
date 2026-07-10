@@ -9,7 +9,9 @@ struct ComplicationMetricProgress: Equatable, Identifiable {
     let name: String
     let icon: String
     let colorName: String?
-    let measurementType: MeasurementType
+    /// nil when the snapshot came from a newer app version whose type this
+    /// build doesn't know; such metrics render their raw value, read-only.
+    let measurementType: MeasurementType?
     let unit: String?
     /// The staleness-corrected amount recorded today, never the raw cache
     /// value.
@@ -79,7 +81,9 @@ enum ComplicationProgress {
     }
 
     /// The Daily Goals complication's rows: metrics whose target applies
-    /// that day, snapshot order, capped to what a small circle fits.
+    /// that day, snapshot order, capped to what a small circle fits. Rows
+    /// need a computable percent, so a target with no computable fraction
+    /// (a zero-amount goal) is excluded rather than shown as a frozen 0%.
     static func goalLines(
         in snapshot: WatchSnapshot,
         at now: Date = .now,
@@ -88,7 +92,7 @@ enum ComplicationProgress {
     ) -> [ComplicationMetricProgress] {
         Array(
             metrics(in: snapshot, at: now, calendar: calendar)
-                .filter(\.hasActiveTarget)
+                .filter { $0.fraction != nil }
                 .prefix(limit)
         )
     }
@@ -118,7 +122,7 @@ enum ComplicationProgress {
         ComplicationMetricProgress(
             id: metric.id,
             name: metric.name,
-            icon: metric.icon ?? "clock",
+            icon: metric.displayIcon,
             colorName: metric.colorName,
             measurementType: metric.measurementType,
             unit: metric.unit,
