@@ -9,7 +9,8 @@ machine (including Linux/Windows, where Xcode isn't available). You download the
 
 You need an **App Store Connect API key** (the modern, no-`.p12`-juggling way to sign
 in CI). Xcode uses it to create the distribution certificate and provisioning
-profiles automatically for both the app and its widget extension.
+profiles automatically for all four signed targets: the app, its widget extension,
+the watch app, and the watch widget extension.
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access**
    → **Integrations** → **App Store Connect API** (Team Keys).
@@ -21,10 +22,19 @@ profiles automatically for both the app and its widget extension.
    **Issuer ID** shown on the page.
 3. Download the `AuthKey_<KEYID>.p8` file. **You can only download it once.**
 4. Make sure an app record for `plastickarma.lead-track` exists in App Store
-   Connect → **My Apps**. The bundle IDs themselves (`plastickarma.lead-track`,
-   `.widget`, `.watchkitapp`) don't need manual registration: with an Admin key,
-   cloud signing registers missing bundle IDs automatically during Archive
-   (observed when the watch app shipped for the first time).
+   Connect → **My Apps**. Four bundle IDs are signed: `plastickarma.lead-track`,
+   `.widget`, `.watchkitapp`, and `.watchkitapp.widget`. The first three don't
+   need manual registration: with an Admin key, cloud signing registers missing
+   bundle IDs automatically during Archive (observed when the watch app shipped
+   for the first time). The watch widget's App ID is the exception — its
+   entitlements request an App Group, which API-key cloud signing cannot
+   create — so the release workflow pre-registers it via
+   [`register-watch-widget-bundle-id.rb`](../.github/scripts/register-watch-widget-bundle-id.rb).
+   Assigning the actual App Group to that App ID is not supported by the public
+   API and remains a **one-time manual step**: in the
+   [developer portal](https://developer.apple.com/account/resources/identifiers/list),
+   edit the `plastickarma.lead-track.watchkitapp.widget` identifier and assign
+   the app group under its App Groups capability.
 5. Add three repository secrets (**Settings → Secrets and variables → Actions →
    New repository secret**):
 
@@ -57,8 +67,8 @@ git tag v1.2.0 && git push origin v1.2.0
 ```
 
 A `v*` tag sets the marketing version from the tag (`v1.2.0` → `1.2.0`) and always
-uploads to TestFlight. The build number (`CFBundleVersion`) is always the workflow
-run number, so every build is unique and accepted by App Store Connect.
+uploads to TestFlight. The build number (`CFBundleVersion`) is derived from a UTC
+timestamp at build time, so every build is unique and accepted by App Store Connect.
 
 ## Testing on your iPhone (TestFlight)
 
@@ -117,8 +127,9 @@ app (Mac App Store), or use Xcode → Organizer / `xcrun altool --upload-app`.
 - **"You can only submit one build from version X to Beta App Review"**: external
   TestFlight reviews only one build per version at a time, so a previously-submitted
   build still *Waiting for Review* / *In Review* blocks the new one. On publish the
-  workflow auto-expires those stuck builds first — the *Expire builds stuck in Beta App
-  Review* step, run by [`expire-builds-in-review.rb`](../.github/scripts/expire-builds-in-review.rb) —
-  so the new build can be submitted; approved builds testers are using are left
-  untouched. Fastest path of all: distribute to **Internal Testing**, which skips Beta
-  App Review entirely.
+  workflow auto-expires stuck builds **of the version being uploaded** first — the
+  *Expire builds stuck in Beta App Review* step, run by
+  [`expire-builds-in-review.rb`](../.github/scripts/expire-builds-in-review.rb) —
+  so the new build can be submitted; approved builds testers are using, and builds
+  of other versions, are left untouched. Fastest path of all: distribute to
+  **Internal Testing**, which skips Beta App Review entirely.

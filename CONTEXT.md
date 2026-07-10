@@ -1,8 +1,9 @@
 # lead track
 
-A personal effort-tracking app. The core hierarchy is Metric → Project →
-Session; an Aspiration is a lens layered above it. This glossary pins the terms
-that are specific to the domain.
+A personal effort-tracking app, shipped under the display name **LeadStone**
+("lead track" is the internal project and bundle name). The core hierarchy is
+Metric → Project → Session; an Aspiration is a lens layered above it. This
+glossary pins the terms that are specific to the domain.
 
 ## Language
 
@@ -70,11 +71,24 @@ contribution with its own unit and total.
 The two figures every rollup total is shown as. Lifetime is the cumulative,
 only-grows total; Recent is the trailing 30-day window showing current momentum.
 
+**Principle**:
+A short vow held under exactly one aspiration ("Pages before feeds.") — the
+why distilled into a sentence that can be lived. Target-free and
+deadline-free, with no machinery of its own: intentions name the principle
+they serve, moments name the principle they live. Its only record is the
+living underline — which of the trailing twelve weeks saw an intention
+serving it actually advance — counting weeks of service, never outcomes.
+_Avoid_: rule, habit, motto, goal (a principle carries no target).
+
 **Intention**:
 A small, week-scoped commitment under exactly one aspiration — the middle
 timescale between the day and the lifetime. Born in a calendar week, closed
 at the next Weekly Review, then history as narrative only: no completion
-rate, streak, or cross-week aggregate is ever computed over outcomes.
+rate, streak, or cross-week aggregate is ever computed over outcomes. While
+open, an intention may carry an optional **daily question** in the user's own
+words, landing once per day at a random time inside a chosen window (e.g.
+8am–8pm) — the app's only per-intention notification; tapping it opens the
+owning aspiration.
 _Avoid_: task, todo, weekly goal.
 
 **Alignment check-in**:
@@ -89,6 +103,7 @@ A kept piece of testimony under exactly one aspiration: evidence, in the
 user's words (with optional photos and a place), that the becoming is
 happening. It occurs at a user-set time distinct from when it was kept, may
 point at the metric or project where it happened, and is witnessed, never
-measured — no counts, totals, streaks, or prompts anywhere. "Keep" is the
-capture verb.
+measured — no counts, totals, streaks, or prompts on any in-app surface;
+only the explicit, user-triggered markdown export includes moments (text,
+place label, provenance) and a range count. "Keep" is the capture verb.
 _Avoid_: milestone, achievement, win, highlight, memory, journal entry.

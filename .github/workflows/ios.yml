@@ -9,6 +9,11 @@ on:
   #   gh workflow run ios.yml --ref <branch>
   workflow_dispatch:
 
+# Least privilege: CI only reads the checkout. Without this block the
+# GITHUB_TOKEN falls back to the repository default, which may be read/write.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Lint, build & test (iOS)
@@ -19,10 +24,34 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
-      - name: Install linters
-        run: brew install swiftlint swiftformat
+      - name: Install linters (pinned)
+        # Pinned versions + checksums instead of `brew install`: a floating
+        # "latest" linter can break every branch overnight with no code
+        # change, and would execute unverified just-published code in CI.
+        # Keep these in sync with the versions developers install locally
+        # (see CLAUDE.md "Linting").
+        env:
+          SWIFTLINT_VERSION: 0.63.3
+          SWIFTLINT_SHA256: fb045e85e7cb3374f42a4840b6b85a0106302afa69035c0c6f29af4a44c810b6
+          SWIFTFORMAT_VERSION: 0.61.1
+          SWIFTFORMAT_SHA256: b990400779aceb7d7020796eb9ba814d4480543f671d38fc0ff48cb72f04c584
+        run: |
+          set -euo pipefail
+          tools="$RUNNER_TEMP/lint-tools"
+          mkdir -p "$tools" && cd "$tools"
+          curl -fsSL -o portable_swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          echo "${SWIFTLINT_SHA256}  portable_swiftlint.zip" | shasum -a 256 -c -
+          unzip -o -q portable_swiftlint.zip swiftlint
+          curl -fsSL -o swiftformat.zip \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/${SWIFTFORMAT_VERSION}/swiftformat.zip"
+          echo "${SWIFTFORMAT_SHA256}  swiftformat.zip" | shasum -a 256 -c -
+          unzip -o -q swiftformat.zip swiftformat
+          chmod +x swiftlint swiftformat
+          echo "$tools" >> "$GITHUB_PATH"
+          ./swiftlint --version && ./swiftformat --version
 
       - name: SwiftFormat (lint only)
         run: swiftformat --lint .
@@ -79,7 +108,7 @@ jobs:
     container: swift:6.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Test
         run: swift test
