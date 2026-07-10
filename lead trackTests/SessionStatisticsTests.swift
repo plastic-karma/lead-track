@@ -456,6 +456,9 @@ struct SessionDayGroupingTests {
         let label = SessionDayGrouping.label(for: older, relativeTo: now)
         #expect(label != "Today")
         #expect(label != "Yesterday")
-        #expect(label.contains("\(calendar.component(.day, from: older))"))
+        // Render the expected day number through the same locale-aware
+        // FormatStyle the source uses, so the assertion holds on hosts
+        // whose locale writes dates with non-Western digits.
+        #expect(label.contains(older.formatted(.dateTime.day())))
     }
 }

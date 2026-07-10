@@ -254,7 +254,7 @@ extension DetailedStatisticsView {
         _ title: String,
         _ rate: Double
     ) -> some View {
-        valueItem(title, String(format: "%.1f", rate))
+        valueItem(title, rate.formatted(.number.precision(.fractionLength(1))))
     }
 
     private func valueItem(

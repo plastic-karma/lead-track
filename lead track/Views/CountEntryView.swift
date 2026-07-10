@@ -42,7 +42,7 @@ struct CountEntryView: View {
     }
 
     private var parsedValue: Double? {
-        Double(valueText).flatMap { $0 > 0 ? $0 : nil }
+        LocaleDoubleParser.parse(valueText).flatMap { $0 > 0 ? $0 : nil }
     }
 
     private func save() {

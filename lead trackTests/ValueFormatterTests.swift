@@ -28,11 +28,33 @@ struct ValueFormatterTests {
     }
 
     @Test
-    func formatCountTruncatesDecimals() {
+    func formatCountPreservesFractions() {
+        // Expected value goes through the same locale-aware style the
+        // formatter uses, so the assertion is independent of the host
+        // locale's decimal separator.
+        let expected = 3.7.formatted(.number.precision(.fractionLength(0 ... 2)))
         let result = ValueFormatter.format(
             3.7, type: .count, unit: "items"
         )
-        #expect(result == "3 items")
+        #expect(result == "\(expected) items")
+    }
+
+    @Test
+    func formatCountRoundsToTwoFractionDigits() {
+        let expected = 3.749.formatted(.number.precision(.fractionLength(0 ... 2)))
+        #expect(ValueFormatter.format(3.749, type: .count) == expected)
+    }
+
+    @Test
+    func formatCountKeepsWholeValuesBare() {
+        #expect(ValueFormatter.format(5, type: .count) == "5")
+        #expect(ValueFormatter.formatShort(5, type: .count) == "5")
+    }
+
+    @Test
+    func formatShortPreservesFractions() {
+        let expected = 0.5.formatted(.number.precision(.fractionLength(0 ... 2)))
+        #expect(ValueFormatter.formatShort(0.5, type: .count) == expected)
     }
 
     @Test
@@ -87,5 +109,11 @@ struct ValueFormatterTests {
     func sessionsLabelInflects() {
         #expect(ValueFormatter.sessions(1) == "1 session")
         #expect(ValueFormatter.sessions(3) == "3 sessions")
+    }
+
+    @Test
+    func daysLabelInflects() {
+        #expect(ValueFormatter.days(1) == "1 day")
+        #expect(ValueFormatter.days(3) == "3 days")
     }
 }

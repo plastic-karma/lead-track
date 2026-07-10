@@ -218,7 +218,7 @@ extension IntentionFormView {
     private var storedTarget: Double? {
         guard kind != .reflective, !perDay else { return nil }
         if kind == .derived, mode == .valueSum {
-            guard let amount = Double(amountText), amount > 0 else { return nil }
+            guard let amount = LocaleDoubleParser.parse(amountText), amount > 0 else { return nil }
             return metric?.measurementType == .duration ? amount * 3600 : amount
         }
         return Double(targetCount)
