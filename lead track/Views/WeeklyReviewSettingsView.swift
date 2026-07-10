@@ -2,37 +2,51 @@ import SwiftUI
 
 struct WeeklyReviewSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("weeklyReviewEnabled") private var isEnabled = false
-    @AppStorage("weeklyReviewDay") private var day = 2
-    @AppStorage("weeklyReviewHour") private var hour = 9
-    @AppStorage("weeklyReviewMinute") private var minute = 0
+    @AppStorage(WeeklyReviewSettings.enabledKey) private var isEnabled = false
+    @AppStorage(WeeklyReviewSettings.dayKey) private var day = WeeklyReviewSettings.defaultDay
+    @AppStorage(WeeklyReviewSettings.hourKey) private var hour = WeeklyReviewSettings.defaultHour
+    @AppStorage(WeeklyReviewSettings.minuteKey) private var minute = WeeklyReviewSettings.defaultMinute
 
     private let weekdays = Calendar.current.weekdaySymbols
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(footer: Text(
-                    "Get a weekly summary of your progress."
-                )) {
-                    Toggle(
-                        "Weekly Review Notification",
-                        isOn: $isEnabled
-                    )
-                    if isEnabled {
-                        dayPicker
-                        timePicker
+            form
+                .navigationTitle("Weekly Review")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
                     }
                 }
-            }
-            .navigationTitle("Weekly Review")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+        }
+    }
+
+    private var form: some View {
+        Form {
+            Section(footer: Text(
+                "Get a weekly summary of your progress."
+            )) {
+                Toggle(
+                    "Weekly Review Notification",
+                    isOn: $isEnabled
+                )
+                if isEnabled {
+                    dayPicker
+                    timePicker
                 }
             }
         }
+        // Re-arm the notification on every edit: waiting for the next
+        // foreground pass could silently miss the chosen day entirely.
+        .onChange(of: isEnabled) { reschedule() }
+        .onChange(of: day) { reschedule() }
+        .onChange(of: hour) { reschedule() }
+        .onChange(of: minute) { reschedule() }
+    }
+
+    private func reschedule() {
+        NotificationService.rescheduleWeeklyReview()
     }
 
     private var dayPicker: some View {
@@ -65,8 +79,8 @@ struct WeeklyReviewSettingsView: View {
                 let components = Calendar.current.dateComponents(
                     [.hour, .minute], from: newValue
                 )
-                hour = components.hour ?? 9
-                minute = components.minute ?? 0
+                hour = components.hour ?? WeeklyReviewSettings.defaultHour
+                minute = components.minute ?? WeeklyReviewSettings.defaultMinute
             }
         )
     }
