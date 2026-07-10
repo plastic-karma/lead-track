@@ -73,6 +73,9 @@ extension DataImportView {
             row("Sessions created", summary.sessionsCreated)
             row("Metrics created", summary.metricsCreated)
             row("Projects created", summary.projectsCreated)
+            if summary.duplicatesSkipped > 0 {
+                row("Already imported", summary.duplicatesSkipped)
+            }
             if summary.rowsSkipped > 0 {
                 row("Rows skipped", summary.rowsSkipped)
             }

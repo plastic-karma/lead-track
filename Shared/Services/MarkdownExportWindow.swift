@@ -55,20 +55,14 @@ struct MarkdownExportWindow {
 // MARK: - Session Collection
 
 extension MarkdownExportWindow {
-    /// The completed sessions the report aggregates: belonging to a metric
-    /// directly or through one of its projects, de-duplicated so a session
-    /// counts once (the `IntentionProgress` convention). Running sessions
-    /// never count until completed.
+    /// The completed sessions the report aggregates, gathered by the shared
+    /// `SessionCollection` rule and sorted oldest first.
     static func completedSessions(of metrics: [Metric], since cutoff: Date?) -> [Session] {
-        var seen = Set<ObjectIdentifier>()
-        return metrics
-            .flatMap { $0.sessions + $0.projects.flatMap(\.sessions) }
-            .filter { session in
-                !session.isRunning
-                    && cutoff.map { session.startedAt >= $0 } ?? true
-                    && seen.insert(ObjectIdentifier(session)).inserted
-            }
-            .sorted { $0.startedAt < $1.startedAt }
+        SessionCollection.completedSessions(
+            of: metrics,
+            startingIn: cutoff.map { DateInterval(start: $0, end: .distantFuture) }
+        )
+        .sorted { $0.startedAt < $1.startedAt }
     }
 }
 

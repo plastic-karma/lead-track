@@ -65,7 +65,7 @@ extension DataExportView {
             "One self-describing file with every metric, moment, intention, and check-in, "
                 + "week by week and day by day — made for handing to an AI chat."
         case .csv:
-            "Raw session rows for spreadsheets, or for importing back into lead track."
+            "Raw session rows for spreadsheets, or for importing back into LeadStone."
         }
     }
 
@@ -121,22 +121,24 @@ extension DataExportView {
     @ViewBuilder private var markdownLink: some View {
         if markdownWindow.isEmpty {
             emptyNote("No recorded data in this range.")
-        } else {
+        } else if let url = MarkdownExporter.exportFile(data: exportData, range: range) {
             ShareLink(
-                item: MarkdownExporter.exportFile(data: exportData, range: range),
+                item: url,
                 preview: SharePreview(MarkdownExporter.filename(range: range))
             ) {
                 Label("Export Markdown Report", systemImage: "square.and.arrow.up")
             }
+        } else {
+            emptyNote("Couldn't write the export file. Free up space and try again.")
         }
     }
 
     @ViewBuilder private var csvLink: some View {
         if filteredSessions.isEmpty {
             emptyNote("No sessions in this range.")
-        } else {
+        } else if let url = CSVExporter.exportFile(from: filteredSessions) {
             ShareLink(
-                item: CSVExporter.exportFile(from: filteredSessions),
+                item: url,
                 preview: SharePreview("lead-track-export.csv")
             ) {
                 Label(
@@ -144,6 +146,8 @@ extension DataExportView {
                     systemImage: "square.and.arrow.up"
                 )
             }
+        } else {
+            emptyNote("Couldn't write the export file. Free up space and try again.")
         }
     }
 

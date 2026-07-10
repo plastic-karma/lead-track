@@ -16,17 +16,25 @@ struct MarkdownExportData {
 /// that is the entire integration, deliberately: the app itself never talks
 /// to a model.
 enum MarkdownExporter {
+    /// Writes the report to the temp file, or nil when the write fails. Any
+    /// previous export at the same path is removed first, so a failed write
+    /// can never hand the share sheet a stale artifact.
     static func exportFile(
         data: MarkdownExportData,
         range: ExportRange,
         now: Date = .now,
         calendar: Calendar = .current
-    ) -> URL {
+    ) -> URL? {
         let markdown = buildMarkdown(data: data, range: range, now: now, calendar: calendar)
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(filename(range: range))
-        try? markdown.write(to: url, atomically: true, encoding: .utf8)
-        return url
+        try? FileManager.default.removeItem(at: url)
+        do {
+            try markdown.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            return nil
+        }
     }
 
     /// "lead-track-last-3-months.md" — the range names the artifact, so
@@ -68,7 +76,7 @@ extension MarkdownExporter {
             "everything through \(generated)"
         }
         return [
-            "# lead track — data export",
+            "# LeadStone — data export",
             "",
             "- Generated: \(generated)",
             "- Range: \(range.label) (\(span))",
@@ -86,7 +94,7 @@ extension MarkdownExporter {
     private static let glossary: [String] = [
         "## How to read this file",
         "",
-        "A plain-text export from \"lead track\", a personal effort-tracking app, written to be",
+        "A plain-text export from \"LeadStone\", a personal effort-tracking app, written to be",
         "handed to an AI conversation. It opens with stable context — aspirations, then metrics —",
         "and then tells the range as a chronology: one section per calendar week, oldest first,",
         "each closing with a subsection per day.",

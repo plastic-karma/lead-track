@@ -74,19 +74,11 @@ extension IntentionProgress {
 // MARK: - Qualification
 
 extension IntentionProgress {
-    /// The completed sessions a derived intention consumes: attributed to the
-    /// week by `startedAt` (the `SessionStatistics` convention, half-open),
-    /// belonging to the metric directly or through one of its projects, and
-    /// de-duplicated so a session counts once (the `ContributionSource`
-    /// approach). Running sessions never count until completed.
+    /// The completed sessions a derived intention consumes, gathered by the
+    /// shared `SessionCollection` rule (half-open week on `startedAt`,
+    /// project sessions included, each session counted once).
     static func qualifyingSessions(of metric: Metric, in week: DateInterval) -> [Session] {
-        var seen = Set<ObjectIdentifier>()
-        let candidates = metric.sessions + metric.projects.flatMap(\.sessions)
-        return candidates.filter { session in
-            !session.isRunning
-                && session.startedAt >= week.start && session.startedAt < week.end
-                && seen.insert(ObjectIdentifier(session)).inserted
-        }
+        SessionCollection.completedSessions(of: [metric], startingIn: week)
     }
 
     /// The calendar days a per-day intention is answerable for: from its

@@ -19,10 +19,10 @@ enum MarkdownExportProfiles {
 
 extension MarkdownExportProfiles {
     private static func profile(of aspiration: Aspiration) -> [String] {
-        var lines = ["### \(aspiration.title)", ""]
+        var lines = ["### \(MarkdownExportText.inline(aspiration.title))", ""]
         let detail = aspiration.detail.trimmingCharacters(in: .whitespacesAndNewlines)
         if !detail.isEmpty {
-            lines.append(detail)
+            lines += MarkdownExportText.quoted(detail)
             lines.append("")
         }
         lines += attachments(of: aspiration)
@@ -55,9 +55,9 @@ extension MarkdownExportProfiles {
 
 extension MarkdownExportProfiles {
     private static func profile(of metric: Metric) -> [String] {
-        var lines = ["### \(metric.name) (\(typeLabel(metric)))", ""]
+        var lines = ["### \(MarkdownExportText.inline(metric.name)) (\(typeLabel(metric)))", ""]
         if let description = metric.metricDescription {
-            lines.append(description)
+            lines += MarkdownExportText.quoted(description)
             lines.append("")
         }
         lines += facts(of: metric)
