@@ -97,6 +97,7 @@ extension MetricFoldsCard {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(isOpen.wrappedValue ? "Collapse" : "Expand")
     }
 
     private func sfIcon(_ name: String) -> some View {

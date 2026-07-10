@@ -150,6 +150,8 @@ extension AspirationFormView {
                         .fill(color.prominentColor)
                 )
         }
+        .accessibilityLabel("Icon")
+        .accessibilityValue(icon.replacingOccurrences(of: ".", with: " "))
     }
 
     private var whySection: some View {

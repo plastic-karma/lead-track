@@ -46,6 +46,21 @@ struct WatchLogView: View {
             isContinuous: false,
             isHapticFeedbackEnabled: true
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(metric.name)
+        .accessibilityValue(accessibilityAmount)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: amount = min(amount + 1, 999)
+            case .decrement: amount = max(amount - 1, 1)
+            @unknown default: break
+            }
+        }
+    }
+
+    private var accessibilityAmount: String {
+        guard let unit = metric.unit, !unit.isEmpty else { return "\(Int(amount))" }
+        return "\(Int(amount)) \(unit)"
     }
 
     private func adjustButton(
@@ -60,6 +75,7 @@ struct WatchLogView: View {
         }
         .buttonStyle(.bordered)
         .clipShape(Circle())
+        .accessibilityLabel(change > 0 ? "Increase amount" : "Decrease amount")
     }
 
     private var logButton: some View {

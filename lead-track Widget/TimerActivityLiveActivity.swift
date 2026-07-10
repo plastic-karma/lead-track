@@ -108,7 +108,8 @@ extension TimerActivityLiveActivity {
                 .roundedDigits(.title)
                 .foregroundStyle(context.attributes.displayColor)
             Button(intent: StopTimerIntent()) {
-                Image(systemName: "stop.fill")
+                Label("Stop", systemImage: "stop.fill")
+                    .labelStyle(.iconOnly)
                     .font(.title2)
             }
             .tint(context.attributes.displayColor)
