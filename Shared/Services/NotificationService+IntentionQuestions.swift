@@ -13,8 +13,6 @@ extension NotificationService {
     /// `userInfo` key carrying the owning aspiration's `stableID`, so a tap
     /// can deep-link into its detail.
     static let aspirationDeepLinkKey = "aspirationStableID"
-    /// A question fires at most once per day of a calendar week.
-    private static let questionSlotCount = 7
 
     /// Whether a delivered notification is an intention's daily question, so
     /// the responder can route the tap to the owning aspiration.
@@ -25,26 +23,31 @@ extension NotificationService {
     /// Re-arms every active intention's question inside `rescheduleAll`'s
     /// sweep; `scheduleQuestion` itself filters out the ineligible.
     static func scheduleAllIntentionQuestions(in context: ModelContext) {
-        let descriptor = FetchDescriptor<Intention>()
-        guard let intentions = try? context.fetch(descriptor) else { return }
+        let intentions: [Intention]
+        do {
+            intentions = try context.fetch(FetchDescriptor<Intention>())
+        } catch {
+            NotifyLog.error("intention fetch failed: \(error.localizedDescription)")
+            return
+        }
         for intention in intentions {
             scheduleQuestion(for: intention)
         }
     }
 
     /// Schedules the intention's question once per remaining day of its week
-    /// — at most `questionSlotCount` one-shots, each at a seeded-random
-    /// minute inside the daily window.
-    static func scheduleQuestion(for intention: Intention) {
+    /// — at most `IntentionQuestionPlanner.maxSlotsPerWeek` one-shots, each
+    /// at a seeded-random minute inside the daily window.
+    static func scheduleQuestion(for intention: Intention, now: Date = .now) {
         guard let question = intention.question,
               let stableID = intention.stableID,
-              intention.isOpen, intention.isInCurrentWeek()
+              intention.isOpen, intention.isInCurrentWeek(now: now)
         else { return }
         let dates = IntentionQuestionPlanner.fireDates(
             for: question,
             week: intention.weekInterval(),
             seed: stableID.stableSeed,
-            now: .now
+            now: now
         )
         let content = questionContent(for: intention, question: question)
         for (index, date) in dates.enumerated() {
@@ -58,9 +61,12 @@ extension NotificationService {
         scheduleQuestion(for: intention)
     }
 
+    /// Sweeps every slot the planner could have filled — the range is the
+    /// planner's own ceiling, so scheduled IDs can never outrun the cancel.
     static func cancelQuestion(for intention: Intention) {
         guard let stableID = intention.stableID else { return }
-        let ids = (0 ..< questionSlotCount).map { questionID(stableID, $0) }
+        let ids = (0 ..< IntentionQuestionPlanner.maxSlotsPerWeek)
+            .map { questionID(stableID, $0) }
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
     }
@@ -77,15 +83,17 @@ extension NotificationService {
         "\(intentionQuestionPrefix)\(stableID.uuidString)-\(index)"
     }
 
-    /// The banner reads "<intention title> / <the user's question>".
+    /// The banner reads "<intention title> / <the user's question>" — or two
+    /// generic lines when the app lock calls for discreet banners.
     private static func questionContent(
         for intention: Intention,
         question: IntentionQuestion
     ) -> UNMutableNotificationContent {
-        let content = UNMutableNotificationContent()
-        content.title = intention.title
-        content.body = question.text
-        content.sound = .default
+        let content = makeContent(questionCopy(
+            title: intention.title,
+            question: question.text,
+            discreet: NotificationPrivacy.isDiscreet()
+        ))
         if let aspirationID = intention.aspiration?.stableID {
             content.userInfo = [aspirationDeepLinkKey: aspirationID.uuidString]
         }

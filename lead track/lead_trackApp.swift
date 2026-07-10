@@ -62,12 +62,14 @@ struct lead_trackApp: App {
             in: ModelContext(sharedModelContainer)
         )
         NotificationService.requestPermission()
-        NotificationService.rescheduleAll(
-            container: sharedModelContainer
-        )
+        // The reschedule sweep walks every metric's session history; a
+        // detached task keeps it out of the scene-activation turn.
+        let container = sharedModelContainer
+        Task.detached {
+            await NotificationService.rescheduleAll(container: container)
+        }
         // No-op until the user has created a health-linked metric; only then
         // does the app talk to HealthKit at all.
-        let container = sharedModelContainer
         Task {
             await HealthMetricSyncService.shared.refreshAll(container: container)
         }

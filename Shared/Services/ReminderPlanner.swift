@@ -7,16 +7,22 @@ import Foundation
 enum ReminderPlanner {
     /// The fire times for the soonest goal day that still has a moment ahead of
     /// `now` — today's remaining pings when any are left, otherwise the next
-    /// non-rest day's full set. Empty when no goal day falls in the next week
-    /// (every weekday excluded).
+    /// non-rest day's full set. `skippingToday` starts the walk tomorrow: the
+    /// re-arm path once today is already logged, so logging never unarms the
+    /// next goal day. Empty when no goal day falls in the next week (every
+    /// weekday excluded).
     static func nextFireDates(
         for schedule: ReminderSchedule,
         seed: UInt64,
         excludedWeekdays: Set<Int>,
         now: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        skippingToday: Bool = false
     ) -> [Date] {
-        let days = goalDays(from: now, excludedWeekdays: excludedWeekdays, calendar: calendar)
+        let days = goalDays(
+            from: now, excludedWeekdays: excludedWeekdays,
+            calendar: calendar, skippingToday: skippingToday
+        )
         for day in days {
             let fires = fireDates(for: schedule, on: day, seed: seed, calendar: calendar)
                 .filter { $0 > now }
@@ -25,6 +31,30 @@ enum ReminderPlanner {
             }
         }
         return []
+    }
+
+    /// The next moment `time`'s hour-and-minute lands on a goal day strictly
+    /// after `now` — today while the moment is still ahead, otherwise the
+    /// soonest non-rest day in the next week. `skippingToday` starts the walk
+    /// tomorrow, for alerts made moot by today's logging. Nil when every
+    /// weekday is excluded. Absorbs `NotificationService`'s former private
+    /// goal-day walk so schedulable date math lives with the planner.
+    static func nextGoalMoment(
+        at time: Date,
+        excludedWeekdays: Set<Int>,
+        now: Date,
+        calendar: Calendar = .current,
+        skippingToday: Bool = false
+    ) -> Date? {
+        let minute = minuteOfDay(time, calendar: calendar)
+        return goalDays(
+            from: now, excludedWeekdays: excludedWeekdays,
+            calendar: calendar, skippingToday: skippingToday
+        )
+        .compactMap { day in
+            calendar.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: day)
+        }
+        .first { $0 > now }
     }
 
     /// The concrete fire moments on a single day for this schedule.
@@ -100,16 +130,19 @@ extension ReminderPlanner {
 // MARK: - Day & Time Helpers
 
 extension ReminderPlanner {
-    /// Today through a week out, dropping rest days, as start-of-day dates.
+    /// Today through a week out, dropping rest days — and today itself when
+    /// `skippingToday` — as start-of-day dates.
     private static func goalDays(
         from now: Date,
         excludedWeekdays: Set<Int>,
-        calendar: Calendar
+        calendar: Calendar,
+        skippingToday: Bool = false
     ) -> [Date] {
         let start = calendar.startOfDay(for: now)
         return (0 ... 7)
             .compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
-            .filter { !excludedWeekdays.contains(calendar.component(.weekday, from: $0)) }
+            .filter { GoalDayRule.isGoalDay(on: $0, excludedWeekdays: excludedWeekdays, calendar: calendar) }
+            .filter { !skippingToday || $0 > start }
     }
 
     // The three helpers below are internal (not private) so
