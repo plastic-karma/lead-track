@@ -914,9 +914,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -959,9 +959,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

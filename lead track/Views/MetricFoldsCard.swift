@@ -22,11 +22,11 @@ struct MetricFoldsCard: View {
     var body: some View {
         if !visibleFolds.isEmpty {
             VStack(spacing: 0) {
-                ForEach(visibleFolds.indices, id: \.self) { index in
-                    if index > 0 {
+                ForEach(visibleFolds, id: \.self) { fold in
+                    if fold != visibleFolds.first {
                         Divider().padding(.leading, 46)
                     }
-                    foldView(visibleFolds[index])
+                    foldView(fold)
                 }
             }
             .padding(.vertical, 4)
@@ -42,7 +42,7 @@ struct MetricFoldsCard: View {
 // MARK: - Folds
 
 extension MetricFoldsCard {
-    private enum Fold {
+    private enum Fold: Hashable {
         case activity
         case history
         case health

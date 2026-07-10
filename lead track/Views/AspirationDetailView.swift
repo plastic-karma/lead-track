@@ -283,10 +283,9 @@ extension AspirationDetailView {
     }
 
     private func deleteAspiration() {
-        // The cascade takes the intentions with no per-row hook, so their
-        // pending daily questions are cancelled explicitly first.
-        NotificationService.cancelQuestions(for: aspiration)
-        modelContext.delete(aspiration)
+        // The shared delete path cancels the intentions' pending daily
+        // questions before the cascade (see `ModelContext.deleteAspiration`).
+        modelContext.deleteAspiration(aspiration)
         dismiss()
     }
 }

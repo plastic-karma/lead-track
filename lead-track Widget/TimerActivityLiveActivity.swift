@@ -49,15 +49,11 @@ extension TimerActivityLiveActivity {
     }
 
     private func expandedCenter(_ context: ActivityContext) -> some View {
-        VStack(alignment: .leading) {
-            Text(context.attributes.metricName)
-                .font(.headline)
-            if let project = context.attributes.projectName {
-                Text(project)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
+        TimerActivityNames(
+            metricName: context.attributes.metricName,
+            projectName: context.attributes.projectName,
+            projectFont: .caption
+        )
     }
 
     private func expandedTimer(_ context: ActivityContext) -> some View {
@@ -94,15 +90,11 @@ extension TimerActivityLiveActivity {
             Image(systemName: context.attributes.icon)
                 .font(.title2)
                 .foregroundStyle(context.attributes.displayColor)
-            VStack(alignment: .leading) {
-                Text(context.attributes.metricName)
-                    .font(.headline)
-                if let project = context.attributes.projectName {
-                    Text(project)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            TimerActivityNames(
+                metricName: context.attributes.metricName,
+                projectName: context.attributes.projectName,
+                projectFont: .subheadline
+            )
             Spacer()
             Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
                 .roundedDigits(.title)
@@ -114,5 +106,39 @@ extension TimerActivityLiveActivity {
             .tint(context.attributes.displayColor)
         }
         .padding()
+    }
+}
+
+// MARK: - Names
+
+/// The metric and project names for the lock screen and the expanded island.
+/// A Live Activity is readable on the locked lock screen, and what the user
+/// tracks can be highly personal, so the names are marked
+/// `.privacySensitive()` — and when the system redacts private content the
+/// block swaps to a generic "Timer running" label instead of leaving
+/// pill-shaped hints of the real text.
+private struct TimerActivityNames: View {
+    @Environment(\.redactionReasons) private var redactionReasons
+    let metricName: String
+    let projectName: String?
+    let projectFont: Font
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            if redactionReasons.contains(.privacy) {
+                Text("Timer running")
+                    .font(.headline)
+            } else {
+                Text(metricName)
+                    .font(.headline)
+                    .privacySensitive()
+                if let projectName {
+                    Text(projectName)
+                        .font(projectFont)
+                        .foregroundStyle(.secondary)
+                        .privacySensitive()
+                }
+            }
+        }
     }
 }

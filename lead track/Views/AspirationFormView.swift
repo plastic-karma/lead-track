@@ -21,6 +21,7 @@ struct AspirationFormView: View {
     @State private var selectedMetrics: Set<Metric>
     @State private var selectedProjects: Set<Project>
     @State private var showingPhotoPicker = false
+    @State private var showingPhotoLoadFailure = false
     @State private var saveTrigger = false
 
     private let iconOptions = [
@@ -69,6 +70,9 @@ struct AspirationFormView: View {
         .sensoryFeedback(.success, trigger: saveTrigger)
         .onChange(of: photoItem) { _, item in
             Task { await loadPhoto(item) }
+        }
+        .alert("Couldn't Load Photo", isPresented: $showingPhotoLoadFailure) {} message: {
+            Text("The selected photo couldn't be loaded. Your current cover is unchanged.")
         }
     }
 }
@@ -217,9 +221,21 @@ extension AspirationFormView {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Imports the picked cover. The stored bytes are re-encoded display
+    /// pixels — the same downscale-and-JPEG pass moment photos take — never
+    /// the picker's original file, so EXIF metadata (including the GPS
+    /// coordinates of where the photo was taken) is stripped before anything
+    /// reaches the store. A failed load keeps the existing cover and says so.
     private func loadPhoto(_ item: PhotosPickerItem?) async {
         guard let item else { return }
-        imageData = try? await item.loadTransferable(type: Data.self)
+        guard let raw = try? await item.loadTransferable(type: Data.self),
+              let cover = MomentPhotoImport.downscaledJPEG(from: raw)
+        else {
+            photoItem = nil
+            showingPhotoLoadFailure = true
+            return
+        }
+        imageData = cover
     }
 
     private func removePhoto() {

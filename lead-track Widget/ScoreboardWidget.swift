@@ -178,6 +178,12 @@ extension ScoreboardWidgetView {
             }
             streakBadge(metric.streak, tint: metric.displayColor)
         }
+        // The row shows exactly what the optional biometric app lock guards —
+        // names, goal progress, streaks — so it is marked privacy-sensitive:
+        // the system redacts it wherever it hides private data (a locked lock
+        // screen or StandBy). On the unlocked Home Screen widgets remain
+        // visible by design; the app lock gates the app, not the widget.
+        .privacySensitive()
     }
 
     @ViewBuilder

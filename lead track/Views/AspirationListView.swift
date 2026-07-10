@@ -8,6 +8,7 @@ struct AspirationListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @State private var showingAddSheet = false
+    @State private var aspirationPendingDelete: Aspiration?
 
     var body: some View {
         ScrollView {
@@ -31,7 +32,26 @@ struct AspirationListView: View {
         .sheet(isPresented: $showingAddSheet) {
             AspirationFormView()
         }
+        .confirmationDialog(
+            "Delete \(aspirationPendingDelete?.title ?? "Aspiration")?",
+            isPresented: deleteConfirmationPresented,
+            titleVisibility: .visible,
+            presenting: aspirationPendingDelete
+        ) { aspiration in
+            Button("Delete Aspiration", role: .destructive) { delete(aspiration) }
+        } message: { _ in
+            Text("Its metrics and projects stay in your library. Its intentions go with it.")
+        }
         .overlay { emptyState }
+    }
+
+    /// Drives the delete dialog off the optional the context-menu action sets,
+    /// mirroring the detail screen — the cascade is never one tap away.
+    private var deleteConfirmationPresented: Binding<Bool> {
+        Binding(
+            get: { aspirationPendingDelete != nil },
+            set: { presented in if !presented { aspirationPendingDelete = nil } }
+        )
     }
 }
 
@@ -45,7 +65,7 @@ extension AspirationListView {
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
-                delete(aspiration)
+                aspirationPendingDelete = aspiration
             } label: {
                 Label("Delete Aspiration", systemImage: "trash")
             }
@@ -67,7 +87,20 @@ extension AspirationListView {
 
     private func delete(_ aspiration: Aspiration) {
         withAnimation {
-            modelContext.delete(aspiration)
+            modelContext.deleteAspiration(aspiration)
         }
+    }
+}
+
+// MARK: - The one delete path
+
+extension ModelContext {
+    /// The single aspiration delete path, shared by the list's context menu
+    /// and the detail screen: the cascade takes the intentions with no
+    /// per-row hook, so their pending daily-question notifications are
+    /// cancelled explicitly before the delete.
+    func deleteAspiration(_ aspiration: Aspiration) {
+        NotificationService.cancelQuestions(for: aspiration)
+        delete(aspiration)
     }
 }
