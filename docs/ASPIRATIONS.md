@@ -1,5 +1,18 @@
 # Aspirations — requirements
 
+> **Status: v1 spec, shipped — partially superseded.** The core invariants
+> below still hold in code (target-free, live recomputed rollup, 30-day
+> recent window, unit-bucketed breakdown — see `AspirationRollup`). Two
+> areas are superseded by later work: the
+> [Navigation](#navigation--a-new-tab) section describes a two-tab root,
+> but the shipping shell is a page-style `TabView`
+> with **three** tabs (Today / Week / Aspirations) and a custom `AppTabBar`;
+> and several [Out of scope](#out-of-scope) items have since shipped —
+> Weekly Review integration, intention daily-question notifications that
+> deep-link into aspiration detail, and the layers specified in later docs
+> (intentions, check-ins, moments, principles). Where this document and the
+> code disagree, the code wins.
+
 A new top-level concept for **lead track / LeadStone**: an *aspiration* — an
 ongoing, never-"done" theme you pour effort into over a lifetime. Unlike the
 existing daily/weekly **goals** (`Metric.dailyGoal` / `weeklyGoal`,
