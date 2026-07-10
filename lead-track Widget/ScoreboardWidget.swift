@@ -178,6 +178,8 @@ extension ScoreboardWidgetView {
             }
             streakBadge(metric.streak, tint: metric.displayColor)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary(metric))
     }
 
     @ViewBuilder
@@ -237,6 +239,26 @@ extension ScoreboardWidgetView {
                 .roundedDigits(.caption, weight: .bold)
         }
         .foregroundStyle(days > 0 ? tint : Color.secondary)
+    }
+
+    private func accessibilitySummary(_ metric: MetricSnapshot) -> String {
+        var parts = [metric.name]
+        if let goal = metric.dailyGoal, goal > 0 {
+            parts.append(
+                metric.isRestDay
+                    ? "rest day"
+                    : "\(goalPercent(metric.todayTotal, of: goal)) percent of daily goal"
+            )
+        }
+        if let goal = metric.weeklyGoal, goal > 0 {
+            parts.append("\(goalPercent(metric.weeklyTotal, of: goal)) percent of weekly goal")
+        }
+        parts.append("\(metric.streak) day streak")
+        return parts.joined(separator: ", ")
+    }
+
+    private func goalPercent(_ current: TimeInterval, of goal: TimeInterval) -> Int {
+        Int((min(current / goal, 1) * 100).rounded())
     }
 }
 

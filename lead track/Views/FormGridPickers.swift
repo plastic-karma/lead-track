@@ -32,6 +32,8 @@ struct IconGridPicker: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(option.replacingOccurrences(of: ".", with: " "))
+        .accessibilityAddTraits(selection == option ? .isSelected : [])
     }
 }
 
