@@ -42,9 +42,10 @@ extension MetricQuery {
             sortBy: [SortDescriptor(\.createdAt)]
         )
         // Health-linked metrics mirror Apple Health and have no timer to
-        // drive, so they never appear in the picker.
+        // drive, so they never appear in the picker; archived metrics rest
+        // off the widget until they return.
         return try context.fetch(descriptor)
-            .filter { $0.measurementType == .duration && !$0.isHealthLinked }
+            .filter { $0.measurementType == .duration && !$0.isHealthLinked && !$0.isArchived }
             .compactMap { metric in
                 guard let id = metric.stableID?.uuidString else {
                     return nil

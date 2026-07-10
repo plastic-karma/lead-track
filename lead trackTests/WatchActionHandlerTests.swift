@@ -215,4 +215,43 @@ struct WatchActionHandlerTests {
 
         #expect(metric.sessions.isEmpty)
     }
+
+    // MARK: - Archived
+
+    @Test
+    func archivedMetricRejectsNewEffort() throws {
+        let context = try makeContext()
+        let metric = makeMetric(in: context)
+        metric.archive()
+        let id = try #require(metric.stableID)
+        let kinds: [WatchAction.Kind] = [.startTimer, .logValue, .toggleDay]
+
+        for kind in kinds {
+            try WatchActionHandler.apply(
+                WatchAction(kind: kind, metricID: id, value: 2),
+                in: context
+            )
+        }
+
+        #expect(metric.sessions.isEmpty)
+    }
+
+    @Test
+    func archivedMetricStillAcceptsStop() throws {
+        let context = try makeContext()
+        let metric = makeMetric(in: context)
+        let id = try #require(metric.stableID)
+        let session = Session(
+            metric: metric, startedAt: .now.addingTimeInterval(-600)
+        )
+        context.insert(session)
+        metric.archive()
+
+        try WatchActionHandler.apply(
+            WatchAction(kind: .stopTimer, metricID: id),
+            in: context
+        )
+
+        #expect(SessionService.activeSession(for: metric) == nil)
+    }
 }

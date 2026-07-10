@@ -20,12 +20,15 @@ enum NotificationService {
         else { return }
         UNUserNotificationCenter.current()
             .removeAllPendingNotificationRequests()
-        for metric in metrics {
+        // Archived metrics rest silently — no reminders, no streak nudges,
+        // and no mention in the weekly review summary.
+        let live = metrics.unarchived
+        for metric in live {
             scheduleReminder(for: metric)
             scheduleStreakAlert(for: metric)
             scheduleRunningCountdown(for: metric)
         }
-        scheduleWeeklyReview(metrics: metrics)
+        scheduleWeeklyReview(metrics: live)
         scheduleAllIntentionQuestions(in: context)
     }
 
@@ -33,6 +36,7 @@ enum NotificationService {
         _ metric: Metric
     ) {
         cancelForMetric(metric)
+        guard !metric.isArchived else { return }
         scheduleReminder(for: metric)
         scheduleStreakAlert(for: metric)
     }

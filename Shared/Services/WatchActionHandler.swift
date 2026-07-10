@@ -15,6 +15,11 @@ enum WatchActionHandler {
         // buttons on a health-linked metric; its sessions belong to the
         // HealthKit mirror, so such actions are dropped.
         guard !metric.isHealthLinked else { return }
+        // A watch holding a pre-archive snapshot may likewise still offer a
+        // just-archived metric. New effort on it is dropped — it would be
+        // invisible on every surface — but a stop still lands, so a timer
+        // racing the archive can always be ended.
+        guard !metric.isArchived || action.kind == .stopTimer else { return }
         switch action.kind {
         case .startTimer:
             SessionService.startSession(for: metric, in: context, at: action.timestamp)

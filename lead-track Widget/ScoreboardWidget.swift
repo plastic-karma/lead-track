@@ -70,7 +70,8 @@ extension ScoreboardProvider {
         )
         guard let metrics = try? context.fetch(descriptor)
         else { return [] }
-        return metrics.prefix(4).map { snapshot(for: $0) }
+        // Archived metrics leave the scoreboard so a live one takes the slot.
+        return metrics.unarchived.prefix(4).map { snapshot(for: $0) }
     }
 
     private func snapshot(for metric: Metric) -> MetricSnapshot {

@@ -99,6 +99,7 @@ extension MetricDetailView {
         let totals = dailyTotals
         return VStack(alignment: .leading, spacing: 14) {
             titleBlock
+            archivedBanner
             ringCard(totals)
             MetricQuietLines(metric: metric, dailyTotals: totals)
             foldsCard(totals)
@@ -139,12 +140,31 @@ extension MetricDetailView {
 
     @ViewBuilder
     private var dock: some View {
-        if !metric.isHealthLinked {
+        if !metric.isHealthLinked, !metric.isArchived {
             MetricRecordDock(
                 metric: metric,
                 activeSession: activeSession,
                 onLogManually: showManualEntry
             )
+        }
+    }
+
+    /// The quiet notice an archived metric wears in place of its record
+    /// dock: where it went, and the way back.
+    @ViewBuilder
+    private var archivedBanner: some View {
+        if metric.isArchived {
+            HStack(spacing: 8) {
+                Image(systemName: "archivebox")
+                Text("Archived — resting off Today and Week.")
+                Spacer(minLength: 8)
+                Button("Unarchive") { toggleArchive() }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 4)
         }
     }
 }
@@ -209,6 +229,13 @@ extension MetricDetailView {
                         showingProjectForm = true
                     }
                 }
+                Divider()
+                Button(
+                    metric.isArchived ? "Unarchive" : "Archive",
+                    systemImage: metric.isArchived ? "tray.and.arrow.up" : "archivebox"
+                ) {
+                    toggleArchive()
+                }
             } label: {
                 Label("More", systemImage: "ellipsis.circle")
             }
@@ -239,6 +266,22 @@ extension MetricDetailView {
         } else {
             showingCountEntry = true
         }
+    }
+
+    /// Sets the metric aside or brings it back. Archiving first stops any
+    /// running timer — a session on an archived metric would be invisible on
+    /// every surface — and both directions re-arm notifications (cancelled
+    /// while archived); the watch refreshes on the save that follows.
+    private func toggleArchive() {
+        withAnimation(.snappy) {
+            if metric.isArchived {
+                metric.unarchive()
+            } else {
+                SessionService.stopSession(for: metric)
+                metric.archive()
+            }
+        }
+        NotificationService.rescheduleMetric(metric)
     }
 
     /// Freshens the mirror whenever a health metric's detail opens; silent,

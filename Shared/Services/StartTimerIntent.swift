@@ -35,7 +35,8 @@ struct StartTimerIntent: LiveActivityIntent {
     private func targetMetric(in context: ModelContext) throws -> Metric? {
         guard let id = UUID(uuidString: metricID) else { return nil }
         guard let metric = try Metric.find(stableID: id, in: context),
-              !metric.isHealthLinked
+              !metric.isHealthLinked,
+              !metric.isArchived
         else { return nil }
         return metric
     }

@@ -13,7 +13,8 @@ enum WatchSnapshotBuilder {
         at now: Date = .now,
         calendar: Calendar = .current
     ) -> WatchSnapshot {
-        let sorted = metrics.sorted { $0.createdAt < $1.createdAt }
+        // Archived metrics leave the wrist with the rest of the day surfaces.
+        let sorted = metrics.unarchived.sorted { $0.createdAt < $1.createdAt }
         return WatchSnapshot(
             metrics: sorted.compactMap(metricSnapshot),
             day: calendar.startOfDay(for: now)
