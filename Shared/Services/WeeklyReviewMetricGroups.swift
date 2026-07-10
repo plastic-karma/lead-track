@@ -40,7 +40,7 @@ extension WeeklyReview {
     ) -> [MetricGroup] {
         let weekByID = Dictionary(weeks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let quietByID = Dictionary(quiet.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let split = TodayGrouping.groups(metrics: metrics, aspirations: aspirations)
+        let split = TodayGrouping.groups(metrics: metrics.unarchived, aspirations: aspirations)
 
         func group(_ aspiration: Aspiration?, _ members: [Metric]) -> MetricGroup? {
             let ids = members.map { stableID(of: $0) }
@@ -76,7 +76,7 @@ extension WeeklyReview {
         calendar: Calendar = .current
     ) -> [GoalDialSegment] {
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
-        return metrics.compactMap { metric in
+        return metrics.unarchived.compactMap { metric in
             guard let fraction = weekGoalFraction(of: metric, bounds: bounds, calendar: calendar)
             else { return nil }
             return GoalDialSegment(id: stableID(of: metric), colorName: metric.colorName, fraction: fraction)

@@ -118,6 +118,21 @@ struct WatchSnapshotBuilderTests {
     }
 
     @Test
+    func snapshotLeavesArchivedMetricsOut() throws {
+        let container = try SharedModelContainer.create(inMemoryOnly: true)
+        let context = ModelContext(container)
+        let live = Metric(name: "Focus")
+        let shelved = Metric(name: "Guitar")
+        shelved.archive()
+        context.insert(live)
+        context.insert(shelved)
+
+        let snapshot = WatchSnapshotBuilder.snapshot(from: [live, shelved])
+
+        #expect(snapshot.metrics.map(\.name) == ["Focus"])
+    }
+
+    @Test
     func binaryMetricShipsImplicitTargetWithoutAmountGoal() throws {
         let container = try SharedModelContainer.create(inMemoryOnly: true)
         let context = ModelContext(container)

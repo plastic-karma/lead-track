@@ -110,14 +110,14 @@ extension TodayGrouping {
     /// holding metrics or open intentions this week — needsYou first
     /// (closest to completion leading), then resting, done, and self-filling
     /// stubs — with the unaligned metrics as one trailing cluster, always
-    /// last regardless of state.
+    /// last regardless of state. Archived metrics never enter the day.
     static func clusters(
         metrics: [Metric],
         aspirations: [Aspiration],
         intentions: [Intention],
         calendar: Calendar = .current
     ) -> [Cluster] {
-        let split = groups(metrics: metrics, aspirations: aspirations)
+        let split = groups(metrics: metrics.unarchived, aspirations: aspirations)
         let open = intentions.filter { $0.isOpen && $0.isInCurrentWeek(calendar: calendar) }
         let aligned = alignedClusters(
             groups: split.groups, aspirations: aspirations,

@@ -25,11 +25,12 @@ struct MetricListView: View {
     @State private var showingExport = false
     @State private var showingImport = false
     @State private var showingSettings = false
+    @State private var showingArchived = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
-                DayDialView(metrics: metrics)
+                DayDialView(metrics: metrics.unarchived)
                 clusterSections
             }
             .padding(.horizontal)
@@ -67,6 +68,11 @@ struct MetricListView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingArchived) {
+            ArchivedMetricsView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .overlay {
             if showsEmptyState {
                 ContentUnavailableView(
@@ -84,10 +90,11 @@ struct MetricListView: View {
 // MARK: - Pieces
 
 extension MetricListView {
-    /// Nothing to cluster at all — no metrics and no open intentions this
-    /// week — so the day opens with the invitation instead.
+    /// Nothing to cluster at all — no live metrics and no open intentions
+    /// this week — so the day opens with the invitation instead. Archived
+    /// metrics stay reachable through the menu, not the day.
     private var showsEmptyState: Bool {
-        metrics.isEmpty && !intentions.contains { $0.isOpen && $0.isInCurrentWeek() }
+        metrics.unarchived.isEmpty && !intentions.contains { $0.isOpen && $0.isInCurrentWeek() }
     }
 
     private var appMenu: some View {
@@ -97,6 +104,11 @@ extension MetricListView {
             }
             Button { notificationResponder.showWeeklyReview = true } label: {
                 Label("Weekly Review", systemImage: "calendar.badge.clock")
+            }
+            if metrics.contains(where: \.isArchived) {
+                Button { showingArchived = true } label: {
+                    Label("Archived Metrics", systemImage: "archivebox")
+                }
             }
             Button { showingExport = true } label: {
                 Label("Export Data", systemImage: "square.and.arrow.up")

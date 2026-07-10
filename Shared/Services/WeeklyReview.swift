@@ -84,6 +84,9 @@ extension WeeklyReview {
         now: Date = .now,
         calendar: Calendar = .current
     ) -> WeeklyReview {
+        // Archived metrics leave the week entirely: no week card, no quiet
+        // stub, no goal-season ask, and no pulse in the header series.
+        let metrics = metrics.unarchived
         let bounds = PeriodBounds(weeksBack: weeksBack, now: now, calendar: calendar)
         let metricSplit = partitionMetrics(metrics, bounds: bounds, calendar: calendar)
         let closures = intentionClosures(

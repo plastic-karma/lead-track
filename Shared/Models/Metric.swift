@@ -80,6 +80,11 @@ final class Metric {
     /// for the amount — the behavior before the setting existed — so existing
     /// stores migrate untouched. Meaningless on non-count metrics.
     var countLogStyleRaw: String = CountLogStyle.askAmount.rawValue
+    /// When the metric was archived — set it aside without deleting its
+    /// history. Archived metrics leave the day and week surfaces (Today,
+    /// Week, watch, widgets, reminders) until unarchived. nil — the default,
+    /// so existing stores migrate untouched — means the metric is live.
+    var archivedAt: Date?
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -250,6 +255,37 @@ extension Metric {
     }
 }
 #endif
+
+// MARK: - Archive
+
+extension Metric {
+    /// Whether the metric is set aside: hidden from the day and week
+    /// surfaces while keeping every session, goal, and link for the day it
+    /// returns.
+    var isArchived: Bool {
+        archivedAt != nil
+    }
+
+    /// Sets the metric aside, stamping when. Side effects — stopping a
+    /// running timer, cancelling reminders, refreshing the watch — stay with
+    /// the callers, which live behind Apple-only frameworks.
+    func archive(at date: Date = .now) {
+        archivedAt = date
+    }
+
+    /// Brings the metric back to the day and week surfaces.
+    func unarchive() {
+        archivedAt = nil
+    }
+}
+
+extension Array where Element == Metric {
+    /// The metrics still living on the day and week surfaces — everything
+    /// not archived, in their incoming order.
+    var unarchived: [Metric] {
+        filter { !$0.isArchived }
+    }
+}
 
 // MARK: - Daily Show-Up Expectation
 

@@ -61,7 +61,7 @@ struct WeeklyReviewView: View {
 
     @ViewBuilder
     private func content(_ review: WeeklyReview) -> some View {
-        if metrics.isEmpty {
+        if metrics.unarchived.isEmpty {
             emptyState
         } else {
             reviewScroll(review)
