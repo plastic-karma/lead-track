@@ -11,6 +11,10 @@ import SwiftData
 /// State classification is covered in `TodayClusterTests`.
 struct TodayClusterReadingTests {
     private let calendar = Calendar.current
+    /// One anchor per suite, captured at init: helpers that recomputed
+    /// startOfDay(.now) per call could split a test's fixtures and
+    /// assertions across a midnight crossing.
+    private let anchor = Calendar.current.startOfDay(for: .now)
 
     #if canImport(SwiftData)
     /// Relationship arrays only sync through a context on Apple platforms;
@@ -28,7 +32,7 @@ struct TodayClusterReadingTests {
     private func date(_ daysAgo: Int) -> Date {
         calendar.date(
             byAdding: .day, value: -daysAgo,
-            to: calendar.startOfDay(for: .now)
+            to: anchor
         )!
     }
 
@@ -60,7 +64,7 @@ struct TodayClusterReadingTests {
         seconds: TimeInterval = 600,
         value: Double? = nil
     ) {
-        let start = calendar.startOfDay(for: .now)
+        let start = anchor
         let session = Session(
             metric: metric,
             startedAt: start,

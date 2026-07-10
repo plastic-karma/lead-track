@@ -219,6 +219,21 @@ extension AspirationRollupTests {
     }
 
     @Test
+    func recentWindowEdgeCountsDayTwentyNineButNotThirty() {
+        // Pins the 30-day window's exact length: today plus the 29 prior
+        // days, matching the day-aligned trailing-window convention.
+        let aspiration = makeAspiration()
+        let metric = makeMetric(type: .count, unit: "pages")
+        addCount(3, to: metric, at: day(29))
+        addCount(5, to: metric, at: day(30))
+        aspiration.metrics.append(metric)
+
+        let rollup = AspirationRollup.compute(for: aspiration)
+
+        #expect(rollup.headline.first?.recent == 3)
+    }
+
+    @Test
     func reattachingRestoresFullHistory() {
         let aspiration = makeAspiration()
         let metric = makeMetric(type: .duration)

@@ -264,3 +264,81 @@ struct AspirationAlignmentTests {
         #expect(earlier.aspirationWeeks.allSatisfy { !$0.offersCheckIn })
     }
 }
+
+// MARK: - Divergence branches & integration
+
+extension AspirationAlignmentTests {
+    private func attachMetric(to aspiration: Aspiration) -> Metric {
+        let metric = Metric(name: "Walking", measurementType: .duration)
+        #if canImport(SwiftData)
+        context.insert(metric)
+        #endif
+        aspiration.metrics.append(metric)
+        return metric
+    }
+
+    private func addSession(_ metric: Metric, at start: Date) {
+        let session = Session(
+            metric: metric, startedAt: start, endedAt: start.addingTimeInterval(600)
+        )
+        #if canImport(SwiftData)
+        context.insert(session)
+        #else
+        metric.sessions.append(session)
+        #endif
+    }
+
+    @Test
+    func exactlyFlatEffortStillFires() throws {
+        // The "flat or rising" contract: secondMean == firstMean must fire
+        // with ratio 1 — a `>` regression would read flat as falling.
+        let aspiration = makeAspiration()
+        fallingRatings(aspiration)
+
+        let divergence = try #require(AspirationAlignment.divergence(
+            alignment: AspirationAlignment.series(from: aspiration.checkIns),
+            effort: [2, 2, 2, 2, 2, 2],
+            now: now
+        ))
+
+        #expect(divergence.effortChangeRatio == 1)
+    }
+
+    @Test
+    func effortOnlyInTheSecondHalfReadsAsRatioOne() throws {
+        let aspiration = makeAspiration()
+        fallingRatings(aspiration)
+
+        let divergence = try #require(AspirationAlignment.divergence(
+            alignment: AspirationAlignment.series(from: aspiration.checkIns),
+            effort: [0, 0, 0, 3, 3, 3],
+            now: now
+        ))
+
+        #expect(divergence.effortChangeRatio == 1)
+    }
+
+    @Test
+    func effortSeriesFeedsDivergenceEndToEnd() throws {
+        // The real pipeline: sessions -> effortSeries(weeks: 12) ->
+        // divergence, including the suffix trim of the 12-week history.
+        let aspiration = makeAspiration()
+        fallingRatings(aspiration)
+        let metric = attachMetric(to: aspiration)
+        addSession(metric, at: week(8).addingTimeInterval(3600))
+        addSession(metric, at: week(5).addingTimeInterval(3600))
+        addSession(metric, at: week(1).addingTimeInterval(3600))
+        addSession(metric, at: week(1).addingTimeInterval(7200))
+
+        let effort = AspirationAlignment.effortSeries(for: aspiration, weeks: 12, now: now)
+        let divergence = try #require(AspirationAlignment.divergence(
+            alignment: AspirationAlignment.series(from: aspiration.checkIns),
+            effort: effort,
+            now: now
+        ))
+
+        #expect(effort.count == 12)
+        #expect(divergence.windowWeeks == 6)
+        #expect(divergence.effortChangeRatio == 2)
+    }
+}

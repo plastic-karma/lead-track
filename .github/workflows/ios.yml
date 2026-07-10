@@ -68,6 +68,14 @@ jobs:
           [ -n "$newest" ] && sudo xcode-select -s "$newest/Contents/Developer"
           xcodebuild -version
 
+      - name: SwiftPM tests (macOS overlay)
+        # The overlay package on macOS compiles the SwiftData-backed services
+        # too (see Package.swift), so SessionService, the watch-action
+        # pipeline, and their five suites execute here — closing the gap left
+        # while the simulator test step below is skipped on images without a
+        # bootable simulator.
+        run: swift test
+
       - name: Select simulator
         id: sim
         # Hardcoding a device name (e.g. "iPhone 16") breaks whenever the image
@@ -86,7 +94,7 @@ jobs:
             echo "DESTINATION=platform=iOS Simulator,id=$id" >> "$GITHUB_ENV"
             echo "have_sim=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::No bootable iOS simulator on the runner; compiling for a generic simulator and skipping the test run."
+            echo "::warning::No bootable iOS simulator on the runner; compiling for a generic simulator and skipping the xcodebuild test run (unit coverage still executes in the SwiftPM steps)."
             echo "DESTINATION=generic/platform=iOS Simulator" >> "$GITHUB_ENV"
             echo "have_sim=false" >> "$GITHUB_OUTPUT"
           fi

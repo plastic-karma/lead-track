@@ -296,3 +296,22 @@ struct GoalSeasonTests {
         #expect(metric.goalSeasonStartedAt == now)
     }
 }
+
+// MARK: - Phase boundaries
+
+extension GoalSeasonTests {
+    @Test
+    func graceBoundaryTipsToPastSeason() {
+        // over == graceWeeks exactly: an off-by-one here would silently
+        // extend or truncate the grace period.
+        let metric = seasoned(8)
+        #expect(GoalSeason.phase(of: metric, now: now) == .pastSeason(weeksOver: 2))
+    }
+
+    @Test
+    func finalActiveDayStillReportsOneWeekRemaining() {
+        let metric = seasoned(0)
+        metric.goalSeasonStartedAt = day(6 * 7 - 1)
+        #expect(GoalSeason.phase(of: metric, now: now) == .active(weeksRemaining: 1))
+    }
+}

@@ -206,7 +206,9 @@ enum SessionService {
     private static func rescheduleNotifications(
         for metric: Metric
     ) {
-        #if canImport(UserNotifications)
+        // Overlay builds compile this out: scheduling needs a real app
+        // bundle, which the SwiftPM test process doesn't have.
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         NotificationService.rescheduleMetric(metric)
         #endif
     }
@@ -217,7 +219,7 @@ enum SessionService {
         for metric: Metric,
         session: Session
     ) {
-        #if canImport(UserNotifications)
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         guard let end = session.countdownInterval?.upperBound else { return }
         NotificationService.scheduleCountdownCompletion(for: metric, endsAt: end)
         #endif
@@ -230,7 +232,7 @@ enum SessionService {
         session: Session,
         endedAt: Date
     ) {
-        #if canImport(UserNotifications)
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         guard let end = session.countdownInterval?.upperBound,
               endedAt < end
         else { return }

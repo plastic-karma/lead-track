@@ -6,19 +6,22 @@ import Foundation
 enum WatchSnapshotCache {
     private static let key = "cachedWatchSnapshot"
 
-    static func load() -> WatchSnapshot {
+    /// The cached snapshot, or `.empty` when nothing usable is stored —
+    /// missing data and an undecodable cache (written by a newer app
+    /// version) degrade the same way.
+    static func load(from defaults: UserDefaults = sharedDefaults) -> WatchSnapshot {
         guard let data = defaults.data(forKey: key),
               let snapshot = try? JSONDecoder().decode(WatchSnapshot.self, from: data)
         else { return .empty }
         return snapshot
     }
 
-    static func save(_ snapshot: WatchSnapshot) {
+    static func save(_ snapshot: WatchSnapshot, to defaults: UserDefaults = sharedDefaults) {
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: key)
     }
 
-    private static var defaults: UserDefaults {
+    private static var sharedDefaults: UserDefaults {
         UserDefaults(suiteName: AppGroup.id) ?? .standard
     }
 }
