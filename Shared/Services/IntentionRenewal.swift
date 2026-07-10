@@ -24,9 +24,12 @@ enum IntentionPromotion: Equatable {
 enum IntentionRenewal {
     /// Closes `source` without a verdict (the numbers stood on their own) and
     /// clones it into the calendar week containing `now`. The clone keeps the
-    /// commitment — title, kind, mode, perDay, metric, target — and carries
-    /// the chain forward via `predecessorID`, `promotionDismissed` included.
-    /// The caller inserts the clone into its context.
+    /// commitment — title, kind, mode, perDay, metric, target, and the daily
+    /// question — and carries the chain forward via `predecessorID`,
+    /// `promotionDismissed` included. The caller inserts the clone into its
+    /// context (and, from UI, should also arm the clone's question via
+    /// `NotificationService.scheduleQuestion(for:)`; until then the next
+    /// foreground sweep picks it up).
     static func setAgain(
         _ source: Intention,
         now: Date = .now,
@@ -46,6 +49,7 @@ enum IntentionRenewal {
         )
         renewed.predecessorID = source.stableID
         renewed.promotionDismissed = source.promotionDismissed
+        renewed.applyQuestion(source.question)
         return renewed
     }
 

@@ -5,12 +5,17 @@ import UserNotifications
 
 /// Routes notification taps into the app. Tapping the weekly review
 /// notification raises the flag the root tab shell answers by sliding to
-/// the Week tab; because the flag lives on a singleton set up before the
-/// first scene renders, a tap that cold-launches the app still lands.
+/// the Week tab; tapping an intention's daily question raises the owning
+/// aspiration's ID and the shell drills into its detail. Because the flags
+/// live on a singleton set up before the first scene renders, a tap that
+/// cold-launches the app still lands.
 final class NotificationResponder: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationResponder()
 
     @Published var showWeeklyReview = false
+    /// The aspiration a tapped daily question deep-links into; the shell
+    /// consumes and clears it.
+    @Published var pendingAspirationID: UUID?
 
     /// Must run during app init so taps delivered at launch reach us.
     func install() {
@@ -47,12 +52,27 @@ final class NotificationResponder: NSObject, ObservableObject, UNUserNotificatio
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let id = response.notification.request.identifier
-        if id == NotificationService.weeklyReviewNotificationID {
+        route(response.notification.request)
+        completionHandler()
+    }
+
+    /// Raises the flag matching the tapped notification; the root tab shell
+    /// consumes it.
+    private func route(_ request: UNNotificationRequest) {
+        if request.identifier == NotificationService.weeklyReviewNotificationID {
             DispatchQueue.main.async { [weak self] in
                 self?.showWeeklyReview = true
             }
+        } else if NotificationService.isIntentionQuestion(id: request.identifier) {
+            routeToAspiration(from: request.content.userInfo)
         }
-        completionHandler()
+    }
+
+    private func routeToAspiration(from userInfo: [AnyHashable: Any]) {
+        let raw = userInfo[NotificationService.aspirationDeepLinkKey] as? String
+        guard let id = raw.flatMap(UUID.init(uuidString:)) else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.pendingAspirationID = id
+        }
     }
 }

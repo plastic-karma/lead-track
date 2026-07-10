@@ -26,12 +26,15 @@ enum AppTab: Hashable {
 /// that a nested scroll view would otherwise collapse. The built-in page dots
 /// are hidden since `AppTabBar` is the visible affordance.
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab: AppTab = .today
     @State private var todayPath = NavigationPath()
     @State private var weekPath = NavigationPath()
     @State private var aspirationsPath = NavigationPath()
-    /// Tapping the weekly review notification raises this responder's flag;
-    /// the shell answers by sliding to the Week tab, even on a cold launch.
+    /// Tapping the weekly review notification raises this responder's flag —
+    /// the shell answers by sliding to the Week tab — and tapping an
+    /// intention's daily question raises an aspiration ID the shell answers
+    /// by drilling into its detail; both land even on a cold launch.
     @ObservedObject private var notificationResponder = NotificationResponder.shared
 
     var body: some View {
@@ -60,9 +63,15 @@ struct ContentView: View {
             AppTabBar(selectedTab: animatedSelection)
         }
         .background(Theme.washedScreen)
-        .onAppear(perform: routeToWeekIfRequested)
+        .onAppear {
+            routeToWeekIfRequested()
+            routeToAspirationIfRequested()
+        }
         .onChange(of: notificationResponder.showWeeklyReview) {
             routeToWeekIfRequested()
+        }
+        .onChange(of: notificationResponder.pendingAspirationID) {
+            routeToAspirationIfRequested()
         }
     }
 
@@ -73,6 +82,21 @@ struct ContentView: View {
             selectedTab = .week
         }
         notificationResponder.showWeeklyReview = false
+    }
+
+    /// Consumes a daily-question tap by landing on the owning aspiration's
+    /// detail, replacing whatever the Aspirations stack held. An aspiration
+    /// deleted since the ask resolves to nil and the tap degrades to just
+    /// opening the app.
+    private func routeToAspirationIfRequested() {
+        guard let id = notificationResponder.pendingAspirationID else { return }
+        notificationResponder.pendingAspirationID = nil
+        guard let aspiration = try? Aspiration.find(stableID: id, in: modelContext) else { return }
+        withAnimation(.snappy) {
+            selectedTab = .aspirations
+        }
+        aspirationsPath = NavigationPath()
+        aspirationsPath.append(aspiration)
     }
 }
 

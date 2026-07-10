@@ -83,6 +83,7 @@ extension AspirationPastIntentionsView {
         let targets = offsets.map { pastIntentions[$0] }
         withAnimation {
             for intention in targets {
+                NotificationService.cancelQuestion(for: intention)
                 modelContext.delete(intention)
             }
         }
