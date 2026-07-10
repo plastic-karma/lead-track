@@ -76,6 +76,14 @@ final class Intention {
     /// Whether a promotion offer was declined somewhere along the chain;
     /// copied forward on renewal so the chain is never asked again.
     var promotionDismissed: Bool = false
+    /// The daily question asked while the intention is active; nil — together
+    /// with the window fields — means no question is asked. See
+    /// `Intention+Question` for the bridged value type.
+    var questionText: String?
+    /// The daily window the ask lands in (hour/minute-only Dates, the
+    /// `ReminderSchedule.time` idiom).
+    var questionWindowStart: Date?
+    var questionWindowEnd: Date?
     var createdAt: Date
 
     init(

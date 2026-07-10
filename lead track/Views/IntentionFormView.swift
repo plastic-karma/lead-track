@@ -19,6 +19,8 @@ struct IntentionFormView: View {
     @State private var amountText = ""
     @State private var principle: Principle?
     @State private var showingAttach = false
+    @State private var asksDaily = false
+    @State private var question: IntentionQuestion = .makeDefault()
 
     var body: some View {
         NavigationStack {
@@ -29,6 +31,7 @@ struct IntentionFormView: View {
                     metricSection
                 }
                 shapeSection
+                questionSection
                 if !heldPrinciples.isEmpty {
                     servesSection
                 }
@@ -124,6 +127,19 @@ extension IntentionFormView {
         }
     }
 
+    private var questionSection: some View {
+        Section {
+            Toggle("Daily Question", isOn: $asksDaily)
+            if asksDaily {
+                IntentionQuestionEditor(question: $question)
+            }
+        } footer: {
+            if asksDaily {
+                Text("Asks once a day, at a random time inside your window, through the end of the week.")
+            }
+        }
+    }
+
     /// Present only once the aspiration holds any principles — the why
     /// threaded through the commitment, never a required field.
     private var servesSection: some View {
@@ -186,15 +202,17 @@ extension IntentionFormView {
     }
 
     /// Checked without constructing a model — the same rules `Intention.make`
-    /// enforces on save.
+    /// enforces on save, plus a switched-on question needing words.
     private var isValid: Bool {
-        !trimmedTitle.isEmpty && Intention.isValidShape(
-            kind: kind,
-            derivedMode: kind == .derived ? mode : nil,
-            metric: kind == .derived ? metric : nil,
-            perDay: perDay,
-            target: storedTarget
-        )
+        !trimmedTitle.isEmpty
+            && (!asksDaily || !question.trimmedText.isEmpty)
+            && Intention.isValidShape(
+                kind: kind,
+                derivedMode: kind == .derived ? mode : nil,
+                metric: kind == .derived ? metric : nil,
+                perDay: perDay,
+                target: storedTarget
+            )
     }
 
     private var storedTarget: Double? {
@@ -217,7 +235,9 @@ extension IntentionFormView {
             target: storedTarget
         ) else { return }
         intention.principle = principle
+        intention.applyQuestion(asksDaily ? question : nil)
         modelContext.insert(intention)
+        NotificationService.scheduleQuestion(for: intention)
         dismiss()
     }
 

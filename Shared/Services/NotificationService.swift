@@ -26,6 +26,7 @@ enum NotificationService {
             scheduleRunningCountdown(for: metric)
         }
         scheduleWeeklyReview(metrics: metrics)
+        scheduleAllIntentionQuestions(in: context)
     }
 
     static func rescheduleMetric(
@@ -296,8 +297,9 @@ extension NotificationService {
         return calendarTrigger(for: date)
     }
 
-    /// A one-shot trigger firing at the exact given date.
-    private static func calendarTrigger(
+    /// A one-shot trigger firing at the exact given date. Internal (not
+    /// private) so the intention-question extension shares it.
+    static func calendarTrigger(
         for date: Date
     ) -> UNCalendarNotificationTrigger {
         let components = Calendar.current.dateComponents(
@@ -349,7 +351,8 @@ extension NotificationService {
         )
     }
 
-    private static func schedule(
+    /// Internal (not private) so the intention-question extension shares it.
+    static func schedule(
         id: String,
         content: UNMutableNotificationContent,
         trigger: UNCalendarNotificationTrigger

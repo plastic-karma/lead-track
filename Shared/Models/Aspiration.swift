@@ -111,3 +111,22 @@ extension Aspiration {
         icon ?? "mountain.2"
     }
 }
+
+// MARK: - Lookup
+
+#if canImport(SwiftData)
+extension Aspiration {
+    /// Fetches the aspiration carrying this stable identity — the ID an
+    /// intention's daily-question notification references for its deep link.
+    static func find(
+        stableID id: UUID,
+        in context: ModelContext
+    ) throws -> Aspiration? {
+        var descriptor = FetchDescriptor<Aspiration>(
+            predicate: #Predicate { $0.stableID == id }
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+}
+#endif

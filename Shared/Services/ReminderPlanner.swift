@@ -112,16 +112,20 @@ extension ReminderPlanner {
             .filter { !excludedWeekdays.contains(calendar.component(.weekday, from: $0)) }
     }
 
-    private static func minuteOfDay(_ date: Date, calendar: Calendar) -> Int {
+    // The three helpers below are internal (not private) so
+    // `IntentionQuestionPlanner` draws from the same per-day seed formula —
+    // determinism has one source of truth.
+
+    static func minuteOfDay(_ date: Date, calendar: Calendar) -> Int {
         let components = calendar.dateComponents([.hour, .minute], from: date)
         return (components.hour ?? 0) * 60 + (components.minute ?? 0)
     }
 
-    private static func dayOrdinal(_ date: Date, calendar: Calendar) -> UInt64 {
+    static func dayOrdinal(_ date: Date, calendar: Calendar) -> UInt64 {
         UInt64(calendar.ordinality(of: .day, in: .era, for: date) ?? 0)
     }
 
-    private static func mix(_ seed: UInt64, _ salt: UInt64) -> UInt64 {
+    static func mix(_ seed: UInt64, _ salt: UInt64) -> UInt64 {
         (seed ^ salt) &* 0x9E37_79B9_7F4A_7C15
     }
 }
