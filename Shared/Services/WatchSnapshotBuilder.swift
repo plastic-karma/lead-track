@@ -21,12 +21,8 @@ enum WatchSnapshotBuilder {
     ) -> WatchSnapshot? {
         do {
             let metrics = try context.fetch(FetchDescriptor<Metric>())
-            return snapshot(
-                from: metrics,
-                index: try sessionIndex(in: context, at: now, calendar: calendar),
-                at: now,
-                calendar: calendar
-            )
+            let index = try sessionIndex(in: context, at: now, calendar: calendar)
+            return snapshot(from: metrics, index: index, at: now, calendar: calendar)
         } catch {
             SyncLog.error("Watch snapshot fetch failed: \(error)")
             return nil
