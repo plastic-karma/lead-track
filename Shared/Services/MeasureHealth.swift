@@ -45,9 +45,9 @@ extension MeasureHealth {
     ) -> Insight? {
         guard let goal = metric.dailyGoal, goal > 0,
               metric.measurementType.tracksQuantity,
-              hasHistory(metric, days: lookbackDays, now: now)
+              hasHistory(metric, days: lookbackDays, now: now, calendar: calendar)
         else { return nil }
-        let hits = SessionStatistics.dailyTotals(from: metric.sessions)
+        let hits = SessionStatistics.dailyTotals(from: metric.sessions, calendar: calendar)
             .filter { inWindow($0.date, days: lookbackDays, now: now, calendar: calendar) }
             .filter { metric.isGoalDay(on: $0.date, calendar: calendar) && $0.duration >= goal }
         guard hits.count >= minHitDays else { return nil }
@@ -70,11 +70,15 @@ extension MeasureHealth {
         calendar: Calendar = .current
     ) -> Insight? {
         guard metric.measurementType.tracksQuantity, !metric.isHealthLinked,
-              hasHistory(metric, days: lookbackDays, now: now)
+              hasHistory(metric, days: lookbackDays, now: now, calendar: calendar)
         else { return nil }
+        // The streak as of `now`, not of today — browsing an earlier week's
+        // review must judge the streak that was alive back then.
         let streak = SessionStatistics.currentStreak(
-            from: SessionStatistics.dailyTotals(from: metric.sessions),
-            excludedWeekdays: metric.excludedWeekdaySet
+            from: SessionStatistics.dailyTotals(from: metric.sessions, calendar: calendar),
+            excludedWeekdays: metric.excludedWeekdaySet,
+            now: now,
+            calendar: calendar
         )
         guard streak >= saverMinStreak,
               let median = medianSessionValue(of: metric)
@@ -90,7 +94,9 @@ extension MeasureHealth {
             .map(\.trackingValue)
             .sorted()
         guard !values.isEmpty else { return nil }
-        return values[values.count / 2]
+        let upper = values.count / 2
+        guard values.count.isMultiple(of: 2) else { return values[upper] }
+        return (values[upper - 1] + values[upper]) / 2
     }
 
     /// Days in the window whose only session was tiny and late.
@@ -117,13 +123,19 @@ extension MeasureHealth {
 
 extension MeasureHealth {
     /// Both metric detectors need a month of history before saying anything.
-    private static func hasHistory(_ metric: Metric, days: Int, now: Date) -> Bool {
+    private static func hasHistory(
+        _ metric: Metric,
+        days: Int,
+        now: Date,
+        calendar: Calendar
+    ) -> Bool {
         guard let first = metric.sessions
             .filter({ !$0.isRunning })
             .map(\.startedAt)
-            .min()
+            .min(),
+            let cutoff = calendar.date(byAdding: .day, value: -days, to: now)
         else { return false }
-        return now.timeIntervalSince(first) >= Double(days) * 24 * 3600
+        return first <= cutoff
     }
 
     private static func inWindow(
@@ -159,10 +171,10 @@ extension MeasureHealth {
     static func detectNarrowing(
         for aspiration: Aspiration,
         now: Date = .now,
-        calendar _: Calendar = .current
+        calendar: Calendar = .current
     ) -> Narrowing? {
         let counted = AspirationRollup.contributionSources(of: aspiration)
-            .map { CountedSource(source: $0, now: now) }
+            .map { CountedSource(source: $0, now: now, calendar: calendar) }
         guard counted.count(where: \.everActive) >= monocultureMinSources else { return nil }
         let total = counted.reduce(0) { $0 + $1.recent }
         guard total >= monocultureMinSessions,
@@ -178,18 +190,20 @@ extension MeasureHealth {
         )
     }
 
-    /// One source's completed-session counts in the recent and prior windows.
+    /// One source's completed-session counts in the recent and prior windows,
+    /// both day-aligned via the calendar like every other window in this file.
     private struct CountedSource {
         let name: String
         let recent: Int
         let prior: Int
         let everActive: Bool
 
-        init(source: ContributionSource, now: Date) {
+        init(source: ContributionSource, now: Date, calendar: Calendar) {
             let completed = source.sessions.filter { !$0.isRunning }
-            let window = Double(MeasureHealth.monocultureWindowDays) * 24 * 3600
-            let recentStart = now.addingTimeInterval(-window)
-            let priorStart = now.addingTimeInterval(-2 * window)
+            let today = calendar.startOfDay(for: now)
+            let days = MeasureHealth.monocultureWindowDays
+            let recentStart = calendar.date(byAdding: .day, value: -days, to: today) ?? today
+            let priorStart = calendar.date(byAdding: .day, value: -2 * days, to: today) ?? recentStart
             name = source.name
             recent = completed.count { $0.startedAt >= recentStart && $0.startedAt < now }
             prior = completed.count { $0.startedAt >= priorStart && $0.startedAt < recentStart }

@@ -158,9 +158,11 @@ extension Insight {
                 + "\(Int(MeasureHealth.clusterBand * 100))% of the line. Is the goal "
                 + "the right size — or has the line become the point?"
         case let .streakSaver(occurrences, _):
-            return "\(occurrences) evenings this month, a session a quarter of "
-                + "your usual size landed after 9 pm. Would a rest day serve "
-                + "the why better than the chain?"
+            return "\(occurrences) evenings these past "
+                + "\(MeasureHealth.lookbackDays / 7) weeks, a session at most "
+                + "\(Int(MeasureHealth.saverValueShare * 100))% of your usual "
+                + "size landed after \(Self.hourLabel(MeasureHealth.saverLateHour)). "
+                + "Would a rest day serve the why better than the chain?"
         }
     }
 }
@@ -193,6 +195,12 @@ private extension Insight {
         let symbols = Calendar.current.standaloneWeekdaySymbols
         let index = max(0, min(weekday - 1, symbols.count - 1))
         return symbols[index]
+    }
+
+    /// "9 pm"-style label for an hour-of-day threshold, so the copy tracks
+    /// the detector constant it describes (`MeasureHealth.saverLateHour`).
+    static func hourLabel(_ hour: Int) -> String {
+        hour > 12 ? "\(hour - 12) pm" : "\(hour) am"
     }
 
     static func volumeDetail(

@@ -33,12 +33,17 @@ struct OversubscriptionInsightTests {
         day(0)
     }
 
+    /// Metrics predate the window by default; the creation-gating tests pass
+    /// an explicit `createdAt` instead.
     private func goalMetric(
         name: String = "Reading",
         type: MeasurementType = .duration,
-        dailyGoal: TimeInterval? = 600
+        dailyGoal: TimeInterval? = 600,
+        createdAt: Date? = nil
     ) -> Metric {
-        let metric = Metric(name: name, measurementType: type)
+        let metric = Metric(
+            name: name, measurementType: type, createdAt: createdAt ?? day(30)
+        )
         metric.dailyGoal = dailyGoal
         #if canImport(SwiftData)
         context.insert(metric)
@@ -174,6 +179,52 @@ struct OversubscriptionInsightTests {
         #expect(checkIn?.goalCount == 2)
         #expect(checkIn?.activeDays == 21)
         #expect(checkIn?.missedDays == 21)
+    }
+
+    // MARK: - Goal creation gating
+
+    @Test
+    func goalAddedMidWindowOnlyJudgesItsOwnDays() {
+        // Meditate met daily for three weeks; Reading only exists (and falls
+        // short) for the last six days. Before the gate, Reading's empty
+        // earlier days all read as misses and inflated the rate to 100%.
+        let meditate = goalMetric(name: "Meditate")
+        let reading = goalMetric(name: "Reading", createdAt: day(6))
+        logEachDay(1 ... 21) { log(600, to: meditate, on: $0) }
+        logEachDay(1 ... 6) { log(300, to: reading, on: $0) }
+
+        let checkIn = OversubscriptionInsight.checkIn(for: [meditate, reading], now: now)
+
+        #expect(checkIn?.activeDays == 21)
+        #expect(checkIn?.missedDays == 6)
+    }
+
+    @Test
+    func goalAddedTodayNeverRewritesTheWindow() {
+        // A brand-new, never-logged goal cannot turn three good weeks into
+        // misses at the next review.
+        let meditate = goalMetric(name: "Meditate")
+        let reading = goalMetric(name: "Reading", createdAt: now)
+        logEachDay(1 ... 21) { log(600, to: meditate, on: $0) }
+
+        #expect(OversubscriptionInsight.checkIn(for: [meditate, reading], now: now) == nil)
+    }
+
+    @Test
+    func importedHistoryPredatingCreationStillCounts() {
+        // Sessions imported from before the metric row existed keep weighing
+        // in: the gate is the earliest sign of life, not the row's timestamp.
+        let reading = goalMetric(name: "Reading", createdAt: now)
+        let writing = goalMetric(name: "Writing", createdAt: now)
+        logEachDay(1 ... 8) { day in
+            log(600, to: reading, on: day)
+            log(300, to: writing, on: day)
+        }
+
+        let checkIn = OversubscriptionInsight.checkIn(for: [reading, writing], now: now)
+
+        #expect(checkIn?.activeDays == 8)
+        #expect(checkIn?.missedDays == 8)
     }
 
     // MARK: - Review wiring

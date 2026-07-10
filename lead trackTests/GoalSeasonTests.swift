@@ -225,6 +225,19 @@ struct GoalSeasonTests {
         #expect(habit.sessions.count == 1)
     }
 
+    /// Daily completion is judged at the injected instant, so completion
+    /// around midnight and rest-day boundaries is testable deterministically.
+    @Test
+    func dailyCompletionEvaluatesAtTheInjectedInstant() {
+        let habit = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
+        addSession(habit, at: day(1))
+
+        #expect(GoalSummary.isDailyComplete(habit, now: day(1)))
+        #expect(!GoalSummary.isDailyComplete(habit, now: now))
+        #expect(GoalSummary.daily(for: [habit], now: day(1)).met == 1)
+        #expect(GoalSummary.daily(for: [habit], now: now).met == 0)
+    }
+
     /// The watch mirrors the release: a retired habit leaves the day ring.
     @Test
     func watchRingsDropReleasedBinaryHabit() {

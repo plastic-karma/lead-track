@@ -110,7 +110,7 @@ enum WatchSnapshotBuilder {
         } else {
             running = SessionService.activeSession(for: metric)
             todayTotal = SessionStatistics.todayTotal(
-                from: metric.sessions, calendar: calendar, now: now
+                from: metric.sessions, now: now, calendar: calendar
             )
         }
         return WatchMetricSnapshot(
