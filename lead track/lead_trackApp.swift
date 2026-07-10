@@ -6,12 +6,22 @@ struct lead_trackApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var lockService = AppLockService()
 
-    var sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer = {
         let isUITest = ProcessInfo.processInfo.arguments.contains("-uitest")
         do {
             return try SharedModelContainer.create(inMemoryOnly: isUITest)
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // A failed open (most plausibly a future migration failure) must
+            // stay diagnosable, not become a crash loop that also blocks
+            // recovery. Launch on a volatile in-memory store instead: the
+            // on-disk data is left untouched for a fixed build to migrate,
+            // and the failure is in the log rather than a crash report.
+            StoreLog.error("Persistent store failed to open; launching in-memory: \(error)")
+            do {
+                return try SharedModelContainer.create(inMemoryOnly: true)
+            } catch {
+                fatalError("Could not create any ModelContainer: \(error)")
+            }
         }
     }()
 

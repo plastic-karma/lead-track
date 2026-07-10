@@ -13,6 +13,11 @@ final class Metric {
     var stableID: UUID?
     var name: String
     var metricDescription: String?
+    /// Stored as the enum itself — a pre-doctrine exception. Every enum
+    /// attribute added since is stored raw (`xxxRaw: String` + typed
+    /// accessor) so a store written by a newer app version still opens;
+    /// adding a MeasurementType case therefore requires migrating this
+    /// field to that pattern first. Do not copy this shape for new fields.
     var measurementType: MeasurementType
     var unit: String?
     var icon: String?

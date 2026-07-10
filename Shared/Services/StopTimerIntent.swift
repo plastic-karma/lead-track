@@ -19,7 +19,7 @@ struct StopTimerIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        let container = try SharedModelContainer.create()
+        guard let container = SharedModelContainer.shared else { return .result() }
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Session>(
             predicate: Session.isRunningPredicate

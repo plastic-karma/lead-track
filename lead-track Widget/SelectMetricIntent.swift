@@ -36,7 +36,7 @@ struct MetricQuery: EntityQuery {
 
 extension MetricQuery {
     private func durationMetrics() throws -> [MetricEntity] {
-        let container = try SharedModelContainer.create()
+        guard let container = SharedModelContainer.shared else { return [] }
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Metric>(
             sortBy: [SortDescriptor(\.createdAt)]

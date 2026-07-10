@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import UIKit
 import UserNotifications
@@ -9,23 +8,45 @@ import UserNotifications
 /// aspiration's ID and the shell drills into its detail. Because the flags
 /// live on a singleton set up before the first scene renders, a tap that
 /// cold-launches the app still lands.
-final class NotificationResponder: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
+@MainActor
+@Observable
+final class NotificationResponder: NSObject {
     static let shared = NotificationResponder()
 
-    @Published var showWeeklyReview = false
+    var showWeeklyReview = false
     /// The aspiration a tapped daily question deep-links into; the shell
     /// consumes and clears it.
-    @Published var pendingAspirationID: UUID?
+    var pendingAspirationID: UUID?
 
     /// Must run during app init so taps delivered at launch reach us.
     func install() {
         UNUserNotificationCenter.current().delegate = self
     }
 
+    /// Raises the flag matching the tapped notification; the root tab shell
+    /// consumes it.
+    private func route(_ request: UNNotificationRequest) {
+        if request.identifier == NotificationService.weeklyReviewNotificationID {
+            showWeeklyReview = true
+        } else if NotificationService.isIntentionQuestion(id: request.identifier) {
+            routeToAspiration(from: request.content.userInfo)
+        }
+    }
+
+    private func routeToAspiration(from userInfo: [AnyHashable: Any]) {
+        let raw = userInfo[NotificationService.aspirationDeepLinkKey] as? String
+        guard let id = raw.flatMap(UUID.init(uuidString:)) else { return }
+        pendingAspirationID = id
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension NotificationResponder: UNUserNotificationCenterDelegate {
     /// Surfaces a countdown's "time's up" alert even while the app is open,
     /// pinging and/or vibrating per the user's toggles; other notifications
     /// stay silent in the foreground as before.
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
@@ -47,32 +68,15 @@ final class NotificationResponder: NSObject, ObservableObject, UNUserNotificatio
         }
     }
 
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        route(response.notification.request)
+        let request = response.notification.request
+        Task { @MainActor in
+            route(request)
+        }
         completionHandler()
-    }
-
-    /// Raises the flag matching the tapped notification; the root tab shell
-    /// consumes it.
-    private func route(_ request: UNNotificationRequest) {
-        if request.identifier == NotificationService.weeklyReviewNotificationID {
-            DispatchQueue.main.async { [weak self] in
-                self?.showWeeklyReview = true
-            }
-        } else if NotificationService.isIntentionQuestion(id: request.identifier) {
-            routeToAspiration(from: request.content.userInfo)
-        }
-    }
-
-    private func routeToAspiration(from userInfo: [AnyHashable: Any]) {
-        let raw = userInfo[NotificationService.aspirationDeepLinkKey] as? String
-        guard let id = raw.flatMap(UUID.init(uuidString:)) else { return }
-        DispatchQueue.main.async { [weak self] in
-            self?.pendingAspirationID = id
-        }
     }
 }

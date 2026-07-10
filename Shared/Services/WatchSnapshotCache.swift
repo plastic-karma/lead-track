@@ -22,6 +22,15 @@ enum WatchSnapshotCache {
     }
 
     private static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: AppGroup.id) ?? .standard
+        guard let suite = UserDefaults(suiteName: AppGroup.id) else {
+            // The shared app group is the point of this cache — the watch
+            // app and its widget extension must read one state. Falling back
+            // silently would ship as a mysteriously stale widget, so fail
+            // loudly in development.
+            assertionFailure("App-group defaults unavailable; watch cache is per-process")
+            SyncLog.error("App-group defaults unavailable; using standard defaults")
+            return .standard
+        }
+        return suite
     }
 }

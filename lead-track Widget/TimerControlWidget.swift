@@ -6,6 +6,9 @@ import WidgetKit
 struct TimerControlEntry: TimelineEntry {
     let date: Date
     let metric: TimerMetricState?
+    /// True when the shared store failed to open or fetch — rendered as its
+    /// own state so a broken store never impersonates "unconfigured".
+    var loadFailed = false
 }
 
 /// A snapshot of the configured metric used to render the Timer Control widget.
@@ -49,46 +52,54 @@ struct TimerControlProvider: AppIntentTimelineProvider {
         for configuration: SelectMetricIntent,
         in context: Context
     ) async -> TimerControlEntry {
-        TimerControlEntry(date: .now, metric: state(for: configuration))
+        entry(for: configuration)
     }
 
     func timeline(
         for configuration: SelectMetricIntent,
         in context: Context
     ) async -> Timeline<TimerControlEntry> {
-        let entry = TimerControlEntry(
-            date: .now,
-            metric: state(for: configuration)
+        Timeline(
+            entries: [entry(for: configuration)],
+            policy: .after(WidgetTimeline.nextUpdate())
         )
-        let nextUpdate = Calendar.current.date(
-            byAdding: .minute, value: 15, to: .now
-        ) ?? .now
-        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 }
 
 // MARK: - Data Loading
 
 extension TimerControlProvider {
-    private func state(
-        for configuration: SelectMetricIntent
-    ) -> TimerMetricState? {
-        guard let id = configuration.metric?.id else { return nil }
-        guard let metric = metric(withID: id) else { return nil }
-        return makeState(for: metric)
+    private func entry(for configuration: SelectMetricIntent) -> TimerControlEntry {
+        guard let id = configuration.metric?.id,
+              let uuid = UUID(uuidString: id)
+        else { return TimerControlEntry(date: .now, metric: nil) }
+        guard let container = SharedModelContainer.shared else {
+            return TimerControlEntry(date: .now, metric: nil, loadFailed: true)
+        }
+        // The value snapshot is taken while the context that owns the model
+        // is still alive: a PersistentModel must never outlive its context,
+        // and reading one that did is undefined behavior.
+        let context = ModelContext(container)
+        do {
+            guard let metric = try Metric.find(stableID: uuid, in: context) else {
+                return TimerControlEntry(date: .now, metric: nil)
+            }
+            return withExtendedLifetime(context) {
+                TimerControlEntry(date: .now, metric: makeState(for: metric, id: id))
+            }
+        } catch {
+            StoreLog.error("Timer widget metric fetch failed: \(error)")
+            return TimerControlEntry(date: .now, metric: nil, loadFailed: true)
+        }
     }
 
-    private func metric(withID id: String) -> Metric? {
-        guard let uuid = UUID(uuidString: id),
-              let container = try? SharedModelContainer.create()
-        else { return nil }
-        return try? Metric.find(stableID: uuid, in: ModelContext(container))
-    }
-
-    private func makeState(for metric: Metric) -> TimerMetricState {
+    /// `id` is the already-validated stable ID the metric was found by —
+    /// re-deriving it here with an empty-string fallback would silently map
+    /// onto StopTimerIntent's "stop every timer" sentinel.
+    private func makeState(for metric: Metric, id: String) -> TimerMetricState {
         let running = SessionService.activeSession(for: metric)
         return TimerMetricState(
-            stableID: metric.stableID?.uuidString ?? "",
+            stableID: id,
             name: metric.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
@@ -100,7 +111,7 @@ extension TimerControlProvider {
 
     private var sampleState: TimerMetricState {
         TimerMetricState(
-            stableID: "",
+            stableID: "6B1E1D2A-0000-4000-8000-000000000001",
             name: "Reading",
             icon: "book",
             colorName: "sage",
@@ -119,8 +130,24 @@ struct TimerControlWidgetView: View {
     var body: some View {
         if let metric = entry.metric {
             timerControl(metric)
+        } else if entry.loadFailed {
+            loadFailedView
         } else {
             unconfiguredView
+        }
+    }
+
+    private var loadFailedView: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("Couldn't load data")
+                .font(.headline)
+            Text("Open LeadStone to refresh.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
     }
 
