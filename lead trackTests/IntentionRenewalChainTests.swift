@@ -101,6 +101,26 @@ extension IntentionRenewalChainTests {
 
         #expect(renewed.promotionDismissed)
     }
+
+    @Test
+    func setAgainCarriesDerivedShapeAndQuestionForward() throws {
+        // Dropping the metric link, mode, per-day flag, or question on
+        // renewal would break derived progress and the daily ask for every
+        // renewed week.
+        let source = try makeDerived(mode: .sessionCount, perDay: true)
+        var question = IntentionQuestion.makeDefault(calendar: calendar)
+        question.text = "Did you walk today?"
+        source.applyQuestion(question)
+
+        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
+
+        #expect(renewed.kind == .derived)
+        #expect(renewed.metric === source.metric)
+        #expect(renewed.derivedMode == source.derivedMode)
+        #expect(renewed.perDay == source.perDay)
+        #expect(renewed.question == source.question)
+        #expect(renewed.question?.text == "Did you walk today?")
+    }
 }
 
 // MARK: - Chain length

@@ -36,11 +36,17 @@ struct WeeklyReviewView: View {
     /// tab's cluster stubs. Empty (the default) means every card is folded to
     /// its header line for a calmer, more focused screen.
     @State private var expandedGroups: Set<String> = []
-    /// The goal-settings route shared by measure-health insights and season
-    /// adjustments — hoisted here so it works with or without goal seasons due.
+    /// The goal-settings route shared by measure-health insights, season
+    /// adjustments, and accepted intention promotions — hoisted here so it
+    /// works with or without goal seasons due.
     @State var goalSettingsRoute: GoalSettingsRoute?
     /// The metric whose goal season a Retire tap is confirming, if any.
     @State var retiringSeasonMetric: Metric?
+    /// Aspirations whose alignment pulse was answered this visit, kept on
+    /// stage so the note field doesn't vanish the moment a rating lands.
+    @State var pulsedAspirations: Set<String> = []
+    /// Writes intention closures, renewals, promotions, and check-ins.
+    @Environment(\.modelContext) var modelContext
 
     var body: some View {
         let review = WeeklyReview.build(
@@ -102,6 +108,8 @@ extension WeeklyReviewView {
                 )
                 .padding(.horizontal)
                 metricGroupsSection(review)
+                intentionsSection(review)
+                checkInSection(review)
                 oversubscriptionSection(review)
                 goalSeasonSection(review)
                 restingLine(review.quietAspirations)

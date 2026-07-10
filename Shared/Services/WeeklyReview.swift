@@ -142,6 +142,15 @@ extension WeeklyReview {
     /// half-open, so a session at the next week's first midnight stays out.
     /// Internal (not private) so the aspiration lens in its own file windows
     /// with exactly the same rules.
+    ///
+    /// Two week conventions deliberately coexist in one review, and they
+    /// coincide only when the review is read on a week's first day:
+    /// `PeriodBounds` is a TRAILING seven-day window ending on the anchor
+    /// day (today for the live review), while the intention/check-in layer
+    /// works in CALENDAR weeks (`Intention.weekStart`,
+    /// `dateInterval(of: .weekOfYear)`). When editing "this week" logic,
+    /// pick by layer: effort windows are trailing; commitments —
+    /// intentions, pulses, promotions — are calendar weeks.
     struct PeriodBounds {
         let start: Date
         let previousStart: Date
