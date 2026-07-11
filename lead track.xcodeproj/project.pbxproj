@@ -21,6 +21,7 @@
 		D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000030001 /* GoalSeasonTests.swift */; };
 		D1F00100000000000B0002 /* OversubscriptionInsightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */; };
 		D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040001 /* AspirationAlignmentTests.swift */; };
+		D1F0010000000000040012 /* ModelFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040011 /* ModelFixture.swift */; };
 		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
 		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
 		D1F0010000000000070002 /* MomentWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000070001 /* MomentWeekTests.swift */; };
@@ -130,6 +131,7 @@
 		D1F0010000000000030001 /* GoalSeasonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalSeasonTests.swift; sourceTree = "<group>"; };
 		D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OversubscriptionInsightTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000040001 /* AspirationAlignmentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationAlignmentTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000040011 /* ModelFixture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelFixture.swift; sourceTree = "<group>"; };
 		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000070001 /* MomentWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentWeekTests.swift; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 				D1F0010000000000020001 /* HealthMetricTests.swift */,
 				D1F0010000000000030001 /* GoalSeasonTests.swift */,
 				D1F0010000000000040001 /* AspirationAlignmentTests.swift */,
+				D1F0010000000000040011 /* ModelFixture.swift */,
 				D1F0010000000000050001 /* MeasureHealthTests.swift */,
 				D1F0010000000000060001 /* TodayGroupingTests.swift */,
 				D1F0010000000000070001 /* MomentWeekTests.swift */,
@@ -657,6 +660,7 @@
 				D1F0010000000000020002 /* HealthMetricTests.swift in Sources */,
 				D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */,
 				D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */,
+				D1F0010000000000040012 /* ModelFixture.swift in Sources */,
 				D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */,
 				D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */,
 				D1F0010000000000070002 /* MomentWeekTests.swift in Sources */,
