@@ -43,7 +43,7 @@ enum SessionService {
         at timestamp: Date = .now,
         countdownDuration: TimeInterval? = nil
     ) -> Session {
-        if let running = activeSession(for: metric) {
+        if let running = storedRunningSession(for: metric, in: context) {
             return running
         }
         let project = project ?? metric.defaultProject
@@ -61,6 +61,23 @@ enum SessionService {
         )
         scheduleCountdownCompletion(for: metric, session: session)
         return session
+    }
+
+    /// The metric's running session as the store sees it — the re-derivation
+    /// `startSession` needs before inserting. `metric.sessions` can lag a
+    /// sibling context's save (see `toggleSession`), and a phantom running
+    /// entry there would make `startSession` hand it back and never start
+    /// the timer, so this reads through `Session.isRunningPredicate` the way
+    /// `reconcileCountdowns` and `nextCountdownEnd` already do.
+    private static func storedRunningSession(
+        for metric: Metric,
+        in context: ModelContext
+    ) -> Session? {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        let running = (try? context.fetch(descriptor)) ?? []
+        return running.first { $0.metric === metric }
     }
 
     /// Reassigns a completed session to another project under the same metric,
@@ -297,8 +314,12 @@ enum SessionService {
 
     private static func stopLiveActivity() {
         #if canImport(ActivityKit) && !os(macOS)
+        // End exactly the activities that exist now: the task runs later,
+        // with no ordering guarantee, and must not sweep up an activity a
+        // quick follow-up start created in the meantime.
+        let activities = Activity<TimerActivityAttributes>.activities
         Task {
-            for activity in Activity<TimerActivityAttributes>.activities {
+            for activity in activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
         }

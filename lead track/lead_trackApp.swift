@@ -60,11 +60,15 @@ struct lead_trackApp: App {
 
     private func handle(phase: ScenePhase) {
         lockService.handleScenePhase(phase)
+        if phase == .inactive {
+            // Every exit passes through .inactive, so this is when sessions
+            // completed while the app was open get sent to Apple Health — at
+            // .background the process suspends before the writes can land.
+            // No-op until a metric exports.
+            exportSessionsToHealth()
+        }
         if phase == .background {
             PhoneWatchSyncService.shared.pushSnapshot()
-            // Leaving the app is the moment sessions completed while it was
-            // open get sent to Apple Health. No-op until a metric exports.
-            exportSessionsToHealth()
         }
         guard phase == .active else { return }
         CountdownCoordinator.shared.reconcile()

@@ -96,11 +96,16 @@ extension AspirationListView {
 
 extension ModelContext {
     /// The single aspiration delete path, shared by the list's context menu
-    /// and the detail screen: the cascade takes the intentions with no
-    /// per-row hook, so their pending daily-question notifications are
-    /// cancelled explicitly before the delete.
+    /// and the detail screen: the dependents go with no per-row hook, so
+    /// their pending daily-question notifications are cancelled explicitly
+    /// before the delete (see `deleteAspirationAndDependents` for why the
+    /// dependents are deleted explicitly too).
     func deleteAspiration(_ aspiration: Aspiration) {
         NotificationService.cancelQuestions(for: aspiration)
-        delete(aspiration)
+        do {
+            try deleteAspirationAndDependents(aspiration)
+        } catch {
+            StoreLog.error("Aspiration delete failed: \(error)")
+        }
     }
 }
