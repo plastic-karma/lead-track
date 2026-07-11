@@ -1,14 +1,22 @@
 import SwiftUI
 
-/// A labeled day-by-day bar strip for the weekly review: one capsule per day
-/// with its weekday initial underneath. Unlike `SparklineView`, which singles
-/// out today, this strip singles out the period's biggest day — a review asks
-/// "which day won the week", not "where am I now". Empty days keep a stub so
-/// the week stays readable.
+/// A day-by-day bar strip for the weekly review: one capsule per day, the
+/// period's biggest day fully opaque — a review asks "which day won the
+/// week", not "where am I now". Empty days keep a stub so the week stays
+/// readable. The full form labels each bar with its weekday initial; the
+/// compact form (fixed-width bars, no labels) is the header strip's glance
+/// pulse — one implementation, so the two can never drift.
 struct WeekBarsView: View {
     let values: [Double]
-    let labels: [String]
+    /// Weekday initials under the bars; empty (the compact form) hides the row.
+    var labels: [String] = []
     var tint: Color = .accentColor
+    /// A fixed width per bar makes the strip compact; nil lets the bars share
+    /// whatever width the parent proposes.
+    var barWidth: CGFloat?
+    /// The gap between bars — the full-width form breathes at 8, the compact
+    /// glance sits at 3.
+    var spacing: CGFloat = 8
 
     private var peak: Double {
         max(values.max() ?? 0, 1)
@@ -22,14 +30,16 @@ struct WeekBarsView: View {
     var body: some View {
         VStack(spacing: 6) {
             bars
-            labelRow
+            if !labels.isEmpty {
+                labelRow
+            }
         }
         .accessibilityHidden(true)
     }
 
     private var bars: some View {
         GeometryReader { geometry in
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: spacing) {
                 ForEach(values.indices, id: \.self) { index in
                     bar(at: index, fullHeight: geometry.size.height)
                 }
@@ -40,12 +50,12 @@ struct WeekBarsView: View {
     private func bar(at index: Int, fullHeight: CGFloat) -> some View {
         Capsule()
             .fill(tint.opacity(index == peakIndex ? 1 : 0.35))
-            .frame(height: max(fullHeight * values[index] / peak, 3))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .frame(width: barWidth, height: max(fullHeight * values[index] / peak, 3))
+            .frame(maxWidth: barWidth == nil ? .infinity : nil, maxHeight: .infinity, alignment: .bottom)
     }
 
     private var labelRow: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: spacing) {
             ForEach(labels.indices, id: \.self) { index in
                 Text(labels[index])
                     .font(.caption2)

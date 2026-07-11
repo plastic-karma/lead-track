@@ -189,10 +189,6 @@ extension View {
     /// The cluster card's shell: the standard elevated card surface without
     /// `cardSurface()`'s uniform padding — cluster rows manage their own.
     func clusterCardSurface() -> some View {
-        background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Theme.cardBackground)
-                .shadow(color: Theme.cardShadow, radius: 10, y: 2)
-        )
+        background(Theme.cardShape())
     }
 }

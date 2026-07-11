@@ -149,16 +149,16 @@ extension DetailedStatisticsView {
     private var streakGrid: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
-                streakItem(
-                    "Current Streak",
-                    SessionStatistics.currentStreak(
+                StatGridItem(
+                    title: "Current Streak",
+                    streak: SessionStatistics.currentStreak(
                         from: dailyTotals,
                         excludedWeekdays: Set(excludedWeekdays)
                     )
                 )
-                streakItem(
-                    "Longest Streak",
-                    SessionStatistics.longestStreak(
+                StatGridItem(
+                    title: "Longest Streak",
+                    streak: SessionStatistics.longestStreak(
                         from: dailyTotals,
                         excludedWeekdays: Set(excludedWeekdays)
                     )
@@ -215,59 +215,24 @@ extension DetailedStatisticsView {
         _ title: String,
         _ value: TimeInterval
     ) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(
-                ValueFormatter.formatShort(
-                    value, type: measurementType
-                )
-            )
-            .numeralStyle(.stat)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func streakItem(
-        _ title: String,
-        _ days: Int
-    ) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("\(days)d")
-                .numeralStyle(.stat)
-        }
-        .frame(maxWidth: .infinity)
+        StatGridItem(
+            title: title,
+            text: ValueFormatter.formatShort(value, type: measurementType)
+        )
     }
 
     private func countItem(
         _ title: String,
         _ count: Int
     ) -> some View {
-        valueItem(title, "\(count)")
+        StatGridItem(title: title, text: "\(count)")
     }
 
     private func rateItem(
         _ title: String,
         _ rate: Double
     ) -> some View {
-        valueItem(title, rate.formatted(.number.precision(.fractionLength(1))))
-    }
-
-    private func valueItem(
-        _ title: String,
-        _ text: String
-    ) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(text)
-                .numeralStyle(.stat)
-        }
-        .frame(maxWidth: .infinity)
+        // Locale-aware (f-47) through the shared stat tile (dedup).
+        StatGridItem(title: title, text: rate.formatted(.number.precision(.fractionLength(1))))
     }
 }

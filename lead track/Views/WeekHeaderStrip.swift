@@ -138,22 +138,28 @@ extension WeekHeaderStrip {
 // MARK: - Mini bars
 
 extension WeekHeaderStrip {
-    /// Seven quiet capsules, the busiest day standing solid — the pulse the
-    /// overview card used to chart, shrunk to a glance beside the number.
+    private static let miniBarWidth: CGFloat = 6
+    private static let miniBarSpacing: CGFloat = 3
+
+    /// Seven quiet capsules, the busiest day standing solid — `WeekBarsView`
+    /// in its compact form (fixed-width bars, no labels), shrunk to a glance
+    /// beside the number. The shared view highlights the first peak day,
+    /// which is exactly `review.busiestDayOffset`.
     private var miniBars: some View {
-        HStack(alignment: .bottom, spacing: 3) {
-            ForEach(review.sessionSeries.indices, id: \.self) { index in
-                Capsule()
-                    .fill(Color.accentColor.opacity(index == review.busiestDayOffset ? 1 : 0.3))
-                    .frame(width: 6, height: barHeight(at: index))
-            }
-        }
+        WeekBarsView(
+            values: review.sessionSeries,
+            barWidth: Self.miniBarWidth,
+            spacing: Self.miniBarSpacing
+        )
+        .frame(width: miniBarsWidth, height: 26)
         .padding(.bottom, 2)
-        .accessibilityHidden(true)
     }
 
-    private func barHeight(at index: Int) -> CGFloat {
-        let peak = max(review.sessionSeries.max() ?? 0, 1)
-        return max(26 * review.sessionSeries[index] / peak, 2)
+    /// The strip's intrinsic width — bars plus gaps — since `WeekBarsView`
+    /// measures itself with a greedy `GeometryReader`.
+    private var miniBarsWidth: CGFloat {
+        let count = review.sessionSeries.count
+        return CGFloat(count) * Self.miniBarWidth
+            + CGFloat(max(count - 1, 0)) * Self.miniBarSpacing
     }
 }

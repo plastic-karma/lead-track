@@ -157,32 +157,6 @@ struct SessionStatisticsTests {
         #expect(SessionStatistics.windowedSessionCount(days: 30, from: totals) == 3)
     }
 
-    // MARK: - Trailing Daily Series
-
-    @Test
-    func trailingDailySeriesZeroFillsMissingDays() {
-        let totals = [
-            makeTotal(daysAgo: 0, duration: 300),
-            makeTotal(daysAgo: 2, duration: 100)
-        ]
-        let series = SessionStatistics.trailingDailySeries(
-            days: 7, from: totals
-        )
-        #expect(series == [0, 0, 0, 0, 100, 0, 300])
-    }
-
-    @Test
-    func trailingDailySeriesIgnoresDaysOutsideWindow() {
-        let totals = [
-            makeTotal(daysAgo: 7, duration: 500),
-            makeTotal(daysAgo: 1, duration: 200)
-        ]
-        let series = SessionStatistics.trailingDailySeries(
-            days: 7, from: totals
-        )
-        #expect(series == [0, 0, 0, 0, 0, 200, 0])
-    }
-
     // MARK: - Recent Average
 
     @Test

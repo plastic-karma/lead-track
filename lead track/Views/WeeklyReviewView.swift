@@ -29,13 +29,7 @@ struct WeeklyReviewView: View {
     /// Every kept moment, windowed per aspiration into the reviewed week (see
     /// `WeeklyReview.build`). Empty until the feature is used — additive.
     @Query(sort: \Moment.occurredAt) var moments: [Moment]
-    @State private var showingSettings = false
     @State private var weeksBack = 0
-    /// The aspiration group cards the user has expanded from their default
-    /// folded state — per-card, transient, never persisted, like the Today
-    /// tab's cluster stubs. Empty (the default) means every card is folded to
-    /// its header line for a calmer, more focused screen.
-    @State private var expandedGroups: Set<String> = []
     /// The goal-settings route shared by measure-health insights, season
     /// adjustments, and accepted intention promotions — hoisted here so it
     /// works with or without goal seasons due.
@@ -49,6 +43,11 @@ struct WeeklyReviewView: View {
     @Environment(\.modelContext) var modelContext
 
     var body: some View {
+        // Built once per body pass. The pass re-runs whenever any query
+        // result or `weeksBack` changes — which the intention-closure and
+        // check-in sections rely on — while purely cosmetic state (the card
+        // folds, the settings sheet) lives in leaf views below, so it can no
+        // longer trigger this aggregation.
         let review = WeeklyReview.build(
             metrics: metrics, aspirations: aspirations, intentions: intentions,
             checkIns: checkIns, moments: moments, weeksBack: weeksBack
@@ -57,9 +56,6 @@ struct WeeklyReviewView: View {
             .background(Theme.washedScreen)
             .navigationTitle("Week")
             .toolbar { toolbarItems(review) }
-            .sheet(isPresented: $showingSettings) {
-                WeeklyReviewSettingsView()
-            }
             .sheet(item: $goalSettingsRoute) { route in
                 GoalSettingsView(metric: route.metric, prefillWeeklyGoal: route.prefillWeekly)
             }
@@ -85,12 +81,7 @@ struct WeeklyReviewView: View {
             }
         }
         ToolbarItem(placement: .topBarLeading) {
-            Button {
-                showingSettings = true
-            } label: {
-                Image(systemName: "bell")
-            }
-            .accessibilityLabel("Weekly Review Notification")
+            SettingsBellButton()
         }
     }
 }
@@ -130,41 +121,8 @@ extension WeeklyReviewView {
             weeks: review.metricWeeks, quiet: review.quietMetrics
         )
         if !groups.isEmpty {
-            VStack(spacing: 16) {
-                ForEach(groups) { group in
-                    groupCard(group)
-                }
-            }
-            .padding(.horizontal)
+            MetricGroupsSection(groups: groups, metric: metric(for:))
         }
-    }
-
-    private func groupCard(_ group: WeeklyReview.MetricGroup) -> some View {
-        MetricLedgerCard(
-            header: MetricLedgerCard.Header(
-                title: group.title, icon: group.icon, colorName: group.colorName
-            ),
-            weeks: group.weeks,
-            quiet: group.quiet,
-            metric: metric(for:),
-            collapse: collapseBinding(group.id)
-        )
-    }
-
-    /// The transient fold flag for one group card, backed by the set above so
-    /// sibling cards fold independently. Cards start collapsed, so a card reads
-    /// as folded unless the user has expanded it.
-    private func collapseBinding(_ id: String) -> Binding<Bool> {
-        Binding(
-            get: { !expandedGroups.contains(id) },
-            set: { collapsed in
-                if collapsed {
-                    expandedGroups.remove(id)
-                } else {
-                    expandedGroups.insert(id)
-                }
-            }
-        )
     }
 
     /// The labeled seam between the review's zones — a hairline rule with the
@@ -210,5 +168,79 @@ extension WeeklyReviewView {
     /// private) for the same reason as the queries above.
     func metric(for id: String) -> Metric? {
         metrics.first { $0.stableID?.uuidString == id }
+    }
+}
+
+// MARK: - Leaf state
+
+/// The aspiration group cards with their fold state, split into a leaf view
+/// so expanding a card re-renders only this section — not the parent body,
+/// whose `WeeklyReview.build` pass over five query result sets is the tab's
+/// expensive part. The groups still flow down from the parent's queries, so
+/// any model change rebuilds them exactly as before.
+private struct MetricGroupsSection: View {
+    let groups: [WeeklyReview.MetricGroup]
+    /// Maps a ledger row back to its model for the drill-in link.
+    let metric: (String) -> Metric?
+    /// The group cards the user has expanded from their default folded
+    /// state — per-card, transient, never persisted, like the Today tab's
+    /// cluster stubs. Empty (the default) means every card is folded to its
+    /// header line for a calmer, more focused screen.
+    @State private var expandedGroups: Set<String> = []
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ForEach(groups) { group in
+                groupCard(group)
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    private func groupCard(_ group: WeeklyReview.MetricGroup) -> some View {
+        MetricLedgerCard(
+            header: MetricLedgerCard.Header(
+                title: group.title, icon: group.icon, colorName: group.colorName
+            ),
+            weeks: group.weeks,
+            quiet: group.quiet,
+            metric: metric,
+            collapse: collapseBinding(group.id)
+        )
+    }
+
+    /// The transient fold flag for one group card, backed by the set above so
+    /// sibling cards fold independently. Cards start collapsed, so a card reads
+    /// as folded unless the user has expanded it.
+    private func collapseBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { !expandedGroups.contains(id) },
+            set: { collapsed in
+                if collapsed {
+                    expandedGroups.remove(id)
+                } else {
+                    expandedGroups.insert(id)
+                }
+            }
+        )
+    }
+}
+
+/// The notification-settings bell and its sheet in one leaf view, so opening
+/// or dismissing the sheet re-renders only this button — not the parent body
+/// and its review aggregation.
+private struct SettingsBellButton: View {
+    @State private var showingSettings = false
+
+    var body: some View {
+        Button {
+            showingSettings = true
+        } label: {
+            Image(systemName: "bell")
+        }
+        .accessibilityLabel("Weekly Review Notification")
+        .sheet(isPresented: $showingSettings) {
+            WeeklyReviewSettingsView()
+        }
     }
 }

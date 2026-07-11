@@ -21,7 +21,8 @@ struct ProjectDetailView: View {
             filter: #Predicate<Session> {
                 $0.project?.persistentModelID == id
             },
-            sort: \.startedAt
+            sort: \.startedAt,
+            order: .reverse
         )
     }
 
@@ -29,10 +30,10 @@ struct ProjectDetailView: View {
         sessions.first { $0.isRunning }
     }
 
+    /// Completed sessions, newest first — the query already sorts descending,
+    /// so no per-render re-sort.
     private var completedSessions: [Session] {
-        sessions
-            .filter { !$0.isRunning }
-            .sorted { $0.startedAt > $1.startedAt }
+        sessions.filter { !$0.isRunning }
     }
 
     private var visibleSessions: [Session] {

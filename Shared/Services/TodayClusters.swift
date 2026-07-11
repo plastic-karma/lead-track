@@ -154,17 +154,30 @@ extension TodayGrouping {
 
     /// Render order: needsYou → resting → done → selfFilling. Within
     /// needsYou the cluster closest to completion leads; every other tie
-    /// keeps aspiration creation order (the sort is stable).
+    /// keeps aspiration creation order (the sort is stable). Urgency
+    /// re-derives per-metric state and completion from the full session
+    /// history, so it is computed once per cluster up front — never inside
+    /// the comparator, which runs O(k log k) times. Non-needsYou clusters
+    /// never compare by urgency; a constant 0 keeps them tied.
     private static func ordered(
         _ clusters: [Cluster],
         calendar: Calendar
     ) -> [Cluster] {
-        clusters.sorted { lhs, rhs in
-            guard lhs.state == rhs.state else { return lhs.state < rhs.state }
-            guard lhs.state == .needsYou else { return false }
-            return urgency(of: lhs.metrics, calendar: calendar)
-                > urgency(of: rhs.metrics, calendar: calendar)
-        }
+        clusters
+            .map { cluster in
+                (
+                    cluster: cluster,
+                    urgency: cluster.state == .needsYou
+                        ? urgency(of: cluster.metrics, calendar: calendar) : 0
+                )
+            }
+            .sorted { lhs, rhs in
+                guard lhs.cluster.state == rhs.cluster.state else {
+                    return lhs.cluster.state < rhs.cluster.state
+                }
+                return lhs.urgency > rhs.urgency
+            }
+            .map(\.cluster)
     }
 }
 

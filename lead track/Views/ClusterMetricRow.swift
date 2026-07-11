@@ -17,8 +17,11 @@ struct ClusterMetricRow: View {
     @State private var quickLogTrigger = false
 
     var body: some View {
-        NavigationLink(value: metric) {
-            row
+        // One pass over the session history per render; every consumer below
+        // (value line, progress track, done row, binary action) shares it.
+        let total = todayTotal
+        return NavigationLink(value: metric) {
+            row(total)
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -52,11 +55,22 @@ struct ClusterMetricRow: View {
     /// A met goal quiets the row in place — unless its timer is running,
     /// which keeps the live row so the effort stays stoppable.
     @ViewBuilder
-    private var row: some View {
+    private func row(_ total: TimeInterval) -> some View {
         if GoalSummary.isDailyComplete(metric), runningSession == nil {
-            doneRow
+            doneRow(total)
         } else {
-            activeRow
+            activeRow(total)
+        }
+    }
+
+    /// The shared record actions — the row supplies only layout.
+    private var recorder: MetricRecorder {
+        MetricRecorder(
+            metric: metric,
+            runningSession: runningSession,
+            modelContext: modelContext
+        ) {
+            quickLogTrigger.toggle()
         }
     }
 }
@@ -64,30 +78,30 @@ struct ClusterMetricRow: View {
 // MARK: - Active Row
 
 extension ClusterMetricRow {
-    private var activeRow: some View {
+    private func activeRow(_ total: TimeInterval) -> some View {
         HStack(alignment: .center, spacing: 12) {
             MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 30)
             VStack(alignment: .leading, spacing: 5) {
-                valueLine
-                if let fraction = goalFraction {
+                valueLine(total)
+                if let fraction = goalFraction(total) {
                     ProgressTrack(fraction: fraction, tint: metric.displayColor)
                         .frame(height: 4)
                 }
             }
             if !metric.isHealthLinked {
-                actionButton
+                actionButton(total)
             }
         }
         .padding(.vertical, 12)
     }
 
-    private var valueLine: some View {
+    private func valueLine(_ total: TimeInterval) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(metric.name)
                 .font(.headline)
                 .lineLimit(1)
             Spacer(minLength: 6)
-            todayValue
+            todayValue(total)
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .monospacedDigit()
             if let goal = goalText {
@@ -99,16 +113,16 @@ extension ClusterMetricRow {
     }
 
     @ViewBuilder
-    private var todayValue: some View {
+    private func todayValue(_ total: TimeInterval) -> some View {
         if metric.measurementType == .binary {
-            Text(todayTotal > 0 ? "Done" : "Not yet")
+            Text(total > 0 ? "Done" : "Not yet")
         } else if let session = runningSession {
             Text(
                 liveTimer: session.countdownInterval,
-                countingUpFrom: session.liveTimerOrigin(backdatedBy: todayTotal)
+                countingUpFrom: session.liveTimerOrigin(backdatedBy: total)
             )
         } else {
-            Text(ValueFormatter.formatShort(todayTotal, type: metric.measurementType))
+            Text(ValueFormatter.formatShort(total, type: metric.measurementType))
         }
     }
 
@@ -123,10 +137,15 @@ extension ClusterMetricRow {
         return ValueFormatter.format(goal, type: metric.measurementType, unit: metric.unit)
     }
 
-    private var goalFraction: Double? {
-        guard metric.measurementType.tracksQuantity, metric.dailyGoal != nil
+    /// Today's completion (0–1) toward a quantity goal — the row's slim
+    /// track. Derived from the hoisted total (the same arithmetic as
+    /// `TodayGrouping.completionFraction`) so the row never re-scans the
+    /// session history for it.
+    private func goalFraction(_ total: TimeInterval) -> Double? {
+        guard metric.measurementType.tracksQuantity, let goal = metric.dailyGoal
         else { return nil }
-        return TodayGrouping.completionFraction(metric)
+        guard goal > 0 else { return 0 }
+        return min(total / goal, 1)
     }
 
     private var todayTotal: TimeInterval {
@@ -137,7 +156,7 @@ extension ClusterMetricRow {
 // MARK: - Done Row
 
 extension ClusterMetricRow {
-    private var doneRow: some View {
+    private func doneRow(_ total: TimeInterval) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
@@ -147,7 +166,7 @@ extension ClusterMetricRow {
                 .font(.callout.weight(.semibold))
                 .lineLimit(1)
             Spacer(minLength: 6)
-            Text(ValueFormatter.format(todayTotal, type: metric.measurementType, unit: metric.unit))
+            Text(ValueFormatter.format(total, type: metric.measurementType, unit: metric.unit))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -162,14 +181,14 @@ extension ClusterMetricRow {
 
 extension ClusterMetricRow {
     @ViewBuilder
-    private var actionButton: some View {
+    private func actionButton(_ total: TimeInterval) -> some View {
         switch metric.measurementType {
         case .duration:
             timerButton
         case .count:
             countButton
         case .binary:
-            binaryButton
+            binaryButton(total)
         }
     }
 
@@ -180,17 +199,17 @@ extension ClusterMetricRow {
         if runningSession == nil {
             Menu {
                 CountdownOptionsMenu(
-                    onPreset: startCountdown,
+                    onPreset: recorder.startCountdown,
                     onCustom: { showingCountdownPicker = true }
                 )
             } label: {
                 actionCircle("play.fill")
             } primaryAction: {
-                toggleTimer()
+                recorder.toggleTimer()
             }
             .accessibilityLabel("Start Timer")
         } else {
-            Button(action: toggleTimer) {
+            Button(action: recorder.toggleTimer) {
                 actionCircle("stop.fill")
             }
             .buttonStyle(.plain)
@@ -207,7 +226,7 @@ extension ClusterMetricRow {
             actionCircle("plus")
         } primaryAction: {
             if metric.logsOneUnitImmediately {
-                logOne()
+                recorder.logOne()
             } else {
                 showingCountEntry = true
             }
@@ -225,19 +244,19 @@ extension ClusterMetricRow {
             }
         } else {
             Button {
-                logOne()
+                recorder.logOne()
             } label: {
                 Label("Log +1", systemImage: "plus")
             }
         }
     }
 
-    private var binaryButton: some View {
-        Button(action: toggleDone) {
-            actionCircle(todayTotal > 0 ? "checkmark" : "circle")
+    private func binaryButton(_ total: TimeInterval) -> some View {
+        Button(action: recorder.toggleDone) {
+            actionCircle(total > 0 ? "checkmark" : "circle")
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(todayTotal > 0 ? "Mark not done today" : "Mark done today")
+        .accessibilityLabel(total > 0 ? "Mark not done today" : "Mark done today")
     }
 
     /// The quiet action: the metric's glyph-on-wash circle, pulsing gently
@@ -249,43 +268,5 @@ extension ClusterMetricRow {
             .symbolEffect(.pulse, isActive: runningSession != nil)
             .frame(width: 44, height: 44)
             .background(Circle().fill(metric.displayColor.opacity(0.15)))
-    }
-}
-
-// MARK: - Recording
-
-extension ClusterMetricRow {
-    private func toggleTimer() {
-        withAnimation(.snappy) {
-            SessionService.toggleSession(
-                for: metric,
-                runningSession: runningSession,
-                in: modelContext
-            )
-        }
-    }
-
-    private func startCountdown(_ duration: TimeInterval) {
-        withAnimation(.snappy) {
-            SessionService.startSession(
-                for: metric,
-                in: modelContext,
-                countdownDuration: duration
-            )
-        }
-    }
-
-    private func logOne() {
-        withAnimation(.snappy) {
-            SessionService.logCount(1, for: metric, in: modelContext)
-        }
-        quickLogTrigger.toggle()
-    }
-
-    private func toggleDone() {
-        withAnimation(.snappy) {
-            SessionService.toggleBinaryDay(for: metric, in: modelContext)
-        }
-        quickLogTrigger.toggle()
     }
 }

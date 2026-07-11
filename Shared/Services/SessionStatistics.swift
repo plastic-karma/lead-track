@@ -381,23 +381,6 @@ extension SessionStatistics {
         return weeks.sorted { $0.date < $1.date }
     }
 
-    /// Per-day totals for the trailing `days` ending today, zero-filled so
-    /// every day is present, ordered oldest to newest. Feeds sparklines that
-    /// need a fixed-width window regardless of which days were logged.
-    static func trailingDailySeries(
-        days: Int,
-        from totals: [DailyTotal],
-        now: Date = .now,
-        calendar: Calendar = .current
-    ) -> [Double] {
-        let today = calendar.startOfDay(for: now)
-        let byDay = durationsByDay(from: totals, calendar: calendar)
-        return (0 ..< days).reversed().map { offset in
-            let day = calendar.date(byAdding: .day, value: -offset, to: today)
-            return byDay[day ?? today] ?? 0
-        }
-    }
-
     /// Trailing `window`-day moving average, one point per day from `cutoff`
     /// through today, so a smooth line can be overlaid on the daily bars.
     static func movingAverage(
