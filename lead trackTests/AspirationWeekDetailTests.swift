@@ -159,7 +159,7 @@ extension AspirationWeekDetailTests {
             target: 3, calendar: calendar
         )
         #if canImport(SwiftData)
-        context.insert(intention)
+        m.context.insert(intention)
         #endif
         _ = intention
 

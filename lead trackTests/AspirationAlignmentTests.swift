@@ -90,7 +90,7 @@ struct AspirationAlignmentTests {
         let metric = makeAttachedMetric(aspiration)
         let running = Session(metric: metric, startedAt: week(0))
         #if canImport(SwiftData)
-        context.insert(running)
+        m.context.insert(running)
         #else
         metric.sessions.append(running)
         #endif
