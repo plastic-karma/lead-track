@@ -1,6 +1,7 @@
-// UIKit-gated to match Theme.inactive's availability: the macOS overlay
-// compiles Shared/ but has no consumer of this view.
-#if canImport(SwiftUI) && canImport(UIKit)
+// iOS-gated to match Theme.inactive's availability: the ring's only
+// consumers are the app and the home-screen widget, while Shared/ also
+// compiles into the watch targets and the macOS overlay.
+#if canImport(SwiftUI) && os(iOS)
 import SwiftUI
 
 /// The shared progress ring: a neutral track plus a trimmed, round-capped
