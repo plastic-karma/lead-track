@@ -34,7 +34,7 @@ final class AppLockService {
     private let disabledForTest: Bool
 
     init() {
-        let isUITest = ProcessInfo.processInfo.arguments.contains("-uitest")
+        let isUITest = LaunchArguments.isUITest
         disabledForTest = isUITest
         let enabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
         isLocked = !isUITest && enabled

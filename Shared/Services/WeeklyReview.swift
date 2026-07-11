@@ -126,11 +126,10 @@ extension WeeklyReview {
         now: Date,
         calendar: Calendar
     ) -> Set<String> {
-        let week = Intention.weekStart(containing: now, calendar: calendar)
         return Set(
             checkIns
-                .filter { $0.weekStart == week }
-                .compactMap { $0.aspiration.map { stableID(of: $0) } }
+                .filter { Intention.week(starting: $0.weekStart, contains: now, calendar: calendar) }
+                .compactMap { $0.aspiration.map(\.stableIdentity) }
         )
     }
 }
@@ -216,11 +215,11 @@ extension WeeklyReview {
     }
 
     static func stableID(of metric: Metric) -> String {
-        metric.stableID?.uuidString ?? metric.name
+        metric.stableIdentity
     }
 
     static func stableID(of aspiration: Aspiration) -> String {
-        aspiration.stableID?.uuidString ?? aspiration.title
+        aspiration.stableIdentity
     }
 }
 

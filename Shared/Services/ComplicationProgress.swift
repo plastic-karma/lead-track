@@ -26,13 +26,13 @@ struct ComplicationMetricProgress: Equatable, Identifiable {
 }
 
 extension ComplicationMetricProgress {
-    /// Mirrors `GoalSummary`: binary metrics carry an implicit "do it today"
-    /// target until it is retired; the others need an amount goal.
+    /// The shared daily-target rule over the row's raw fields.
     var hasDailyTarget: Bool {
-        if measurementType == .binary {
-            return binaryGoalRetiredAt == nil
-        }
-        return dailyGoal != nil
+        DailyTargetRule.exists(
+            measurementType: measurementType,
+            binaryGoalRetiredAt: binaryGoalRetiredAt,
+            dailyGoal: dailyGoal
+        )
     }
 
     /// Whether the target counts right now — a rest day suspends it.

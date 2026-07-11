@@ -73,8 +73,7 @@ extension WeekHeaderStrip {
     }
 
     private var formattedRange: String {
-        "\(review.start.formatted(.dateTime.month().day()))"
-            + " — \(review.end.formatted(.dateTime.month().day()))"
+        review.formattedRange
     }
 }
 
@@ -114,24 +113,11 @@ extension WeekHeaderStrip {
     }
 
     private var heroText: String {
-        review.totalDuration > 0
-            ? DurationFormatter.format(review.totalDuration)
-            : ValueFormatter.sessions(review.sessionCount)
+        review.heroText
     }
 
-    /// The week's story in one breath: sessions (unless they lead above),
-    /// days active, and the busiest day when one won.
     private var heroCaption: String {
-        var parts: [String] = []
-        if review.totalDuration > 0 {
-            parts.append(ValueFormatter.sessions(review.sessionCount))
-        }
-        parts.append("\(review.activeDays) of \(WeeklyReview.periodDays) days")
-        if let offset = review.busiestDayOffset {
-            let weekday = review.day(at: offset).formatted(.dateTime.weekday(.abbreviated))
-            parts.append("busiest \(weekday)")
-        }
-        return parts.joined(separator: " · ")
+        review.heroCaption(includeBusiestDay: true)
     }
 }
 

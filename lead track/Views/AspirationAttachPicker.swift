@@ -5,8 +5,9 @@ import SwiftUI
 /// each metric can be attached as a whole, or expanded to pick individual
 /// projects. Selecting a metric subsumes its projects — their effort is already
 /// counted — so the project toggles disable while the metric is selected,
-/// mirroring the rollup's de-dup. Shared by the create/edit form and the detail
-/// screen's "Add" sheet.
+/// mirroring the rollup's de-dup. Used by the detail screen's "Add" sheet;
+/// the create/edit form draws the card-style `AspirationFeedPicker`, which
+/// implements the same selection rules.
 struct AspirationAttachPicker: View {
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @Binding var selectedMetrics: Set<Metric>
@@ -47,7 +48,7 @@ extension AspirationAttachPicker {
     }
 
     private func sortedProjects(of metric: Metric) -> [Project] {
-        metric.projects.sorted { $0.startedAt < $1.startedAt }
+        metric.projects.inDisplayOrder
     }
 
     private func metricBinding(_ metric: Metric) -> Binding<Bool> {

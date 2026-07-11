@@ -23,22 +23,19 @@ struct GoalSettingsView: View {
     /// arrives — without touching the metric until Save.
     init(metric: Metric, prefillWeeklyGoal: Double? = nil) {
         self.metric = metric
-        let isCount = metric.measurementType == .count
         let weekly = prefillWeeklyGoal ?? metric.weeklyGoal
         _hasDailyGoal = State(initialValue: metric.dailyGoal != nil)
         _excludedWeekdays = State(initialValue: Set(metric.excludedWeekdays))
         _dailyGoalValue = State(
-            initialValue: isCount
-                ? (metric.dailyGoal ?? 10)
-                : (metric.dailyGoal ?? 1800) / 60
+            initialValue: GoalUnit.daily(metric.measurementType)
+                .display(fromStored: metric.dailyGoal)
         )
         _hasWeeklyGoal = State(
             initialValue: weekly != nil
         )
         _weeklyGoalValue = State(
-            initialValue: isCount
-                ? (weekly ?? 50)
-                : (weekly ?? 18000) / 3600
+            initialValue: GoalUnit.weekly(metric.measurementType)
+                .display(fromStored: weekly)
         )
         let reminder = metric.reminderSchedule
         _hasReminder = State(initialValue: reminder != nil)
@@ -285,80 +282,33 @@ extension GoalSettingsView {
 
     /// An enabled amount goal must be a positive number before Save unlocks:
     /// the field's `.number` format accepts zero and negatives, and a
-    /// non-positive `dailyGoal`/`weeklyGoal` would read as permanently met
-    /// (`GoalSummary` treats any non-nil goal as an active target).
-    private var goalsAreValid: Bool {
-        guard metric.measurementType.tracksQuantity else { return true }
-        return (!hasDailyGoal || dailyGoalValue > 0)
-            && (!hasWeeklyGoal || weeklyGoalValue > 0)
+    /// The form's state as the shared draft whose `apply(to:)` owns the
+    /// target and season rules (see `GoalSettingsDraft` — the rules are
+    /// overlay-tested there, so this view stays a thin binding layer).
+    private var draft: GoalSettingsDraft {
+        GoalSettingsDraft(
+            hasDailyGoal: hasDailyGoal,
+            dailyGoalValue: dailyGoalValue,
+            hasWeeklyGoal: hasWeeklyGoal,
+            weeklyGoalValue: weeklyGoalValue,
+            excludedWeekdays: excludedWeekdays,
+            expectsDaily: expectsDaily,
+            seasonWeeks: seasonWeeks,
+            seasonNote: seasonNote
+        )
     }
 
-    /// What a save changed about the metric's target, for the season rule.
-    private struct GoalChange {
-        let hasTarget: Bool
-        let changed: Bool
+    private var goalsAreValid: Bool {
+        draft.isValid(for: metric.measurementType)
     }
 
     private func save() {
-        let change = applyTarget()
-        saveSeason(change)
+        draft.apply(to: metric)
         metric.applyReminderSchedule(hasReminder ? reminderSchedule : nil)
         metric.streakAlertTime = hasStreakAlert ? streakAlertTime : nil
         NotificationService.rescheduleMetric(metric)
         saveTrigger.toggle()
         dismiss()
-    }
-
-    private func applyTarget() -> GoalChange {
-        guard metric.measurementType.tracksQuantity else {
-            return applyBinaryExpectation()
-        }
-        let previousDaily = metric.dailyGoal
-        let previousWeekly = metric.weeklyGoal
-        saveAmountGoals()
-        return GoalChange(
-            hasTarget: metric.dailyGoal != nil || metric.weeklyGoal != nil,
-            changed: metric.dailyGoal != previousDaily || metric.weeklyGoal != previousWeekly
-        )
-    }
-
-    /// A binary habit's target is the show-up expectation itself: switching
-    /// it off releases it (the card and history stay), switching it back on
-    /// is a new experiment and stamps a fresh season.
-    private func applyBinaryExpectation() -> GoalChange {
-        metric.dailyGoal = nil
-        metric.weeklyGoal = nil
-        metric.excludedWeekdays = excludedWeekdays.sorted()
-        let wasExpected = metric.binaryGoalRetiredAt == nil
-        if expectsDaily != wasExpected {
-            metric.binaryGoalRetiredAt = expectsDaily ? nil : .now
-        }
-        return GoalChange(hasTarget: expectsDaily, changed: expectsDaily != wasExpected)
-    }
-
-    /// Seasons ride every save: a target present keeps (or starts) its
-    /// season — so unseasoned legacy goals acquire one here, on their first
-    /// edit — and no target ends it. Only a target change re-stamps the
-    /// start; reminder-only edits never reset the clock.
-    private func saveSeason(_ change: GoalChange) {
-        guard change.hasTarget else {
-            GoalSeason.clearSeason(of: metric)
-            return
-        }
-        metric.goalSeasonWeeks = seasonWeeks
-        metric.goalSeasonNote = seasonNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        GoalSeason.stampOnSave(metric, amountsChanged: change.changed)
-    }
-
-    private func saveAmountGoals() {
-        let isCount = metric.measurementType == .count
-        metric.dailyGoal = hasDailyGoal
-            ? (isCount ? dailyGoalValue : dailyGoalValue * 60)
-            : nil
-        metric.excludedWeekdays = hasDailyGoal ? excludedWeekdays.sorted() : []
-        metric.weeklyGoal = hasWeeklyGoal
-            ? (isCount ? weeklyGoalValue : weeklyGoalValue * 3600)
-            : nil
     }
 
     private static func defaultTime(hour: Int) -> Date {

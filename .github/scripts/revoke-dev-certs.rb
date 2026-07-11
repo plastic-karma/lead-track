@@ -63,8 +63,7 @@ def development_certificates(token)
     end
     body = JSON.parse(response.body)
     found.concat(body['data'] || [])
-    nxt = body.dig('links', 'next')
-    path = nxt&.sub("https://#{HOST}", '')
+    path = next_page_path(body)
   end
   found.select do |cert|
     attributes = cert['attributes'] || {}

@@ -28,7 +28,7 @@ def paged(token, path)
     break unless body
 
     items.concat(body['data'] || [])
-    path = body.dig('links', 'next')&.sub("https://#{HOST}", '')
+    path = next_page_path(body)
   end
   items
 end

@@ -28,6 +28,14 @@ struct WeeklyReviewView: View {
     @Query(sort: \AspirationCheckIn.createdAt) var checkIns: [AspirationCheckIn]
     /// Every kept moment, windowed per aspiration into the reviewed week (see
     /// `WeeklyReview.build`). Empty until the feature is used — additive.
+    ///
+    /// These queries are deliberately unwindowed: the header chevrons browse
+    /// arbitrarily far back, so any fetch-level window would need to track
+    /// `weeksBack` (a dynamic-@Query restructure), and at a personal
+    /// tracker's data scale the in-memory windowing in `WeeklyReview.build`
+    /// stays proportional to the store, not the screen. Revisit by pushing
+    /// a `weekStart`/`occurredAt` range into these predicates if lifetime
+    /// histories ever grow past that.
     @Query(sort: \Moment.occurredAt) var moments: [Moment]
     @State private var weeksBack = 0
     /// The goal-settings route shared by measure-health insights, season

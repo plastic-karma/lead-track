@@ -7,7 +7,7 @@ struct lead_trackApp: App {
     @State private var lockService = AppLockService()
 
     let sharedModelContainer: ModelContainer = {
-        let isUITest = ProcessInfo.processInfo.arguments.contains("-uitest")
+        let isUITest = LaunchArguments.isUITest
         do {
             return try SharedModelContainer.create(inMemoryOnly: isUITest)
         } catch {

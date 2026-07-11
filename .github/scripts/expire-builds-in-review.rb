@@ -83,7 +83,7 @@ def builds_in_review(token, app, version)
       sid = build.dig('relationships', 'betaAppReviewSubmission', 'data', 'id')
       blocking << build if sid && BLOCKING_STATES.include?(states[sid])
     end
-    path = body.dig('links', 'next')&.sub("https://#{HOST}", '')
+    path = next_page_path(body)
   end
   blocking
 end

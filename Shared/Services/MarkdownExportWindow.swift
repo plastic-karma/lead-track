@@ -106,7 +106,7 @@ struct MarkdownExportWeekBuilder {
 
     private func week(startingAt weekStart: Date) -> MarkdownExportWeek {
         let interval = calendar.dateInterval(of: .weekOfYear, for: weekStart)
-            ?? DateInterval(start: weekStart, duration: 7 * 24 * 3600)
+            ?? DateInterval.approximateWeek(startingAt: weekStart)
         let weekSessions = sessions.filter { interval.holds($0.startedAt) }
         let weekMoments = moments.filter { interval.holds($0.occurredAt) }
         return MarkdownExportWeek(

@@ -12,7 +12,7 @@ enum TodayGrouping {
         let metrics: [Metric]
 
         var id: String {
-            aspiration.stableID?.uuidString ?? aspiration.title
+            aspiration.stableIdentity
         }
     }
 

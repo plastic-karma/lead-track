@@ -247,8 +247,8 @@ extension AspirationDetailView {
     /// The attached row's trailing summary: the names in display order, or
     /// the quiet invitation when nothing is attached yet.
     private var attachedSummary: String {
-        let names = aspiration.metrics.sorted { $0.createdAt < $1.createdAt }.map(\.name)
-            + aspiration.projects.sorted { $0.startedAt < $1.startedAt }.map(\.name)
+        let names = aspiration.metrics.inDisplayOrder.map(\.name)
+            + aspiration.projects.inDisplayOrder.map(\.name)
         return names.isEmpty ? "None yet" : names.joined(separator: ", ")
     }
 

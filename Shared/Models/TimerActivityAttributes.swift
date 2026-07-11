@@ -10,6 +10,10 @@ struct TimerActivityAttributes: ActivityAttributes {
     }
 
     var metricName: String
+    /// The metric's stable ID (uuidString) — the identity StopTimerIntent
+    /// matches on; `metricName` is display-only. Optional so activities
+    /// started by builds that predate the field still rehydrate.
+    var metricID: String?
     var projectName: String?
     var icon: String
     var colorName: String?
@@ -19,8 +23,7 @@ struct TimerActivityAttributes: ActivityAttributes {
     /// The range a countdown started at `startedAt` animates across, or nil
     /// for a count-up timer.
     func countdownInterval(startedAt: Date) -> ClosedRange<Date>? {
-        guard let target = countdownDuration, target > 0 else { return nil }
-        return startedAt ... startedAt.addingTimeInterval(target)
+        CountdownDisplay.interval(startedAt: startedAt, duration: countdownDuration)
     }
 }
 #endif

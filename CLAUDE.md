@@ -97,3 +97,16 @@ Complexity thresholds are intentionally strict (see `.swiftlint.yml`): max 5 cyc
 - Swift version: 5.0 with modern concurrency features enabled
 - Bundle ID: `plastickarma.lead-track`
 - Automatic code signing, team ID 9492A97LWY
+
+## Localization policy
+
+The app is deliberately English-only for now: there is no String Catalog and
+no `.lproj`/`String(localized:)` plumbing, so per-view i18n findings are
+expected and not bugs. Locale-SENSITIVE code is a different matter — device
+region breaks English-only apps too — so treat these as defects everywhere:
+parsing user numeric input with `Double(text)` instead of a locale-aware
+parser (`LocaleDoubleParser`), formatting displayed numbers with
+`String(format:)` instead of `.formatted(...)`, hand-built plurals, and
+locale-dependent wire formats (CSV timestamps are ISO-8601 for this reason).
+If localization is ever adopted, start a String Catalog before the string
+count grows further.

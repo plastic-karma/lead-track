@@ -122,7 +122,7 @@ private extension WeeklyReview {
             .map { intention in
                 let progress = IntentionProgress.compute(for: intention, calendar: context.calendar)
                 return IntentionLine(
-                    id: intention.stableID?.uuidString ?? intention.title,
+                    id: intention.stableIdentity,
                     title: intention.title,
                     progressText: progress?.text,
                     progressFraction: progress?.fraction
@@ -157,7 +157,7 @@ private extension WeeklyReview {
             .sorted { $0.occurredAt < $1.occurredAt }
             .map { moment in
                 MomentLine(
-                    id: moment.stableID?.uuidString ?? moment.text,
+                    id: moment.stableIdentity,
                     text: moment.text,
                     occurredAt: moment.occurredAt,
                     placeName: moment.placeName,

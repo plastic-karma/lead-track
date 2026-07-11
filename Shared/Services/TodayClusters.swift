@@ -39,8 +39,8 @@ extension TodayGrouping {
         let state: ClusterState
 
         var id: String {
-            guard let aspiration else { return "unaligned" }
-            return aspiration.stableID?.uuidString ?? aspiration.title
+            guard let aspiration else { return AspirationGrouping.unalignedID }
+            return aspiration.stableIdentity
         }
     }
 }

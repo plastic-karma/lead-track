@@ -58,8 +58,8 @@ extension WeeklyReview {
         calendar: Calendar
     ) -> IntentionClosure {
         IntentionClosure(
-            id: intention.stableID?.uuidString ?? intention.title,
-            aspirationID: intention.aspiration.map { $0.stableID?.uuidString ?? $0.title } ?? "",
+            id: intention.stableIdentity,
+            aspirationID: intention.aspiration.map(\.stableIdentity) ?? "",
             title: intention.title,
             kind: intention.kind,
             perDay: intention.perDay,

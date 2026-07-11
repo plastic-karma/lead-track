@@ -292,6 +292,7 @@ enum SessionService {
         #if canImport(ActivityKit) && !os(macOS)
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
+            metricID: metric.stableID?.uuidString,
             projectName: project?.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,

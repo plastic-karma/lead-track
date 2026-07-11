@@ -59,7 +59,11 @@ extension GoalSummary {
     /// private): Today's cluster states and day dial share this exact
     /// definition of "has a daily target".
     static func hasDailyTarget(_ metric: Metric) -> Bool {
-        metric.expectsDailyShowUp || metric.dailyGoal != nil
+        DailyTargetRule.exists(
+            measurementType: metric.measurementType,
+            binaryGoalRetiredAt: metric.binaryGoalRetiredAt,
+            dailyGoal: metric.dailyGoal
+        )
     }
 
     private static func isDailyMet(

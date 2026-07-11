@@ -37,8 +37,7 @@ struct CountdownStartView: View {
         NavigationStack {
             Form {
                 Section("Countdown length") {
-                    Stepper("\(hours) h", value: $hours, in: 0 ... 23)
-                    Stepper("\(minutes) min", value: $minutes, in: 0 ... 59)
+                    HourMinuteDurationPicker(hours: $hours, minutes: $minutes)
                 }
             }
             .navigationTitle("Countdown")
@@ -56,7 +55,7 @@ struct CountdownStartView: View {
     }
 
     private var duration: TimeInterval {
-        TimeInterval(hours * 3600 + minutes * 60)
+        HourMinuteDurationPicker.duration(hours: hours, minutes: minutes)
     }
 
     private func start() {

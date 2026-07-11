@@ -101,7 +101,7 @@ extension WeeklyReviewView {
         HStack(spacing: 8) {
             seasonButton("Renew") { renewSeason(row) }
             seasonButton("Adjust") { adjustSeason(row) }
-            seasonButton("Retire") { retiringSeasonMetric = seasonMetric(for: row) }
+            seasonButton("Retire") { retiringSeasonMetric = metric(for: row.id) }
         }
         .padding(.top, 2)
     }
@@ -126,19 +126,15 @@ extension WeeklyReviewView {
         )
     }
 
-    private func seasonMetric(for row: GoalSeason.Review) -> Metric? {
-        metrics.first { $0.stableID?.uuidString == row.id }
-    }
-
     /// Same experiment, next season.
     private func renewSeason(_ row: GoalSeason.Review) {
-        guard let metric = seasonMetric(for: row) else { return }
+        guard let metric = metric(for: row.id) else { return }
         withAnimation { GoalSeason.renew(metric) }
     }
 
     /// Opens the shared goal-settings sheet; saving there re-stamps the season.
     private func adjustSeason(_ row: GoalSeason.Review) {
-        guard let metric = seasonMetric(for: row) else { return }
+        guard let metric = metric(for: row.id) else { return }
         goalSettingsRoute = GoalSettingsRoute(metric: metric, prefillWeekly: nil)
     }
 

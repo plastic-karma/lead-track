@@ -99,7 +99,7 @@ extension GoalSeason {
             let phase = phase(of: metric, now: now, calendar: calendar)
             guard phase.needsReview else { return nil }
             return Review(
-                id: metric.stableID?.uuidString ?? metric.name,
+                id: metric.stableIdentity,
                 name: metric.name,
                 icon: metric.displayIcon,
                 colorName: metric.colorName,

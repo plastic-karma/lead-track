@@ -6,37 +6,24 @@ import SwiftData
 #endif
 
 struct AspirationRollupTests {
-    private let calendar = Calendar.current
-
-    #if canImport(SwiftData)
-    /// Relationship arrays only sync through a context on Apple platforms; the
-    /// Linux overlay compiles the models as plain classes and wires the arrays
-    /// directly. The rollup only ever reads the side these fixtures set.
-    private let context: ModelContext
+    private let m: ModelFixture
 
     init() throws {
-        let container = try SharedModelContainer.create(inMemoryOnly: true)
-        context = ModelContext(container)
+        m = try ModelFixture()
     }
-    #endif
 
-    // MARK: - Fixtures
+    // MARK: - Fixtures (thin wrappers over the shared ModelFixture)
 
-    /// Midnight `daysAgo` days back — sessions placed at a day's first instant
-    /// never land after "now", keeping the window math deterministic.
+    private var calendar: Calendar {
+        m.calendar
+    }
+
     private func day(_ daysAgo: Int) -> Date {
-        calendar.date(
-            byAdding: .day, value: -daysAgo,
-            to: calendar.startOfDay(for: .now)
-        )!
+        m.day(daysAgo)
     }
 
-    private func makeAspiration() -> Aspiration {
-        let aspiration = Aspiration(title: "Grow wiser")
-        #if canImport(SwiftData)
-        context.insert(aspiration)
-        #endif
-        return aspiration
+    private func makeAspiration(_ title: String = "Grow wiser") -> Aspiration {
+        m.makeAspiration(title)
     }
 
     private func makeMetric(
@@ -44,21 +31,11 @@ struct AspirationRollupTests {
         type: MeasurementType = .duration,
         unit: String? = nil
     ) -> Metric {
-        let metric = Metric(name: name, measurementType: type, unit: unit)
-        #if canImport(SwiftData)
-        context.insert(metric)
-        #endif
-        return metric
+        m.makeMetric(name: name, type: type, unit: unit)
     }
 
     private func makeProject(_ name: String, of metric: Metric) -> Project {
-        let project = Project(name: name, metric: metric)
-        #if canImport(SwiftData)
-        context.insert(project)
-        #else
-        metric.projects.append(project)
-        #endif
-        return project
+        m.makeProject(name, of: metric)
     }
 
     private func addDuration(
@@ -67,13 +44,7 @@ struct AspirationRollupTests {
         project: Project? = nil,
         at start: Date
     ) {
-        register(
-            Session(
-                metric: metric, project: project,
-                startedAt: start, endedAt: start.addingTimeInterval(seconds)
-            ),
-            metric: metric, project: project
-        )
+        m.addDuration(seconds, to: metric, project: project, at: start)
     }
 
     private func addCount(
@@ -82,19 +53,11 @@ struct AspirationRollupTests {
         project: Project? = nil,
         at start: Date
     ) {
-        register(
-            Session(metric: metric, project: project, startedAt: start, value: value),
-            metric: metric, project: project
-        )
+        m.addCount(value, to: metric, project: project, at: start)
     }
 
-    private func register(_ session: Session, metric: Metric, project: Project?) {
-        #if canImport(SwiftData)
-        context.insert(session)
-        #else
-        metric.sessions.append(session)
-        project?.sessions.append(session)
-        #endif
+    private func register(_ session: Session, metric: Metric, project: Project? = nil) {
+        m.register(session, metric: metric, project: project)
     }
 }
 

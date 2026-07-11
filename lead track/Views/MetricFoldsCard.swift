@@ -211,11 +211,7 @@ extension MetricFoldsCard {
     }
 
     private func sessionValue(_ session: Session) -> String {
-        if metric.measurementType == .binary { return "Done" }
-        if let count = session.value {
-            return ValueFormatter.format(count, type: .count, unit: metric.unit)
-        }
-        return DurationFormatter.format(session.duration)
+        session.displayValue(unit: metric.unit)
     }
 
     @ViewBuilder

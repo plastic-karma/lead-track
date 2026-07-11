@@ -43,6 +43,8 @@ final class LeadTrackUITests: XCTestCase {
     @MainActor
     private func launchUITestApp() -> XCUIApplication {
         let app = XCUIApplication()
+        // Mirrors LaunchArguments.uiTest — the UI-test bundle cannot import
+        // the app module, so this literal must stay in sync by hand.
         app.launchArguments = ["-uitest"]
         app.launch()
         return app

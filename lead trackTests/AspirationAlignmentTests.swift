@@ -6,37 +6,29 @@ import SwiftData
 #endif
 
 struct AspirationAlignmentTests {
-    private let calendar = Calendar.current
-
-    #if canImport(SwiftData)
-    /// Relationship arrays only sync through a context on Apple platforms;
-    /// the Linux overlay compiles the models as plain classes instead.
-    private let context: ModelContext
+    private let m: ModelFixture
 
     init() throws {
-        let container = try SharedModelContainer.create(inMemoryOnly: true)
-        context = ModelContext(container)
+        m = try ModelFixture()
     }
-    #endif
 
-    // MARK: - Fixtures
+    // MARK: - Fixtures (thin wrappers over the shared ModelFixture)
+
+    private var calendar: Calendar {
+        m.calendar
+    }
 
     private var now: Date {
-        calendar.startOfDay(for: .now)
+        m.anchor
     }
 
     /// The normalized start of the calendar week `weeksAgo` weeks back.
     private func week(_ weeksAgo: Int) -> Date {
-        let current = Intention.weekStart(containing: now, calendar: calendar)
-        return calendar.date(byAdding: .weekOfYear, value: -weeksAgo, to: current)!
+        m.week(weeksAgo)
     }
 
     private func makeAspiration() -> Aspiration {
-        let aspiration = Aspiration(title: "Grow wiser")
-        #if canImport(SwiftData)
-        context.insert(aspiration)
-        #endif
-        return aspiration
+        m.makeAspiration()
     }
 
     @discardableResult
@@ -46,21 +38,15 @@ struct AspirationAlignmentTests {
         rating: AlignmentRating,
         createdAt: Date? = nil
     ) -> AspirationCheckIn {
-        let row = AspirationCheckIn(
-            aspiration: aspiration,
-            rating: rating,
-            weekStart: week(weeksAgo),
-            createdAt: createdAt ?? week(weeksAgo)
-        )
-        #if canImport(SwiftData)
-        context.insert(row)
-        #else
-        aspiration.checkIns.append(row)
-        #endif
-        return row
+        m.checkIn(aspiration, weeksAgo: weeksAgo, rating: rating, createdAt: createdAt)
     }
 
-    /// Attaches a metric and logs `count` sessions in the given week.
+    private func makeAttachedMetric(_ aspiration: Aspiration) -> Metric {
+        let metric = m.makeMetric()
+        aspiration.metrics.append(metric)
+        return metric
+    }
+
     private func addWeeklySessions(
         _ aspiration: Aspiration,
         metric: Metric,
@@ -69,27 +55,9 @@ struct AspirationAlignmentTests {
     ) {
         for index in 0 ..< count {
             let start = week(weeksAgo).addingTimeInterval(Double(index) * 3600)
-            let session = Session(
-                metric: metric, startedAt: start, endedAt: start.addingTimeInterval(600)
-            )
-            #if canImport(SwiftData)
-            context.insert(session)
-            #else
-            metric.sessions.append(session)
-            #endif
+            m.addDuration(600, to: metric, at: start)
         }
     }
-
-    private func makeAttachedMetric(_ aspiration: Aspiration) -> Metric {
-        let metric = Metric(name: "Reading")
-        #if canImport(SwiftData)
-        context.insert(metric)
-        #endif
-        aspiration.metrics.append(metric)
-        return metric
-    }
-
-    // MARK: - Series
 
     @Test
     func seriesIsOldestFirstWithLatestEditWinning() {
@@ -103,8 +71,6 @@ struct AspirationAlignmentTests {
         #expect(series.map(\.rating) == [3, 2])
         #expect(series.map(\.weekStart) == [week(2), week(1)])
     }
-
-    // MARK: - Effort series
 
     @Test
     func effortSeriesBucketsSessionsByCalendarWeek() {
@@ -134,9 +100,6 @@ struct AspirationAlignmentTests {
         #expect(effort == [0, 0])
     }
 
-    // MARK: - Divergence guards
-
-    /// Four ratings falling one full step across the window.
     private func fallingRatings(_ aspiration: Aspiration) {
         checkIn(aspiration, weeksAgo: 5, rating: .serving)
         checkIn(aspiration, weeksAgo: 4, rating: .serving)
@@ -269,23 +232,13 @@ struct AspirationAlignmentTests {
 
 extension AspirationAlignmentTests {
     private func attachMetric(to aspiration: Aspiration) -> Metric {
-        let metric = Metric(name: "Walking", measurementType: .duration)
-        #if canImport(SwiftData)
-        context.insert(metric)
-        #endif
+        let metric = m.makeMetric(name: "Walking")
         aspiration.metrics.append(metric)
         return metric
     }
 
     private func addSession(_ metric: Metric, at start: Date) {
-        let session = Session(
-            metric: metric, startedAt: start, endedAt: start.addingTimeInterval(600)
-        )
-        #if canImport(SwiftData)
-        context.insert(session)
-        #else
-        metric.sessions.append(session)
-        #endif
+        m.addDuration(600, to: metric, at: start)
     }
 
     @Test

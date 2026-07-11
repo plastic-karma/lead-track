@@ -210,7 +210,7 @@ extension AspirationFeedPicker {
     }
 
     private func sortedProjects(of metric: Metric) -> [Project] {
-        metric.projects.sorted { $0.startedAt < $1.startedAt }
+        metric.projects.inDisplayOrder
     }
 
     private func primaryTap(_ metric: Metric) {

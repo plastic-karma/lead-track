@@ -112,8 +112,8 @@ extension WatchMetricSnapshot {
     /// The range a running countdown animates across, or nil when the metric
     /// isn't running or counts up.
     var countdownInterval: ClosedRange<Date>? {
-        guard let since = runningSince, let target = countdownDuration, target > 0 else { return nil }
-        return since ... since.addingTimeInterval(target)
+        guard let since = runningSince else { return nil }
+        return CountdownDisplay.interval(startedAt: since, duration: countdownDuration)
     }
 
     /// Whether the phone fills this metric from Apple Health. The watch
@@ -129,13 +129,13 @@ extension WatchMetricSnapshot {
         countLogStyleRaw.flatMap(CountLogStyle.init(rawValue:)) ?? .askAmount
     }
 
-    /// Mirrors `GoalSummary`: binary metrics carry an implicit "do it today"
-    /// target until it is retired; the others need an amount goal.
+    /// The shared daily-target rule over the snapshot's raw fields.
     var hasDailyTarget: Bool {
-        if measurementType == .binary {
-            return binaryGoalRetiredAt == nil
-        }
-        return dailyGoal != nil
+        DailyTargetRule.exists(
+            measurementType: measurementType,
+            binaryGoalRetiredAt: binaryGoalRetiredAt,
+            dailyGoal: dailyGoal
+        )
     }
 
     /// Whether the daily goal applies on the given date's weekday.
