@@ -8,6 +8,11 @@ import WidgetKit
 /// queued delivery when the phone is unreachable.
 @Observable
 final class WatchSyncController: NSObject {
+    /// One instance shared by the SwiftUI scene and the app delegate, so the
+    /// session the delegate activates on a background launch is the same one
+    /// the UI observes.
+    static let shared = WatchSyncController()
+
     private(set) var snapshot: WatchSnapshot
 
     override init() {
@@ -97,6 +102,19 @@ extension WatchSyncController: WCSessionDelegate {
     ) {
         Task { @MainActor in
             receive(context: applicationContext)
+        }
+    }
+
+    /// A complication push (`transferCurrentComplicationUserInfo`) arrives here,
+    /// waking the app in the background. Applying the snapshot saves the cache
+    /// and reloads the widget timelines, so the complications refresh even
+    /// though the app was never opened.
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveUserInfo userInfo: [String: Any] = [:]
+    ) {
+        Task { @MainActor in
+            receive(context: userInfo)
         }
     }
 }

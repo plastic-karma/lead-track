@@ -12,6 +12,9 @@ final class PhoneWatchSyncService: NSObject {
     private var container: ModelContainer?
     private var saveObserver: (any NSObjectProtocol)?
     private var lastPushed: WatchSnapshot?
+    /// When the phone last spent a complication transfer to wake the watch,
+    /// so bursts of saves coalesce into one wake (see `WatchComplicationPush`).
+    private var lastComplicationWakeAt: Date?
 
     func activate(container: ModelContainer) {
         guard WCSession.isSupported() else { return }
@@ -66,14 +69,32 @@ final class PhoneWatchSyncService: NSObject {
               session.isWatchAppInstalled,
               snapshot != lastPushed
         else { return }
+        let context = encoded ?? WatchSyncCodec.context(for: snapshot)
         do {
-            try session.updateApplicationContext(
-                encoded ?? WatchSyncCodec.context(for: snapshot)
-            )
+            try session.updateApplicationContext(context)
             lastPushed = snapshot
+            wakeComplication(session: session, encoded: context)
         } catch {
             // Leave lastPushed stale so the next change retries the transfer.
         }
+    }
+
+    /// Wakes the watch in the background so its complications reload without the
+    /// app being opened — the one delivery that reaches a suspended watch.
+    /// Budget- and rate-gated by `WatchComplicationPush`; degrades silently to
+    /// the application-context push above when a complication isn't on the
+    /// active face or the day's transfer budget is spent.
+    private func wakeComplication(session: WCSession, encoded: [String: Any]) {
+        let secondsSinceLastWake = lastComplicationWakeAt.map { Date.now.timeIntervalSince($0) } ?? .infinity
+        let wake = WatchComplicationPush.shouldWake(
+            complicationEnabled: session.isComplicationEnabled,
+            remainingTransfers: session.remainingComplicationUserInfoTransfers,
+            secondsSinceLastWake: secondsSinceLastWake,
+            minInterval: WatchComplicationPush.minWakeInterval
+        )
+        guard wake else { return }
+        session.transferCurrentComplicationUserInfo(encoded)
+        lastComplicationWakeAt = .now
     }
 
     private func observeSaves() {
@@ -112,6 +133,10 @@ extension PhoneWatchSyncService: WCSessionDelegate {
 
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         Task { @MainActor in
+            // A complication just added to the face (or a freshly installed
+            // watch app) needs the current state pushed and its timelines
+            // woken, even when the snapshot itself hasn't changed.
+            lastPushed = nil
             pushSnapshot()
         }
     }
