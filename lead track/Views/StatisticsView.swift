@@ -18,10 +18,12 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        if !dailyTotals.isEmpty {
+        // One aggregation pass per render, shared by every stat below.
+        let totals = dailyTotals
+        if !totals.isEmpty {
             Section("Statistics") {
-                statsContent
-                paceBanner
+                statsContent(totals)
+                paceBanner(totals)
                 Button {
                     showingDetailedStats = true
                 } label: {
@@ -36,8 +38,8 @@ struct StatisticsView: View {
     }
 
     @ViewBuilder
-    private var paceBanner: some View {
-        if let pace = weekPace {
+    private func paceBanner(_ totals: [DailyTotal]) -> some View {
+        if let pace = weekPace(totals) {
             GoalPaceView(
                 pace: pace,
                 measurementType: measurementType,
@@ -47,28 +49,28 @@ struct StatisticsView: View {
         }
     }
 
-    private var weekPace: GoalPace? {
+    private func weekPace(_ totals: [DailyTotal]) -> GoalPace? {
         GoalPace.forWeek(
-            dailyTotals: dailyTotals,
+            dailyTotals: totals,
             weeklyGoal: weeklyGoal,
             excludedWeekdays: excludedWeekdays
         )
     }
 
-    private var statsContent: some View {
+    private func statsContent(_ totals: [DailyTotal]) -> some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 if let goal = weeklyGoal {
-                    weekItem(goal)
+                    weekItem(goal, totals: totals)
                 }
                 statItem(
                     "Total",
-                    SessionStatistics.overallTotal(from: dailyTotals)
+                    SessionStatistics.overallTotal(from: totals)
                 )
-                streakItem(
-                    "Streak",
-                    SessionStatistics.currentStreak(
-                        from: dailyTotals,
+                StatGridItem(
+                    title: "Streak",
+                    streak: SessionStatistics.currentStreak(
+                        from: totals,
                         excludedWeekdays: Set(excludedWeekdays)
                     )
                 )
@@ -80,11 +82,11 @@ struct StatisticsView: View {
 // MARK: - Items
 
 extension StatisticsView {
-    private func weekItem(_ goal: TimeInterval) -> some View {
+    private func weekItem(_ goal: TimeInterval, totals: [DailyTotal]) -> some View {
         GoalProgressView(
             label: "Week",
             current: SessionStatistics.currentWeekTotal(
-                from: dailyTotals
+                from: totals
             ),
             goal: goal,
             measurementType: measurementType,
@@ -97,29 +99,37 @@ extension StatisticsView {
         _ title: String,
         _ value: TimeInterval
     ) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(
-                ValueFormatter.formatShort(
-                    value, type: measurementType
-                )
-            )
-            .numeralStyle(.stat)
-        }
-        .frame(maxWidth: .infinity)
+        StatGridItem(
+            title: title,
+            text: ValueFormatter.formatShort(value, type: measurementType)
+        )
+    }
+}
+
+// MARK: - Grid Cell
+
+/// One cell of the statistics grids — a caption title over the stat numeral —
+/// shared by this summary card and the detailed-statistics sheet so the two
+/// surfaces can never drift apart.
+struct StatGridItem: View {
+    let title: String
+    let text: String
+
+    init(title: String, text: String) {
+        self.title = title
+        self.text = text
     }
 
-    private func streakItem(
-        _ title: String,
-        _ days: Int
-    ) -> some View {
+    init(title: String, streak days: Int) {
+        self.init(title: title, text: "\(days)d")
+    }
+
+    var body: some View {
         VStack(spacing: 4) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("\(days)d")
+            Text(text)
                 .numeralStyle(.stat)
         }
         .frame(maxWidth: .infinity)

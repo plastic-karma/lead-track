@@ -31,12 +31,20 @@ struct WatchSyncCodecTests {
         )
     }
 
+    private func roundTripped(_ snapshot: WatchSnapshot) throws -> WatchSnapshot {
+        let context = try #require(WatchSyncCodec.context(for: snapshot))
+        return try #require(WatchSyncCodec.snapshot(from: context))
+    }
+
+    private func roundTripped(_ action: WatchAction) throws -> WatchAction {
+        let message = try #require(WatchSyncCodec.message(for: action))
+        return try #require(WatchSyncCodec.action(from: message))
+    }
+
     @Test
     func snapshotRoundTripsThroughContext() throws {
         let snapshot = WatchSnapshot(metrics: [sampleMetric(todayTotal: 120)])
-        let decoded = try #require(
-            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
-        )
+        let decoded = try roundTripped(snapshot)
         #expect(decoded == snapshot)
     }
 
@@ -48,9 +56,7 @@ struct WatchSyncCodecTests {
                 countdownDuration: 1500
             )
         ])
-        let decoded = try #require(
-            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
-        )
+        let decoded = try roundTripped(snapshot)
         #expect(decoded == snapshot)
         #expect(decoded.metrics.first?.countdownDuration == 1500)
     }
@@ -63,9 +69,7 @@ struct WatchSyncCodecTests {
             value: 3,
             timestamp: Date(timeIntervalSince1970: 1_750_000_000)
         )
-        let decoded = try #require(
-            WatchSyncCodec.action(from: WatchSyncCodec.message(for: action))
-        )
+        let decoded = try roundTripped(action)
         #expect(decoded == action)
     }
 
@@ -76,9 +80,7 @@ struct WatchSyncCodecTests {
             metricID: metricID,
             timestamp: Date(timeIntervalSince1970: 1_750_000_000)
         )
-        let decoded = try #require(
-            WatchSyncCodec.action(from: WatchSyncCodec.message(for: action))
-        )
+        let decoded = try roundTripped(action)
         #expect(decoded == action)
     }
 
@@ -91,9 +93,7 @@ struct WatchSyncCodecTests {
             ],
             day: day
         )
-        let decoded = try #require(
-            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
-        )
+        let decoded = try roundTripped(snapshot)
         #expect(decoded == snapshot)
         #expect(decoded.day == day)
         #expect(decoded.metrics.first?.dailyGoal == 1800)
@@ -105,11 +105,76 @@ struct WatchSyncCodecTests {
         let snapshot = WatchSnapshot(metrics: [
             sampleMetric(countLogStyleRaw: CountLogStyle.incrementByOne.rawValue)
         ])
-        let decoded = try #require(
-            WatchSyncCodec.snapshot(from: WatchSyncCodec.context(for: snapshot))
-        )
+        let decoded = try roundTripped(snapshot)
         #expect(decoded == snapshot)
         #expect(decoded.metrics.first?.countLogStyle == .incrementByOne)
+    }
+
+    @Test
+    func buildStampSurvivesRoundTrip() throws {
+        let builtAt = Date(timeIntervalSince1970: 1_750_000_000)
+        let snapshot = WatchSnapshot(
+            metrics: [sampleMetric()],
+            day: Calendar.current.startOfDay(for: .now),
+            builtAt: builtAt
+        )
+        let decoded = try roundTripped(snapshot)
+        #expect(decoded.builtAt == builtAt)
+    }
+
+    @Test
+    func unknownMeasurementTypeDegradesToOneReadOnlyMetric() throws {
+        // A newer phone may ship measurement types this build doesn't know.
+        // The snapshot must still decode — only that metric goes read-only.
+        let payload = """
+        {"metrics":[{"id":"11111111-2222-3333-4444-555555555555",
+        "name":"Breathwork","measurementType":"somethingNew","todayTotal":3}]}
+        """
+        let data = try #require(payload.data(using: .utf8))
+        let decoded = try JSONDecoder().decode(WatchSnapshot.self, from: data)
+        let metric = try #require(decoded.metrics.first)
+        #expect(metric.measurementType == nil)
+        #expect(metric.measurementTypeRaw == "somethingNew")
+        #expect(metric.displayIcon == "circle.dashed")
+        #expect(metric.todayTotal == 3)
+        #expect(!metric.hasDailyTarget)
+    }
+
+    @Test
+    func measurementTypeStillEncodesUnderItsOriginalKey() throws {
+        let context = try #require(
+            WatchSyncCodec.context(for: WatchSnapshot(metrics: [sampleMetric()]))
+        )
+        let data = try #require(context["snapshot"] as? Data)
+        let json = try #require(
+            try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        let metrics = try #require(json["metrics"] as? [[String: Any]])
+        #expect(metrics.first?["measurementType"] as? String == "duration")
+    }
+
+    @Test
+    func actionIDRoundTripsAndDistinguishesRetries() throws {
+        let action = WatchAction(kind: .logValue, metricID: metricID, value: 1)
+        let retry = WatchAction(kind: .logValue, metricID: metricID, value: 1)
+        let decoded = try roundTripped(action)
+        #expect(decoded.id == action.id)
+        #expect(action.id != retry.id)
+    }
+
+    @Test
+    func legacyActionWithoutIDStillDecodes() throws {
+        let payload = """
+        {"kind":"toggleDay","metricID":"11111111-2222-3333-4444-555555555555",
+        "timestamp":1750000000}
+        """
+        let data = try #require(payload.data(using: .utf8))
+        let decoded = try JSONDecoder().decode(
+            WatchAction.self,
+            from: data
+        )
+        #expect(decoded.id == nil)
+        #expect(decoded.kind == .toggleDay)
     }
 
     @Test
@@ -304,5 +369,90 @@ struct WatchSnapshotReducerTests {
 
         #expect(result.day == nil)
         #expect(result.metrics.first?.todayTotal == 11)
+    }
+
+    @Test
+    func stopWhileIdleLeavesTotalsUntouched() throws {
+        // A stale queued stop (the timer already ended elsewhere) must not
+        // change today's total, only confirm nothing is running.
+        let action = WatchAction(kind: .stopTimer, metricID: metricID)
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(todayTotal: 60)
+        )
+
+        let metric = try #require(result.metrics.first)
+        #expect(metric.todayTotal == 60)
+        #expect(metric.runningSince == nil)
+    }
+
+    @Test
+    func stopBeforeStartClampsElapsedToZero() throws {
+        let start = Date(timeIntervalSince1970: 1_750_000_000)
+        let action = WatchAction(
+            kind: .stopTimer,
+            metricID: metricID,
+            timestamp: start.addingTimeInterval(-300)
+        )
+
+        let result = WatchSnapshotReducer.applying(
+            action, to: snapshot(runningSince: start, todayTotal: 60)
+        )
+
+        let metric = try #require(result.metrics.first)
+        #expect(metric.runningSince == nil)
+        #expect(metric.todayTotal == 60)
+    }
+}
+
+// MARK: - Snapshot acceptance
+
+struct WatchSnapshotAcceptanceTests {
+    private func stamped(_ builtAt: Date?) -> WatchSnapshot {
+        WatchSnapshot(metrics: [], day: nil, builtAt: builtAt)
+    }
+
+    @Test
+    func olderOrIdenticalStampsAreRejected() {
+        let held = Date(timeIntervalSince1970: 1_750_000_000)
+        #expect(!WatchSnapshotReducer.shouldAccept(
+            stamped(held.addingTimeInterval(-60)), over: stamped(held)
+        ))
+        #expect(!WatchSnapshotReducer.shouldAccept(
+            stamped(held), over: stamped(held)
+        ))
+    }
+
+    @Test
+    func newerStampsAreAccepted() {
+        let held = Date(timeIntervalSince1970: 1_750_000_000)
+        #expect(WatchSnapshotReducer.shouldAccept(
+            stamped(held.addingTimeInterval(60)), over: stamped(held)
+        ))
+    }
+
+    @Test
+    func missingStampsAreAlwaysAccepted() {
+        let held = Date(timeIntervalSince1970: 1_750_000_000)
+        #expect(WatchSnapshotReducer.shouldAccept(stamped(nil), over: stamped(held)))
+        #expect(WatchSnapshotReducer.shouldAccept(stamped(held), over: stamped(nil)))
+        #expect(WatchSnapshotReducer.shouldAccept(stamped(nil), over: stamped(nil)))
+    }
+
+    @Test
+    func contentComparisonIgnoresTheBuildStamp() {
+        let day = Calendar.current.startOfDay(for: .now)
+        let earlier = WatchSnapshot(
+            metrics: [], day: day, builtAt: Date(timeIntervalSince1970: 1_750_000_000)
+        )
+        let later = WatchSnapshot(
+            metrics: [], day: day, builtAt: Date(timeIntervalSince1970: 1_750_000_600)
+        )
+        #expect(earlier.hasSameContent(as: later))
+        #expect(earlier != later)
+
+        var otherDay = later
+        otherDay.day = day.addingTimeInterval(-86400)
+        #expect(!earlier.hasSameContent(as: otherDay))
     }
 }

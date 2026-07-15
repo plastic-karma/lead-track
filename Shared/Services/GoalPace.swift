@@ -41,11 +41,13 @@ extension GoalPace {
         actual: TimeInterval,
         goal: TimeInterval,
         excludedWeekdays: Set<Int> = [],
-        asOf: Date = .now
+        asOf: Date = .now,
+        calendar: Calendar = .current
     ) -> GoalPace? {
         guard goal > 0 else { return nil }
-        guard !goalDays(excludedWeekdays: excludedWeekdays, asOf: asOf).isEmpty else { return nil }
-        let fraction = elapsedGoalFraction(excludedWeekdays: excludedWeekdays, asOf: asOf)
+        let days = goalDays(excludedWeekdays: excludedWeekdays, asOf: asOf, calendar: calendar)
+        guard !days.isEmpty else { return nil }
+        let fraction = elapsedGoalFraction(over: days, asOf: asOf, calendar: calendar)
         let expected = goal * fraction
         return GoalPace(
             actual: actual,
@@ -60,13 +62,17 @@ extension GoalPace {
     static func forWeek(
         dailyTotals: [DailyTotal],
         weeklyGoal: TimeInterval?,
-        excludedWeekdays: [Int]
+        excludedWeekdays: [Int],
+        asOf: Date = .now,
+        calendar: Calendar = .current
     ) -> GoalPace? {
         guard let weeklyGoal else { return nil }
         return weekly(
-            actual: SessionStatistics.currentWeekTotal(from: dailyTotals),
+            actual: SessionStatistics.currentWeekTotal(from: dailyTotals, now: asOf, calendar: calendar),
             goal: weeklyGoal,
-            excludedWeekdays: Set(excludedWeekdays)
+            excludedWeekdays: Set(excludedWeekdays),
+            asOf: asOf,
+            calendar: calendar
         )
     }
 }
@@ -102,24 +108,27 @@ private extension GoalPace {
 // MARK: - Goal-Day Elapsed Fraction
 
 private extension GoalPace {
+    /// Fallback only — a real day's length comes from the calendar below.
     static let secondsPerDay: Double = 86400
 
     static func elapsedGoalFraction(
-        excludedWeekdays: Set<Int>,
-        asOf: Date
+        over days: [Date],
+        asOf: Date,
+        calendar: Calendar
     ) -> Double {
-        let days = goalDays(excludedWeekdays: excludedWeekdays, asOf: asOf)
         guard !days.isEmpty else { return 0 }
-        let today = Calendar.current.startOfDay(for: asOf)
-        let elapsed = days.reduce(0.0) { $0 + dayProgress(of: $1, today: today, asOf: asOf) }
+        let today = calendar.startOfDay(for: asOf)
+        let elapsed = days.reduce(0.0) {
+            $0 + dayProgress(of: $1, today: today, asOf: asOf, calendar: calendar)
+        }
         return min(elapsed / Double(days.count), 1.0)
     }
 
     static func goalDays(
         excludedWeekdays: Set<Int>,
-        asOf: Date
+        asOf: Date,
+        calendar: Calendar
     ) -> [Date] {
-        let calendar = Calendar.current
         guard let week = calendar.dateInterval(of: .weekOfYear, for: asOf) else { return [] }
         return (0 ..< 7)
             .compactMap { calendar.date(byAdding: .day, value: $0, to: week.start) }
@@ -127,13 +136,19 @@ private extension GoalPace {
             .filter { !excludedWeekdays.contains(calendar.component(.weekday, from: $0)) }
     }
 
+    /// Past goal days count in full, future ones not at all, and today by the
+    /// share elapsed — of the day's real length, so a 23/25-hour DST day
+    /// still reaches exactly 1 at midnight.
     static func dayProgress(
         of day: Date,
         today: Date,
-        asOf: Date
+        asOf: Date,
+        calendar: Calendar
     ) -> Double {
         if day < today { return 1.0 }
         if day > today { return 0.0 }
-        return min(max(asOf.timeIntervalSince(today) / secondsPerDay, 0.0), 1.0)
+        let length = calendar.date(byAdding: .day, value: 1, to: today)?
+            .timeIntervalSince(today) ?? secondsPerDay
+        return min(max(asOf.timeIntervalSince(today) / length, 0.0), 1.0)
     }
 }

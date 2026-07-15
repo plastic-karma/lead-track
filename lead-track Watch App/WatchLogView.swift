@@ -9,6 +9,10 @@ struct WatchLogView: View {
     let metric: WatchMetricSnapshot
     @State private var amount = 1.0
 
+    /// One set of bounds for the crown, the +/- buttons, and the
+    /// accessibility adjustable action, so they can't diverge.
+    private static let amountRange: ClosedRange<Double> = 1 ... 999
+
     var body: some View {
         VStack(spacing: 12) {
             amountPicker
@@ -39,12 +43,34 @@ struct WatchLogView: View {
         .focusable()
         .digitalCrownRotation(
             $amount,
-            from: 1,
-            through: 999,
+            from: Self.amountRange.lowerBound,
+            through: Self.amountRange.upperBound,
             by: 1,
             sensitivity: .medium,
             isContinuous: false,
             isHapticFeedbackEnabled: true
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(metric.name)
+        .accessibilityValue(accessibilityAmount)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: adjust(by: 1)
+            case .decrement: adjust(by: -1)
+            @unknown default: break
+            }
+        }
+    }
+
+    private var accessibilityAmount: String {
+        guard let unit = metric.unit, !unit.isEmpty else { return "\(Int(amount))" }
+        return "\(Int(amount)) \(unit)"
+    }
+
+    private func adjust(by change: Double) {
+        amount = min(
+            max(amount + change, Self.amountRange.lowerBound),
+            Self.amountRange.upperBound
         )
     }
 
@@ -53,13 +79,14 @@ struct WatchLogView: View {
         change: Double
     ) -> some View {
         Button {
-            amount = min(max(amount + change, 1), 999)
+            adjust(by: change)
         } label: {
             Image(systemName: icon)
                 .font(.headline)
         }
         .buttonStyle(.bordered)
         .clipShape(Circle())
+        .accessibilityLabel(change > 0 ? "Increase amount" : "Decrease amount")
     }
 
     private var logButton: some View {

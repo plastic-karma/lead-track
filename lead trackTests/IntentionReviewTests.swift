@@ -206,13 +206,17 @@ extension IntentionReviewTests {
     }
 
     @Test
-    func deletingTheAspirationCascadesToItsIntentions() throws {
+    func deletingTheAspirationRemovesItsIntentions() throws {
+        // Through the explicit delete path: the declared cascade walks the
+        // inverse back-array, which this store never reliably populates —
+        // the first real-SwiftData run of this suite proved it deletes
+        // nothing on its own.
         let aspiration = makeAspiration()
         let intention = try makeCounted(aspiration: aspiration, createdAt: .now)
         _ = intention
         try context.save()
 
-        context.delete(aspiration)
+        try context.deleteAspirationAndDependents(aspiration)
         try context.save()
 
         let remaining = try context.fetch(FetchDescriptor<Intention>())

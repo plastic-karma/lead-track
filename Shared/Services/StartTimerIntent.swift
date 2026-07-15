@@ -1,4 +1,4 @@
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !os(macOS)
 import ActivityKit
 import AppIntents
 import Foundation
@@ -22,7 +22,10 @@ struct StartTimerIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        let container = try SharedModelContainer.create()
+        // The cached per-process container: rebuilding the stack (and
+        // re-running the stable-ID backfill) on every widget tap is wasted
+        // work in the extension's tight budget.
+        guard let container = SharedModelContainer.shared else { return .result() }
         let context = ModelContext(container)
         if let metric = try targetMetric(in: context) {
             SessionService.startSession(for: metric, in: context)

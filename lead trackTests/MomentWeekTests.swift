@@ -12,6 +12,10 @@ import SwiftData
 /// too, because a moment row is pure narrative display.
 struct MomentWeekTests {
     private let calendar = Calendar.current
+    /// One anchor per suite, captured at init: helpers that recomputed
+    /// startOfDay(.now) per call could split a test's fixtures and
+    /// assertions across a midnight crossing.
+    private let anchor = Calendar.current.startOfDay(for: .now)
 
     #if canImport(SwiftData)
     private let context: ModelContext
@@ -27,7 +31,7 @@ struct MomentWeekTests {
     private func day(_ daysAgo: Int) -> Date {
         calendar.date(
             byAdding: .day, value: -daysAgo,
-            to: calendar.startOfDay(for: .now)
+            to: anchor
         )!
     }
 

@@ -68,8 +68,19 @@ extension Session {
     /// The range a running countdown animates across — start to the instant it
     /// reaches zero — or nil for a count-up session.
     var countdownInterval: ClosedRange<Date>? {
-        guard let target = countdownDuration, target > 0 else { return nil }
-        return startedAt ... startedAt.addingTimeInterval(target)
+        CountdownDisplay.interval(startedAt: startedAt, duration: countdownDuration)
+    }
+
+    /// The one value-rendering rule for a completed session row, shared by
+    /// the metric detail's History fold and the full session list one tap
+    /// behind it: a binary metric's day reads "Done", a counted value
+    /// formats with its unit, a timed session formats its duration.
+    func displayValue(unit: String?) -> String {
+        if metric?.measurementType == .binary { return "Done" }
+        if let value {
+            return ValueFormatter.format(value, type: .count, unit: unit)
+        }
+        return DurationFormatter.format(duration)
     }
 }
 

@@ -148,11 +148,26 @@ extension Intention {
     /// "this week" means.
     func weekInterval(calendar: Calendar = .current) -> DateInterval {
         calendar.dateInterval(of: .weekOfYear, for: weekStart)
-            ?? DateInterval(start: weekStart, duration: 7 * 24 * 3600)
+            ?? DateInterval.approximateWeek(startingAt: weekStart)
     }
 
     func isInCurrentWeek(now: Date = .now, calendar: Calendar = .current) -> Bool {
-        weekStart == Self.weekStart(containing: now, calendar: calendar)
+        Self.week(starting: weekStart, contains: now, calendar: calendar)
+    }
+
+    /// Whether `date` falls inside the calendar week whose persisted start
+    /// is `weekStart`. Containment, not Date equality: the stored start was
+    /// normalized by the calendar/zone in effect at creation, and a
+    /// time-zone or firstWeekday change would otherwise silently drop every
+    /// open intention (and the week's check-in) out of "this week".
+    static func week(
+        starting weekStart: Date,
+        contains date: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        let interval = calendar.dateInterval(of: .weekOfYear, for: weekStart)
+            ?? DateInterval.approximateWeek(startingAt: weekStart)
+        return date >= interval.start && date < interval.end
     }
 
     /// The normalized start of the calendar week containing `date`.

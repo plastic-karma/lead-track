@@ -15,6 +15,22 @@ enum WatchSnapshotReducer {
         return next
     }
 
+    /// Whether an incoming phone snapshot should replace the one on hand.
+    /// Snapshots carry the instant the phone built them; an older or
+    /// identical stamp means a stale replay — activation re-delivers the
+    /// last application context — and must not clobber newer local state,
+    /// including optimistic updates layered on top of the current snapshot.
+    /// Payloads without a stamp (phones running older versions) are always
+    /// accepted, the pre-stamp behavior.
+    static func shouldAccept(
+        _ incoming: WatchSnapshot,
+        over current: WatchSnapshot
+    ) -> Bool {
+        guard let arrived = incoming.builtAt, let held = current.builtAt
+        else { return true }
+        return arrived > held
+    }
+
     /// Zeroes the day-scoped totals when the snapshot describes a different
     /// day than `date`, so an overnight action starts a fresh day instead of
     /// inflating yesterday's numbers. Snapshots without a day stamp (caches

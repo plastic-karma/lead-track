@@ -7,6 +7,19 @@ import UIKit
 // toolbar, photo import (downscaled off the picker), the one-shot location
 // fetch, and the save that reconciles the moment and its photo children.
 
+// MARK: - Picked photos
+
+extension MomentFormView {
+    /// One imported photo in the composer. Identity is the import itself, not
+    /// the array slot, so the strip's `ForEach` diffs a mid-strip delete as
+    /// the removal of that one thumbnail rather than a content change of
+    /// every later one.
+    struct PickedPhoto: Identifiable {
+        let id = UUID()
+        let data: Data
+    }
+}
+
 // MARK: - Toolbar & actions
 
 extension MomentFormView {
@@ -25,12 +38,19 @@ extension MomentFormView {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Imports the picker selection, counting the items that fail to load or
+    /// decode so the photos section can say so instead of silently showing
+    /// fewer thumbnails than were picked.
     func loadPhotos(_ items: [PhotosPickerItem]) async {
+        var failures = 0
         for item in items where photoData.count < Self.photoCap {
             if let data = await downscaledData(from: item) {
-                photoData.append(data)
+                photoData.append(PickedPhoto(data: data))
+            } else {
+                failures += 1
             }
         }
+        photoImportFailureCount = failures
         photoItems = []
     }
 
@@ -39,9 +59,8 @@ extension MomentFormView {
         return MomentPhotoImport.downscaledJPEG(from: raw)
     }
 
-    func removePhoto(at index: Int) {
-        guard photoData.indices.contains(index) else { return }
-        photoData.remove(at: index)
+    func removePhoto(_ photo: PickedPhoto) {
+        photoData.removeAll { $0.id == photo.id }
     }
 
     func resolveLocation() {
@@ -104,12 +123,12 @@ extension MomentFormView {
     /// explicitly deleted before the new set is inserted.
     private func syncPhotos(of moment: Moment) {
         let existing = moment.photos.sorted { $0.sortIndex < $1.sortIndex }
-        guard existing.map(\.data) != photoData else { return }
+        guard existing.map(\.data) != photoData.map(\.data) else { return }
         for photo in existing {
             modelContext.delete(photo)
         }
-        for (index, data) in photoData.enumerated() {
-            modelContext.insert(MomentPhoto(data: data, sortIndex: index, moment: moment))
+        for (index, photo) in photoData.enumerated() {
+            modelContext.insert(MomentPhoto(data: photo.data, sortIndex: index, moment: moment))
         }
     }
 }

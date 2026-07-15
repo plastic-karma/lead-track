@@ -68,6 +68,8 @@ private extension InsightGenerator {
 
 private extension InsightGenerator {
     static let minTimeOfDaySessions = 4
+    /// Dominance shares are strict lower bounds: an exact 50/50 week is
+    /// never "mostly" anything.
     static let timeOfDayDominance = 0.5
     static let minDayOfWeekSessions = 4
     static let dayOfWeekDominance = 0.4
@@ -90,15 +92,13 @@ private extension InsightGenerator {
                 for: calendar.component(.hour, from: session.startedAt)
             )
         }
-        guard let entry = buckets.max(by: { $0.value.count < $1.value.count }) else {
-            return nil
-        }
-        let ratio = Double(entry.value.count) / Double(sessions.count)
-        guard ratio >= timeOfDayDominance else { return nil }
+        guard let mode = uniqueMode(of: buckets) else { return nil }
+        let ratio = Double(mode.count) / Double(sessions.count)
+        guard ratio > timeOfDayDominance else { return nil }
         return .timeOfDayMode(
-            bucket: entry.key,
+            bucket: mode.key,
             ratio: ratio,
-            sessionCount: entry.value.count
+            sessionCount: mode.count
         )
     }
 
@@ -110,16 +110,28 @@ private extension InsightGenerator {
         let buckets = Dictionary(grouping: sessions) { session in
             calendar.component(.weekday, from: session.startedAt)
         }
-        guard let entry = buckets.max(by: { $0.value.count < $1.value.count }) else {
-            return nil
-        }
-        let ratio = Double(entry.value.count) / Double(sessions.count)
-        guard ratio >= dayOfWeekDominance else { return nil }
+        guard let mode = uniqueMode(of: buckets) else { return nil }
+        let ratio = Double(mode.count) / Double(sessions.count)
+        guard ratio > dayOfWeekDominance else { return nil }
         return .dayOfWeekMode(
-            weekday: entry.key,
+            weekday: mode.key,
             ratio: ratio,
-            sessionCount: entry.value.count
+            sessionCount: mode.count
         )
+    }
+
+    /// The bucket holding strictly more sessions than every other, or nil on
+    /// a tie for first place: a tied week has no mode, and dictionary
+    /// iteration order must never pick the winner — a fixed past week would
+    /// flip its insight from launch to launch.
+    static func uniqueMode<Key: Hashable>(
+        of buckets: [Key: [Session]]
+    ) -> (key: Key, count: Int)? {
+        let counts = buckets.map { (key: $0.key, count: $0.value.count) }
+        guard let top = counts.max(by: { $0.count < $1.count }),
+              counts.count(where: { $0.count == top.count }) == 1
+        else { return nil }
+        return top
     }
 
     static func detectVolumeChange(

@@ -47,7 +47,7 @@ extension WeeklyReview {
             let active = ids.compactMap { weekByID[$0] }
             guard !active.isEmpty else { return nil }
             return MetricGroup(
-                id: aspiration.map { stableID(of: $0) } ?? "unaligned",
+                id: aspiration.map(\.stableIdentity) ?? AspirationGrouping.unalignedID,
                 title: aspiration?.title ?? "Unaligned Effort",
                 icon: aspiration?.displayIcon,
                 colorName: aspiration?.colorName,

@@ -5,6 +5,19 @@ import SwiftUI
 /// Renders a set of sibling `Form` rows inside the reminder section.
 struct ReminderScheduleEditor: View {
     @Binding var schedule: ReminderSchedule
+    /// One stable identity per fixed-time row, kept parallel to
+    /// `schedule.fixedTimes` (which stores plain, possibly duplicated
+    /// `Date`s). Keying the rows by these means deleting a middle row removes
+    /// exactly that row, instead of every later `DatePicker` inheriting the
+    /// state of the row above it.
+    @State private var fixedTimeRowIDs: [UUID]
+
+    init(schedule: Binding<ReminderSchedule>) {
+        _schedule = schedule
+        _fixedTimeRowIDs = State(
+            initialValue: schedule.wrappedValue.fixedTimes.map { _ in UUID() }
+        )
+    }
 
     var body: some View {
         modePicker
@@ -33,7 +46,7 @@ extension ReminderScheduleEditor {
 extension ReminderScheduleEditor {
     @ViewBuilder
     private var fixedTimesEditor: some View {
-        ForEach(schedule.fixedTimes.indices, id: \.self) { index in
+        ForEach(Array(zip(fixedTimeRowIDs, schedule.fixedTimes.indices)), id: \.0) { _, index in
             fixedTimeRow(index)
         }
         if schedule.fixedTimes.count < ReminderSchedule.maxPerDay {
@@ -110,13 +123,16 @@ extension ReminderScheduleEditor {
 extension ReminderScheduleEditor {
     private func addFixedTime() {
         guard schedule.fixedTimes.count < ReminderSchedule.maxPerDay else { return }
+        fixedTimeRowIDs.append(UUID())
         schedule.fixedTimes.append(nextSuggestedTime())
     }
 
     private func removeFixedTime(at index: Int) {
         guard schedule.fixedTimes.count > 1,
-              schedule.fixedTimes.indices.contains(index)
+              schedule.fixedTimes.indices.contains(index),
+              fixedTimeRowIDs.indices.contains(index)
         else { return }
+        fixedTimeRowIDs.remove(at: index)
         schedule.fixedTimes.remove(at: index)
     }
 

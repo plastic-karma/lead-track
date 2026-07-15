@@ -201,12 +201,14 @@ extension MarkdownExportLineTests {
     }
 
     @Test
-    func multiLineMomentIndentsItsContinuation() {
+    func multiLineMomentBlockquotesItsContinuation() {
+        // Blockquoted, not merely indented: a 2-space indent still parses
+        // as an ATX heading, so testimony could forge document structure.
         let moment = keep("first line\nsecond line", under: makeAspiration(), at: day(1))
 
         let markdown = build(MarkdownExportData(moments: [moment]))
 
-        #expect(markdown.contains("- Moment (Grow wiser): \"first line\n  second line\""))
+        #expect(markdown.contains("- Moment (Grow wiser): \"first line\n  > second line\""))
     }
 
     @Test

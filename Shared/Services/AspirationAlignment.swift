@@ -22,9 +22,11 @@ enum AspirationAlignment {
 
     /// Ratings keyed to calendar weeks, oldest first, one per week (the
     /// latest edit wins), gaps preserved as absent weeks.
+    /// Grouping is purely by the persisted `weekStart` key, so no calendar
+    /// is involved — the parameter a previous shape advertised and ignored
+    /// is gone rather than misleading callers.
     static func series(
-        from checkIns: [AspirationCheckIn],
-        calendar _: Calendar = .current
+        from checkIns: [AspirationCheckIn]
     ) -> [WeekPoint] {
         Dictionary(grouping: checkIns, by: \.weekStart)
             .compactMap { week, items -> WeekPoint? in
@@ -74,9 +76,8 @@ enum AspirationAlignment {
         now: Date = .now,
         calendar: Calendar = .current
     ) -> AspirationCheckIn? {
-        let week = Intention.weekStart(containing: now, calendar: calendar)
         return aspiration.checkIns
-            .filter { $0.weekStart == week }
+            .filter { Intention.week(starting: $0.weekStart, contains: now, calendar: calendar) }
             .max { $0.createdAt < $1.createdAt }
     }
 }

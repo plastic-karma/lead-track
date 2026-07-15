@@ -35,7 +35,7 @@ struct ContentView: View {
     /// the shell answers by sliding to the Week tab — and tapping an
     /// intention's daily question raises an aspiration ID the shell answers
     /// by drilling into its detail; both land even on a cold launch.
-    @ObservedObject private var notificationResponder = NotificationResponder.shared
+    private let notificationResponder = NotificationResponder.shared
 
     var body: some View {
         VStack(spacing: 0) {

@@ -9,6 +9,9 @@ import SwiftData
 final class Project {
     var name: String
     var metric: Metric?
+    /// Stored as the enum itself — the same pre-doctrine exception as
+    /// `Metric.measurementType`; new enum attributes store raw strings.
+    /// Adding a ProjectStatus case requires migrating this field first.
     var status: ProjectStatus
     var startedAt: Date
     var finishedAt: Date?

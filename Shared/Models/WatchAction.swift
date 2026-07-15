@@ -13,6 +13,12 @@ struct WatchAction: Codable, Equatable {
         case toggleDay
     }
 
+    /// Identifies one tap across delivery retries. WatchConnectivity is
+    /// at-least-once — a reply timeout re-queues the identical payload even
+    /// though the phone already applied it — so the phone drops actions
+    /// whose ID it has seen. nil when decoded from an app version that
+    /// predates the field; those apply without dedup, the old behavior.
+    let id: UUID?
     let kind: Kind
     let metricID: UUID
     let value: Double?
@@ -22,8 +28,10 @@ struct WatchAction: Codable, Equatable {
         kind: Kind,
         metricID: UUID,
         value: Double? = nil,
-        timestamp: Date = .now
+        timestamp: Date = .now,
+        id: UUID = UUID()
     ) {
+        self.id = id
         self.kind = kind
         self.metricID = metricID
         self.value = value

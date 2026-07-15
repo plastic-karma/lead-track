@@ -20,6 +20,10 @@ enum WatchActionHandler {
         // invisible on every surface — but a stop still lands, so a timer
         // racing the archive can always be ended.
         guard !metric.isArchived || action.kind == .stopTimer else { return }
+        guard hasValidValue(action) else {
+            SyncLog.error("Dropped logValue with invalid amount for metric \(action.metricID)")
+            return
+        }
         switch action.kind {
         case .startTimer:
             SessionService.startSession(for: metric, in: context, at: action.timestamp)
@@ -39,5 +43,14 @@ enum WatchActionHandler {
         }
         SessionService.reconcileCountdowns(in: context)
         try context.save()
+    }
+
+    /// Rejects amounts that would poison every total — and, via NaN, make
+    /// every subsequent snapshot encode throw, permanently killing sync.
+    /// A logged value must be finite and positive.
+    private static func hasValidValue(_ action: WatchAction) -> Bool {
+        guard action.kind == .logValue else { return true }
+        let value = action.value ?? 1
+        return value.isFinite && value > 0
     }
 }

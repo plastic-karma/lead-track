@@ -42,15 +42,21 @@ is silence, never debt). A moment generalizes both.
    dishonest twin: computed from volume, it celebrates input with a bigger
    number, which is exactly the calcification `docs/ASPIRATION_STEERING.md`
    fights.)
-2. **Never a number.** No moment counts anywhere — not on cards, headers,
-   rollups, insights, widgets, or the watch. Surfaces show the moments
-   themselves, or nothing.
+2. **Never a number.** No moment counts on any surface of the app — not on
+   cards, headers, rollups, insights, widgets, or the watch. Surfaces show
+   the moments themselves, or nothing. The one deliberate exception is the
+   user-triggered markdown export, whose range inventory prints a moment
+   count for the LLM reader (see Principle 4).
 3. **Never prompted.** No notification, badge, streak, or "you haven't kept a
    moment lately." Capture affordances sit quietly where the user already is;
    skipping is structurally invisible.
 4. **Private by construction.** Photos live in on-device external storage;
    location is captured only on an explicit per-moment tap; nothing enters
-   `WatchSnapshot`, widgets, exports, or Health.
+   `WatchSnapshot`, widgets, or Health. The explicit, user-triggered
+   markdown export — the "hand the whole practice to an LLM" artifact — is
+   the one outbound path: it includes each moment's text, place label, and
+   provenance, plus a range count, and never photos or coordinates. No
+   other surface exports moments.
 5. **Purely additive.** New models, defaulted parameters, and one new section
    per surface. A store with zero moments renders every screen byte-identical
    to today.
@@ -266,8 +272,10 @@ Resolved here so v1 is unambiguous; each is easily changed later:
 5. **Photos: child `MomentPhoto` model, soft cap 4, downscaled on import.**
 6. **Location: per-moment explicit fetch, one geocode at capture,
    remove-only afterwards; hundred-meter accuracy.**
-7. **No counts of moments are displayed anywhere in the app** — a design
-   invariant, not a default (with #8 the doctrine mirror of check-ins).
+7. **No counts of moments are displayed anywhere in the app's UI** — a
+   design invariant, not a default (with #8 the doctrine mirror of
+   check-ins); the markdown export's range inventory line is the sole,
+   deliberate exception (see Principles 2 and 4).
 8. **No notifications, badges, streaks, or completion accounting on
    moments — ever.**
 

@@ -31,18 +31,7 @@ struct GoalProgressView: View {
     }
 
     private var progressRing: some View {
-        ZStack {
-            Circle()
-                .stroke(Theme.inactive, lineWidth: 4)
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(
-                    tint,
-                    style: StrokeStyle(
-                        lineWidth: 4, lineCap: .round
-                    )
-                )
-                .rotationEffect(.degrees(-90))
+        RingGauge(fraction: fraction, tint: tint) {
             Text(percentText)
                 .font(.caption2.bold())
                 .monospacedDigit()

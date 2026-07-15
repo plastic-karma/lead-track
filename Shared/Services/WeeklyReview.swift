@@ -126,11 +126,10 @@ extension WeeklyReview {
         now: Date,
         calendar: Calendar
     ) -> Set<String> {
-        let week = Intention.weekStart(containing: now, calendar: calendar)
         return Set(
             checkIns
-                .filter { $0.weekStart == week }
-                .compactMap { $0.aspiration.map { stableID(of: $0) } }
+                .filter { Intention.week(starting: $0.weekStart, contains: now, calendar: calendar) }
+                .compactMap { $0.aspiration.map(\.stableIdentity) }
         )
     }
 }
@@ -142,6 +141,15 @@ extension WeeklyReview {
     /// half-open, so a session at the next week's first midnight stays out.
     /// Internal (not private) so the aspiration lens in its own file windows
     /// with exactly the same rules.
+    ///
+    /// Two week conventions deliberately coexist in one review, and they
+    /// coincide only when the review is read on a week's first day:
+    /// `PeriodBounds` is a TRAILING seven-day window ending on the anchor
+    /// day (today for the live review), while the intention/check-in layer
+    /// works in CALENDAR weeks (`Intention.weekStart`,
+    /// `dateInterval(of: .weekOfYear)`). When editing "this week" logic,
+    /// pick by layer: effort windows are trailing; commitments —
+    /// intentions, pulses, promotions — are calendar weeks.
     struct PeriodBounds {
         let start: Date
         let previousStart: Date
@@ -207,11 +215,11 @@ extension WeeklyReview {
     }
 
     static func stableID(of metric: Metric) -> String {
-        metric.stableID?.uuidString ?? metric.name
+        metric.stableIdentity
     }
 
     static func stableID(of aspiration: Aspiration) -> String {
-        aspiration.stableID?.uuidString ?? aspiration.title
+        aspiration.stableIdentity
     }
 }
 

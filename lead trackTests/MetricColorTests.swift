@@ -44,12 +44,12 @@ struct MetricColorTests {
 }
 
 /// The WCAG contrast each palette role promises (see `MetricColor`). The
-/// backgrounds are `Theme`'s warm neutrals — gray 0.96 (light) and 0.055
-/// (dark) plus the +0.018/+0.008 red/green warmth — restated here because
-/// `Theme` itself is SwiftUI-only.
+/// backgrounds come from the same `WarmNeutral` source `Theme` paints
+/// with, so a designer retuning the neutrals re-runs these guarantees
+/// against the real surfaces.
 struct MetricColorContrastTests {
-    static let lightBackground = MetricColor.Components(red: 0.978, green: 0.968, blue: 0.96)
-    static let darkBackground = MetricColor.Components(red: 0.073, green: 0.063, blue: 0.055)
+    static let lightBackground = MetricColor.WarmNeutral.lightScreenBackground
+    static let darkBackground = MetricColor.WarmNeutral.darkScreenBackground
     static let white = MetricColor.Components(red: 1, green: 1, blue: 1)
 
     /// Large ink — hero numerals, icons, progress fills — needs the WCAG

@@ -6,6 +6,11 @@ import Foundation
 /// unit-tests on Linux; `NotificationService` wraps the returned dates in
 /// one-shot triggers re-armed on every foreground pass.
 enum IntentionQuestionPlanner {
+    /// A question fires at most once per day of a calendar week. The day loop
+    /// below and `NotificationService.cancelQuestion`'s slot sweep both count
+    /// from here, so scheduled IDs can never outrun the cancel.
+    static let maxSlotsPerWeek = 7
+
     /// One fire date per remaining day of `week`, ascending — today included
     /// only while its drawn minute is still ahead of `now`, and nothing at or
     /// past the week's end (half-open, the tick idiom). Inverted window
@@ -47,7 +52,7 @@ enum IntentionQuestionPlanner {
         calendar: Calendar
     ) -> [Date] {
         let first = max(calendar.startOfDay(for: now), week.start)
-        return (0 ..< 7)
+        return (0 ..< maxSlotsPerWeek)
             .compactMap { calendar.date(byAdding: .day, value: $0, to: first) }
             .filter { $0 < week.end }
     }

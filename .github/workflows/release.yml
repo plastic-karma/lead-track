@@ -25,6 +25,10 @@
 # "Cloud signing permission error". An app record for plastickarma.lead-track
 # must exist in App Store Connect; the bundle IDs themselves (app, .widget,
 # .watchkitapp) are registered automatically by cloud signing during Archive.
+# The fourth, .watchkitapp.widget, requests an app group, which cloud signing
+# cannot create — a workflow step pre-registers it (see
+# register-watch-widget-bundle-id.rb); assigning the group to that App ID
+# stays a one-time manual portal step. Details: docs/RELEASE.md.
 
 name: Release IPA
 
@@ -49,8 +53,12 @@ on:
     tags:
       - "v*"
 
+# Least privilege: the signing/upload job only reads the repo — xcodebuild
+# executes repo-supplied build phases and secrets are in scope there, so it
+# must not hold a token that can push. The attach-release job below re-grants
+# `contents: write` for itself alone (tag builds' GitHub Release).
 permissions:
-  contents: write # create/attach GitHub Releases on tag builds
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -66,7 +74,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Select newest Xcode
         # App Store uploads require the build to use a current SDK (iOS 26 / Xcode
@@ -233,7 +241,7 @@ jobs:
           echo "Exported: ${ipas[0]}"
 
       - name: Upload .ipa artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: lead-track-ipa
           path: ${{ runner.temp }}/export/*.ipa
@@ -245,13 +253,26 @@ jobs:
         # so a previously-submitted build still waiting/in review blocks
         # submitting this one ("You can only submit one build from version X…").
         # Expire those first to free the slot. Best-effort: only touches builds
-        # in review (never an approved build testers use) and never fails the job.
+        # of the version being uploaded that are in review (never an approved
+        # build testers use, never another version's pending build) and never
+        # fails the job.
         if: ${{ inputs.publish_testflight || startsWith(github.ref, 'refs/tags/') }}
         continue-on-error: true
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: ruby .github/scripts/expire-builds-in-review.rb
+        run: |
+          set -euo pipefail
+          # The review lock is per marketing version, so scope the expiry to
+          # the version this run uploads. MARKETING_VERSION may be blank
+          # (project default), so fall back to the version actually baked
+          # into the archived app; the script skips when it stays unknown.
+          version="${MARKETING_VERSION}"
+          if [ -z "$version" ]; then
+            version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+              "$ARCHIVE_PATH"/Products/Applications/*.app/Info.plist 2>/dev/null || true)"
+          fi
+          RELEASE_VERSION="$version" ruby .github/scripts/expire-builds-in-review.rb
 
       - name: Upload to TestFlight
         # Runs when dispatched with publish_testflight=true, or on any v* tag push.
@@ -294,16 +315,6 @@ jobs:
           echo "PUBLISHED_TESTFLIGHT=1" >> "$GITHUB_ENV"
           echo "Uploaded — the build appears in TestFlight once App Store Connect finishes processing."
 
-      - name: Attach .ipa to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" "$IPA_PATH" \
-            --title "$GITHUB_REF_NAME" --generate-notes \
-          || gh release upload "$GITHUB_REF_NAME" "$IPA_PATH" --clobber
-
       - name: Summary
         run: |
           {
@@ -317,3 +328,37 @@ jobs:
               echo "- **TestFlight**: not uploaded. Re-run with **publish_testflight** ticked (or push a \`v*\` tag) to send it to TestFlight."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Tag builds only. A separate job so `contents: write` is scoped to exactly
+  # this step: the signing job above runs xcodebuild (repo-supplied build
+  # phases) with the ASC key in scope and must not hold a write token.
+  attach-release:
+    name: Attach .ipa to GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release and attach the .ipa
+    steps:
+      - name: Download .ipa artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: lead-track-ipa
+          path: ${{ runner.temp }}/ipa
+
+      - name: Attach .ipa to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          ipas=("$RUNNER_TEMP"/ipa/*.ipa)
+          if [ "${#ipas[@]}" -eq 0 ]; then
+            echo "::error::the lead-track-ipa artifact contained no .ipa"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" "${ipas[0]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" --generate-notes \
+          || gh release upload "$GITHUB_REF_NAME" "${ipas[0]}" \
+            --repo "$GITHUB_REPOSITORY" --clobber

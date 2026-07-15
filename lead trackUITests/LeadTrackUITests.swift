@@ -31,14 +31,20 @@ final class LeadTrackUITests: XCTestCase {
 
         app.navigationBars["New Metric"].buttons["Save"].tap()
 
-        XCTAssertTrue(
-            app.staticTexts["Reading"].waitForExistence(timeout: 5)
-        )
+        // The new metric appears as its folded cluster stub's title, which
+        // renders uppercased — match case-insensitively so the assertion
+        // follows the label, not its styling.
+        let stub = app.staticTexts.matching(
+            NSPredicate(format: "label ==[c] %@", "Reading")
+        ).firstMatch
+        XCTAssertTrue(stub.waitForExistence(timeout: 5))
     }
 
     @MainActor
     private func launchUITestApp() -> XCUIApplication {
         let app = XCUIApplication()
+        // Mirrors LaunchArguments.uiTest — the UI-test bundle cannot import
+        // the app module, so this literal must stay in sync by hand.
         app.launchArguments = ["-uitest"]
         app.launch()
         return app

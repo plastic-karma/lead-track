@@ -35,11 +35,11 @@ struct AspirationAttachedListView: View {
 
 extension AspirationAttachedListView {
     private var sortedMetrics: [Metric] {
-        aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
+        aspiration.metrics.inDisplayOrder
     }
 
     private var sortedProjects: [Project] {
-        aspiration.projects.sorted { $0.startedAt < $1.startedAt }
+        aspiration.projects.inDisplayOrder
     }
 
     private func metricRow(_ metric: Metric) -> some View {

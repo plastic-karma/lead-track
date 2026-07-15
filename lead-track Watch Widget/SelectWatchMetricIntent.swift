@@ -5,7 +5,7 @@ import Foundation
 /// complication. Backed by the cached snapshot — the watch never opens the
 /// SwiftData store.
 struct WatchMetricEntity: AppEntity {
-    let id: String
+    let id: UUID
     let name: String
     let icon: String
 
@@ -23,9 +23,9 @@ struct WatchMetricEntity: AppEntity {
 extension WatchMetricEntity {
     init(_ metric: WatchMetricSnapshot) {
         self.init(
-            id: metric.id.uuidString,
+            id: metric.id,
             name: metric.name,
-            icon: metric.icon ?? "clock"
+            icon: metric.displayIcon
         )
     }
 }
@@ -33,7 +33,7 @@ extension WatchMetricEntity {
 /// Lists every cached metric for the complication's picker. Complications
 /// are read-only, so health-linked metrics are eligible too.
 struct WatchMetricQuery: EntityQuery {
-    func entities(for identifiers: [String]) async throws -> [WatchMetricEntity] {
+    func entities(for identifiers: [UUID]) async throws -> [WatchMetricEntity] {
         let wanted = Set(identifiers)
         return allEntities().filter { wanted.contains($0.id) }
     }

@@ -10,8 +10,27 @@ require 'openssl'
 require 'base64'
 require 'json'
 require 'net/http'
+require 'uri'
 
 HOST = 'api.appstoreconnect.apple.com'
+
+# The next-page path from a response body, followed only when the link
+# points back at the same https host — the trust is explicit, and a
+# surprising host degrades to a skipped page instead of a malformed
+# request path on the existing connection.
+def next_page_path(body)
+  nxt = body.dig('links', 'next')
+  return nil unless nxt
+
+  uri = URI(nxt)
+  return uri.request_uri if uri.is_a?(URI::HTTPS) && uri.host == HOST
+
+  warn "Ignoring pagination link with unexpected host: #{nxt}"
+  nil
+rescue URI::InvalidURIError
+  warn "Ignoring malformed pagination link: #{nxt}"
+  nil
+end
 
 # Builds a short-lived ES256 JWT for the App Store Connect API.
 def make_token(key, key_id, issuer_id)

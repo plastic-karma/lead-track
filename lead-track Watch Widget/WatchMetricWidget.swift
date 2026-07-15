@@ -30,17 +30,18 @@ struct WatchMetricProvider: AppIntentTimelineProvider {
         for configuration: SelectWatchMetricIntent,
         in _: Context
     ) async -> Timeline<WatchMetricEntry> {
-        let snapshot = WatchSnapshotCache.load()
-        let running = resolved(configuration, in: snapshot, at: .now)?.isRunning ?? false
-        let dates = ComplicationTimeline.entryDates(from: .now, hasRunningTimer: running)
-        let entries = dates.map { date in
-            WatchMetricEntry(
-                date: date,
-                progress: resolved(configuration, in: snapshot, at: date),
-                style: configuration.style
-            )
-        }
-        return Timeline(entries: entries, policy: .atEnd)
+        ComplicationTimeline.timeline(
+            isLive: { snapshot in
+                resolved(configuration, in: snapshot, at: .now)?.isRunning ?? false
+            },
+            makeEntry: { date, snapshot in
+                WatchMetricEntry(
+                    date: date,
+                    progress: resolved(configuration, in: snapshot, at: date),
+                    style: configuration.style
+                )
+            }
+        )
     }
 
     /// One preconfigured pick per cached metric (capped) keeps the on-watch
@@ -68,7 +69,7 @@ struct WatchMetricProvider: AppIntentTimelineProvider {
     ) -> ComplicationMetricProgress? {
         guard let id = configuration.metric?.id else { return nil }
         return ComplicationProgress.metrics(in: snapshot, at: date)
-            .first { $0.id.uuidString == id }
+            .first { $0.id == id }
     }
 }
 
@@ -155,7 +156,7 @@ struct WatchMetricWidgetView: View {
         switch progress.measurementType {
         case .duration:
             DurationFormatter.compact(progress.todayTotal)
-        case .count, .binary:
+        case .count, .binary, nil:
             "\(Int(progress.todayTotal))"
         }
     }

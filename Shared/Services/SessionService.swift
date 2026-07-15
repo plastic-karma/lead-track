@@ -1,4 +1,4 @@
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !os(macOS)
 import ActivityKit
 #endif
 import Foundation
@@ -43,7 +43,7 @@ enum SessionService {
         at timestamp: Date = .now,
         countdownDuration: TimeInterval? = nil
     ) -> Session {
-        if let running = activeSession(for: metric) {
+        if let running = storedRunningSession(for: metric, in: context) {
             return running
         }
         let project = project ?? metric.defaultProject
@@ -61,6 +61,23 @@ enum SessionService {
         )
         scheduleCountdownCompletion(for: metric, session: session)
         return session
+    }
+
+    /// The metric's running session as the store sees it — the re-derivation
+    /// `startSession` needs before inserting. `metric.sessions` can lag a
+    /// sibling context's save (see `toggleSession`), and a phantom running
+    /// entry there would make `startSession` hand it back and never start
+    /// the timer, so this reads through `Session.isRunningPredicate` the way
+    /// `reconcileCountdowns` and `nextCountdownEnd` already do.
+    private static func storedRunningSession(
+        for metric: Metric,
+        in context: ModelContext
+    ) -> Session? {
+        let descriptor = FetchDescriptor<Session>(
+            predicate: Session.isRunningPredicate
+        )
+        let running = (try? context.fetch(descriptor)) ?? []
+        return running.first { $0.metric === metric }
     }
 
     /// Reassigns a completed session to another project under the same metric,
@@ -206,7 +223,9 @@ enum SessionService {
     private static func rescheduleNotifications(
         for metric: Metric
     ) {
-        #if canImport(UserNotifications)
+        // Overlay builds compile this out: scheduling needs a real app
+        // bundle, which the SwiftPM test process doesn't have.
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         NotificationService.rescheduleMetric(metric)
         #endif
     }
@@ -217,7 +236,7 @@ enum SessionService {
         for metric: Metric,
         session: Session
     ) {
-        #if canImport(UserNotifications)
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         guard let end = session.countdownInterval?.upperBound else { return }
         NotificationService.scheduleCountdownCompletion(for: metric, endsAt: end)
         #endif
@@ -230,7 +249,7 @@ enum SessionService {
         session: Session,
         endedAt: Date
     ) {
-        #if canImport(UserNotifications)
+        #if canImport(UserNotifications) && !LEADTRACK_OVERLAY
         guard let end = session.countdownInterval?.upperBound,
               endedAt < end
         else { return }
@@ -245,7 +264,7 @@ enum SessionService {
     /// system only lets foreground apps start Live Activities), so the app
     /// calls this whenever it becomes active.
     static func syncLiveActivity(in context: ModelContext) {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
         let descriptor = FetchDescriptor<Session>(
             predicate: Session.isRunningPredicate
         )
@@ -270,9 +289,10 @@ enum SessionService {
         project: Project?,
         session: Session
     ) {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
         let attributes = TimerActivityAttributes(
             metricName: metric.name,
+            metricID: metric.stableID?.uuidString,
             projectName: project?.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
@@ -294,9 +314,13 @@ enum SessionService {
     }
 
     private static func stopLiveActivity() {
-        #if canImport(ActivityKit)
+        #if canImport(ActivityKit) && !os(macOS)
+        // End exactly the activities that exist now: the task runs later,
+        // with no ordering guarantee, and must not sweep up an activity a
+        // quick follow-up start created in the meantime.
+        let activities = Activity<TimerActivityAttributes>.activities
         Task {
-            for activity in Activity<TimerActivityAttributes>.activities {
+            for activity in activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
         }

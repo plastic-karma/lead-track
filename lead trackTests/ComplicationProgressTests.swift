@@ -276,3 +276,27 @@ struct ComplicationFractionTests {
         #expect(summary.hasGoals)
     }
 }
+
+// MARK: - Goal-line eligibility
+
+struct ComplicationGoalLineEligibilityTests {
+    @Test
+    func zeroAmountGoalIsExcludedInsteadOfFrozenAtZeroPercent() {
+        // dailyGoal 0 passes hasDailyTarget but has no computable fraction;
+        // showing it would render a permanent "0%" whatever the user does.
+        let snapshot = WatchSnapshot(
+            metrics: [
+                metric(todayTotal: 5, dailyGoal: 0),
+                metric(todayTotal: 300, dailyGoal: 600)
+            ],
+            day: today
+        )
+
+        let lines = ComplicationProgress.goalLines(
+            in: snapshot, at: noon, calendar: calendar
+        )
+
+        #expect(lines.count == 1)
+        #expect(lines.first?.percent == 50)
+    }
+}

@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import os
 import SwiftData
 import WidgetKit
 
@@ -21,12 +22,15 @@ final class HealthMetricSyncService {
     /// with their last-synced values.
     static let syncWindowDays = 30
 
-    private var healthStore: HKHealthStore?
+    /// Serializes passes so an overlapping trigger (scene phase, Sync Now,
+    /// detail view) can never interleave with one already in flight and
+    /// apply the same mirror plan twice. See `HealthServicePassQueue`.
+    private let passes = HealthServicePassQueue()
 
     /// Whether this device has health data at all — gates every entry point
     /// and hides the Health option from the metric form.
     var isAvailable: Bool {
-        HKHealthStore.isHealthDataAvailable()
+        HealthServices.isAvailable
     }
 
     /// Creation path (and the explicit Sync Now button): asks for read
@@ -35,25 +39,17 @@ final class HealthMetricSyncService {
     /// is still undecided.
     func connect(metricID: UUID, container: ModelContainer) async {
         guard isAvailable else { return }
-        let context = ModelContext(container)
-        guard let metric = try? Metric.find(stableID: metricID, in: context),
-              let source = metric.healthSource
-        else { return }
-        let reader = HealthKitMetricReader(store: store())
-        try? await reader.requestReadAccess(for: source)
-        await refresh(metric, with: reader, in: context)
+        await passes.run {
+            await self.performConnect(metricID: metricID, container: container)
+        }
     }
 
     /// Foreground path: refreshes every health-linked metric. Returns
     /// immediately — before touching HealthKit — when there are none.
     func refreshAll(container: ModelContainer) async {
         guard isAvailable else { return }
-        let context = ModelContext(container)
-        let linked = healthLinkedMetrics(in: context)
-        guard !linked.isEmpty else { return }
-        let reader = HealthKitMetricReader(store: store())
-        for metric in linked {
-            await refresh(metric, with: reader, in: context)
+        await passes.run {
+            await self.performRefreshAll(container: container)
         }
     }
 
@@ -61,26 +57,78 @@ final class HealthMetricSyncService {
     /// presenting a permission prompt.
     func refreshMetric(metricID: UUID, container: ModelContainer) async {
         guard isAvailable else { return }
+        await passes.run {
+            await self.performRefreshMetric(metricID: metricID, container: container)
+        }
+    }
+}
+
+// MARK: - Passes
+
+extension HealthMetricSyncService {
+    private func performConnect(metricID: UUID, container: ModelContainer) async {
+        let context = ModelContext(container)
+        guard let metric = try? Metric.find(stableID: metricID, in: context),
+              let source = metric.healthSource
+        else { return }
+        let reader = HealthKitMetricReader(store: HealthServices.store())
+        do {
+            try await reader.requestReadAccess(for: source)
+            try await refresh(metric, with: reader, in: context)
+        } catch {
+            HealthServices.report("Health sync connect", error)
+        }
+    }
+
+    private func performRefreshAll(container: ModelContainer) async {
+        let context = ModelContext(container)
+        let linked = HealthServices.metrics(
+            matching: #Predicate<Metric> { $0.healthSourceRaw != nil },
+            in: context
+        )
+        guard !linked.isEmpty else { return }
+        let reader = HealthKitMetricReader(store: HealthServices.store())
+        for metric in linked {
+            do {
+                try await refresh(metric, with: reader, in: context)
+            } catch {
+                HealthServices.report("Health refresh", error)
+            }
+        }
+    }
+
+    private func performRefreshMetric(metricID: UUID, container: ModelContainer) async {
         let context = ModelContext(container)
         guard let metric = try? Metric.find(stableID: metricID, in: context),
               metric.isHealthLinked
         else { return }
-        await refresh(metric, with: HealthKitMetricReader(store: store()), in: context)
+        do {
+            try await refresh(
+                metric,
+                with: HealthKitMetricReader(store: HealthServices.store()),
+                in: context
+            )
+        } catch {
+            HealthServices.report("Health refresh", error)
+        }
     }
 }
 
 // MARK: - Mirroring
 
 extension HealthMetricSyncService {
+    /// Mirrors one metric's trailing window. Throws — without stamping
+    /// `lastHealthSyncAt` — when the HealthKit fetch or the save fails, so a
+    /// failed pass never deletes mirrored sessions and never pretends it
+    /// synced.
     private func refresh(
         _ metric: Metric,
         with reader: HealthKitMetricReader,
         in context: ModelContext
-    ) async {
+    ) async throws {
         guard let source = metric.healthSource else { return }
         let window = HealthDailyMirror.window(days: Self.syncWindowDays)
-        guard let fetched = try? await reader.dayTotals(for: source, window: window)
-        else { return }
+        let fetched = try await reader.dayTotals(for: source, window: window)
         let operations = HealthDailyMirror.plan(
             window: window,
             fetched: fetched,
@@ -88,7 +136,7 @@ extension HealthMetricSyncService {
         )
         apply(operations, to: metric, in: context)
         metric.lastHealthSyncAt = .now
-        try? context.save()
+        try context.save()
         if !operations.isEmpty {
             WidgetCenter.shared.reloadAllTimelines()
         }
@@ -138,18 +186,74 @@ extension HealthMetricSyncService {
             calendar.isDate($0.startedAt, inSameDayAs: day)
         }
     }
+}
 
-    private func healthLinkedMetrics(in context: ModelContext) -> [Metric] {
-        let descriptor = FetchDescriptor<Metric>(
-            predicate: #Predicate { $0.healthSourceRaw != nil }
-        )
-        return (try? context.fetch(descriptor)) ?? []
+// MARK: - Shared Plumbing
+
+/// The non-domain scaffolding `HealthMetricSyncService` and
+/// `HealthSessionExportService` share, kept in one place so a fix to it can
+/// never drift between them: one app-wide `HKHealthStore`, the availability
+/// gate, the predicate fetch, and the log channel.
+@MainActor
+enum HealthServices {
+    private static var healthStore: HKHealthStore?
+
+    /// Whether this device has health data at all.
+    static var isAvailable: Bool {
+        HKHealthStore.isHealthDataAvailable()
     }
 
-    private func store() -> HKHealthStore {
+    /// The app's one `HKHealthStore`, shared by both health services so
+    /// authorization state has a single home — created lazily, so no
+    /// HealthKit object exists until the user opts a metric into Health.
+    static func store() -> HKHealthStore {
         if let healthStore { return healthStore }
         let created = HKHealthStore()
         healthStore = created
         return created
+    }
+
+    /// The metrics a pass covers, fetched fresh from `context`.
+    static func metrics(
+        matching predicate: Predicate<Metric>,
+        in context: ModelContext
+    ) -> [Metric] {
+        let descriptor = FetchDescriptor<Metric>(predicate: predicate)
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Logs a failed pass step, which both services previously swallowed
+    /// whole. Only the step name and the error's description are recorded —
+    /// never metric names, values, or other user content.
+    static func report(_ step: String, _ error: Error) {
+        log.error("\(step, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+    }
+
+    private static let log = Logger(
+        subsystem: "plastickarma.lead-track",
+        category: "Health"
+    )
+}
+
+/// Runs each submitted pass strictly after every earlier one has finished.
+/// The health services are reentrant `@MainActor` singletons whose passes
+/// suspend at HealthKit awaits, so without this two overlapping passes plan
+/// against the same pre-state and apply it twice — duplicate records in
+/// Apple Health on the write side (which never self-heal), duplicate
+/// mirrored day-sessions on the read side.
+@MainActor
+final class HealthServicePassQueue {
+    private var lastPass: Task<Void, Never>?
+
+    /// Enqueues `pass` and returns once it has run — callers still observe
+    /// their own pass completing, they just can never overlap another.
+    func run(_ pass: @escaping @MainActor () async -> Void) async {
+        let previous = lastPass
+        let next = Task {
+            await previous?.value
+            await pass()
+        }
+        lastPass = next
+        await next.value
     }
 }

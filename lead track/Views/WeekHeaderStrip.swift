@@ -73,8 +73,7 @@ extension WeekHeaderStrip {
     }
 
     private var formattedRange: String {
-        "\(review.start.formatted(.dateTime.month().day()))"
-            + " — \(review.end.formatted(.dateTime.month().day()))"
+        review.formattedRange
     }
 }
 
@@ -114,46 +113,39 @@ extension WeekHeaderStrip {
     }
 
     private var heroText: String {
-        review.totalDuration > 0
-            ? DurationFormatter.format(review.totalDuration)
-            : ValueFormatter.sessions(review.sessionCount)
+        review.heroText
     }
 
-    /// The week's story in one breath: sessions (unless they lead above),
-    /// days active, and the busiest day when one won.
     private var heroCaption: String {
-        var parts: [String] = []
-        if review.totalDuration > 0 {
-            parts.append(ValueFormatter.sessions(review.sessionCount))
-        }
-        parts.append("\(review.activeDays) of \(WeeklyReview.periodDays) days")
-        if let offset = review.busiestDayOffset {
-            let weekday = review.day(at: offset).formatted(.dateTime.weekday(.abbreviated))
-            parts.append("busiest \(weekday)")
-        }
-        return parts.joined(separator: " · ")
+        review.heroCaption(includeBusiestDay: true)
     }
 }
 
 // MARK: - Mini bars
 
 extension WeekHeaderStrip {
-    /// Seven quiet capsules, the busiest day standing solid — the pulse the
-    /// overview card used to chart, shrunk to a glance beside the number.
+    private static let miniBarWidth: CGFloat = 6
+    private static let miniBarSpacing: CGFloat = 3
+
+    /// Seven quiet capsules, the busiest day standing solid — `WeekBarsView`
+    /// in its compact form (fixed-width bars, no labels), shrunk to a glance
+    /// beside the number. The shared view highlights the first peak day,
+    /// which is exactly `review.busiestDayOffset`.
     private var miniBars: some View {
-        HStack(alignment: .bottom, spacing: 3) {
-            ForEach(review.sessionSeries.indices, id: \.self) { index in
-                Capsule()
-                    .fill(Color.accentColor.opacity(index == review.busiestDayOffset ? 1 : 0.3))
-                    .frame(width: 6, height: barHeight(at: index))
-            }
-        }
+        WeekBarsView(
+            values: review.sessionSeries,
+            barWidth: Self.miniBarWidth,
+            spacing: Self.miniBarSpacing
+        )
+        .frame(width: miniBarsWidth, height: 26)
         .padding(.bottom, 2)
-        .accessibilityHidden(true)
     }
 
-    private func barHeight(at index: Int) -> CGFloat {
-        let peak = max(review.sessionSeries.max() ?? 0, 1)
-        return max(26 * review.sessionSeries[index] / peak, 2)
+    /// The strip's intrinsic width — bars plus gaps — since `WeekBarsView`
+    /// measures itself with a greedy `GeometryReader`.
+    private var miniBarsWidth: CGFloat {
+        let count = review.sessionSeries.count
+        return CGFloat(count) * Self.miniBarWidth
+            + CGFloat(max(count - 1, 0)) * Self.miniBarSpacing
     }
 }

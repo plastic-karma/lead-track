@@ -88,7 +88,7 @@ extension MarkdownExportLines {
     /// "- \"Call a friend\" (Friendship): 2 of 3 — partly". Reflective
     /// intentions carry no progress reading, deliberately.
     static func intention(_ intention: Intention, calendar: Calendar) -> String {
-        var line = "- \"\(intention.title)\""
+        var line = "- \"\(MarkdownExportText.inline(intention.title))\""
         if let aspiration = intention.aspiration {
             line += " (\(aspiration.title))"
         }
@@ -119,7 +119,7 @@ extension MarkdownExportLines {
         var line = "- \(title): \(checkIn.rating?.label ?? "recorded")"
         let note = checkIn.note.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty {
-            line += " — \"\(note)\""
+            line += " — \"\(MarkdownExportText.inline(note))\""
         }
         return line
     }
@@ -129,8 +129,9 @@ extension MarkdownExportLines {
 
 extension MarkdownExportLines {
     /// "- Moment (Grow wiser): \"summit\" (during Climbing; at Mount Tam)" —
-    /// the testimony verbatim, with continuation lines indented to stay
-    /// inside the list item.
+    /// the testimony verbatim, with continuation lines blockquoted inside
+    /// the list item so they read as quoted material and can never forge
+    /// document structure (a 2-space indent still parses as an ATX heading).
     static func moment(_ moment: Moment) -> [String] {
         var line = "- Moment"
         if let aspiration = moment.aspiration {
@@ -141,7 +142,7 @@ extension MarkdownExportLines {
             line += " (\(context))"
         }
         return line.components(separatedBy: "\n").enumerated()
-            .map { $0.offset == 0 ? $0.element : "  \($0.element)" }
+            .map { $0.offset == 0 ? $0.element : "  > \($0.element)" }
     }
 
     private static func context(of moment: Moment) -> String? {

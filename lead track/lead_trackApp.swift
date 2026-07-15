@@ -6,12 +6,22 @@ struct lead_trackApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var lockService = AppLockService()
 
-    var sharedModelContainer: ModelContainer = {
-        let isUITest = ProcessInfo.processInfo.arguments.contains("-uitest")
+    let sharedModelContainer: ModelContainer = {
+        let isUITest = LaunchArguments.isUITest
         do {
             return try SharedModelContainer.create(inMemoryOnly: isUITest)
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // A failed open (most plausibly a future migration failure) must
+            // stay diagnosable, not become a crash loop that also blocks
+            // recovery. Launch on a volatile in-memory store instead: the
+            // on-disk data is left untouched for a fixed build to migrate,
+            // and the failure is in the log rather than a crash report.
+            StoreLog.error("Persistent store failed to open; launching in-memory: \(error)")
+            do {
+                return try SharedModelContainer.create(inMemoryOnly: true)
+            } catch {
+                fatalError("Could not create any ModelContainer: \(error)")
+            }
         }
     }()
 
@@ -50,11 +60,15 @@ struct lead_trackApp: App {
 
     private func handle(phase: ScenePhase) {
         lockService.handleScenePhase(phase)
+        if phase == .inactive {
+            // Every exit passes through .inactive, so this is when sessions
+            // completed while the app was open get sent to Apple Health — at
+            // .background the process suspends before the writes can land.
+            // No-op until a metric exports.
+            exportSessionsToHealth()
+        }
         if phase == .background {
             PhoneWatchSyncService.shared.pushSnapshot()
-            // Leaving the app is the moment sessions completed while it was
-            // open get sent to Apple Health. No-op until a metric exports.
-            exportSessionsToHealth()
         }
         guard phase == .active else { return }
         CountdownCoordinator.shared.reconcile()
@@ -62,12 +76,14 @@ struct lead_trackApp: App {
             in: ModelContext(sharedModelContainer)
         )
         NotificationService.requestPermission()
-        NotificationService.rescheduleAll(
-            container: sharedModelContainer
-        )
+        // The reschedule sweep walks every metric's session history; a
+        // detached task keeps it out of the scene-activation turn.
+        let container = sharedModelContainer
+        Task.detached {
+            await NotificationService.rescheduleAll(container: container)
+        }
         // No-op until the user has created a health-linked metric; only then
         // does the app talk to HealthKit at all.
-        let container = sharedModelContainer
         Task {
             await HealthMetricSyncService.shared.refreshAll(container: container)
         }

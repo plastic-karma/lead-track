@@ -3,55 +3,31 @@ import Testing
 @testable import lead_track
 
 struct DurationFormatterTests {
-    @Test
-    func formatsSeconds() {
-        #expect(DurationFormatter.format(45) == "45s")
+    @Test(arguments: [
+        (TimeInterval(45), "45s"),
+        (TimeInterval(125), "2m 05s"),
+        (TimeInterval(3661), "1h 01m"),
+        (TimeInterval(0), "0s"),
+        (TimeInterval(60), "1m 00s"),
+        (TimeInterval(3600), "1h 00m"),
+        // Clock skew can hand the formatter a negative or fractional
+        // duration; it clamps and truncates instead of showing "-1s".
+        (TimeInterval(-30), "0s"),
+        (TimeInterval(45.9), "45s")
+    ])
+    func formatSpellsHoursMinutesSeconds(interval: TimeInterval, expected: String) {
+        #expect(DurationFormatter.format(interval) == expected)
     }
 
-    @Test
-    func formatsMinutesAndSeconds() {
-        #expect(DurationFormatter.format(125) == "2m 05s")
-    }
-
-    @Test
-    func formatsHoursAndMinutes() {
-        #expect(DurationFormatter.format(3661) == "1h 01m")
-    }
-
-    @Test
-    func formatsZero() {
-        #expect(DurationFormatter.format(0) == "0s")
-    }
-
-    @Test
-    func formatsExactMinute() {
-        #expect(DurationFormatter.format(60) == "1m 00s")
-    }
-
-    @Test
-    func formatsExactHour() {
-        #expect(DurationFormatter.format(3600) == "1h 00m")
-    }
-
-    @Test
-    func compactFormatsMinutes() {
-        #expect(DurationFormatter.compact(2700) == "45m")
-    }
-
-    @Test
-    func compactFormatsExactHours() {
-        #expect(DurationFormatter.compact(3600) == "1h")
-    }
-
-    @Test
-    func compactFormatsHoursAndMinutes() {
-        #expect(DurationFormatter.compact(3900) == "1h05")
-    }
-
-    @Test
-    func compactTruncatesSubMinuteAndNegative() {
-        #expect(DurationFormatter.compact(59) == "0m")
-        #expect(DurationFormatter.compact(0) == "0m")
-        #expect(DurationFormatter.compact(-30) == "0m")
+    @Test(arguments: [
+        (TimeInterval(2700), "45m"),
+        (TimeInterval(3600), "1h"),
+        (TimeInterval(3900), "1h05"),
+        (TimeInterval(59), "0m"),
+        (TimeInterval(0), "0m"),
+        (TimeInterval(-30), "0m")
+    ])
+    func compactSpellsTinyDialForms(interval: TimeInterval, expected: String) {
+        #expect(DurationFormatter.compact(interval) == expected)
     }
 }
