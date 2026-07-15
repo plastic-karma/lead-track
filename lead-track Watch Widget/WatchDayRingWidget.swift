@@ -27,17 +27,18 @@ struct WatchDayRingProvider: TimelineProvider {
         in _: Context,
         completion: @escaping (Timeline<WatchDayRingEntry>) -> Void
     ) {
-        let snapshot = WatchSnapshotCache.load()
-        let running = ComplicationProgress.metrics(in: snapshot, at: .now)
-            .contains { $0.hasActiveTarget && $0.isRunning }
-        let dates = ComplicationTimeline.entryDates(from: .now, hasRunningTimer: running)
-        let entries = dates.map { date in
-            WatchDayRingEntry(
-                date: date,
-                summary: ComplicationProgress.dailySummary(in: snapshot, at: date)
-            )
-        }
-        completion(Timeline(entries: entries, policy: .atEnd))
+        completion(ComplicationTimeline.timeline(
+            isLive: { snapshot in
+                ComplicationProgress.metrics(in: snapshot, at: .now)
+                    .contains { $0.hasActiveTarget && $0.isRunning }
+            },
+            makeEntry: { date, snapshot in
+                WatchDayRingEntry(
+                    date: date,
+                    summary: ComplicationProgress.dailySummary(in: snapshot, at: date)
+                )
+            }
+        ))
     }
 }
 

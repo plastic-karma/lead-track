@@ -34,7 +34,7 @@ final class AppLockService {
     private let disabledForTest: Bool
 
     init() {
-        let isUITest = ProcessInfo.processInfo.arguments.contains("-uitest")
+        let isUITest = LaunchArguments.isUITest
         disabledForTest = isUITest
         let enabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
         isLocked = !isUITest && enabled
@@ -55,7 +55,10 @@ final class AppLockService {
         var error: NSError?
         guard context.canEvaluatePolicy(
             .deviceOwnerAuthentication, error: &error
-        ) else { return }
+        ) else {
+            failOpenIfPasscodeRemoved(error)
+            return
+        }
         do {
             try await context.evaluatePolicy(
                 .deviceOwnerAuthentication,
@@ -66,6 +69,20 @@ final class AppLockService {
         } catch {
             // User cancelled or failed; stay locked, can retry.
         }
+    }
+
+    /// Device-owner authentication can become unavailable after the lock was
+    /// enabled — most commonly when the device passcode is removed. With no
+    /// passcode the lock protects nothing but would deny the user their own
+    /// data forever (the Unlock button silently does nothing), so that case
+    /// fails open. Any other evaluation error stays locked and retryable.
+    private func failOpenIfPasscodeRemoved(_ error: NSError?) {
+        guard let error,
+              error.domain == LAError.errorDomain,
+              error.code == LAError.Code.passcodeNotSet.rawValue
+        else { return }
+        isLocked = false
+        backgroundedAt = nil
     }
 
     func handleScenePhase(_ phase: ScenePhase) {

@@ -15,15 +15,17 @@ enum CompletionAlertSettings {
     }
 
     static var soundEnabled: Bool {
-        enabled(soundKey)
+        enabled(soundKey, in: store)
     }
 
     static var hapticEnabled: Bool {
-        enabled(hapticKey)
+        enabled(hapticKey, in: store)
     }
 
     /// Absent key means the user hasn't touched the toggle yet — default on.
-    private static func enabled(_ key: String) -> Bool {
+    /// The store is a parameter so the rule is testable against a scratch
+    /// suite.
+    static func enabled(_ key: String, in store: UserDefaults) -> Bool {
         store.object(forKey: key) as? Bool ?? true
     }
 }

@@ -37,6 +37,17 @@ struct MetricRecordDock: View {
     private var showsCountdownStart: Bool {
         metric.measurementType == .duration && activeSession == nil
     }
+
+    /// The shared record actions — the dock supplies only layout.
+    private var recorder: MetricRecorder {
+        MetricRecorder(
+            metric: metric,
+            runningSession: activeSession,
+            modelContext: modelContext
+        ) {
+            quickLogTrigger.toggle()
+        }
+    }
 }
 
 // MARK: - Primary Action
@@ -49,16 +60,12 @@ extension MetricRecordDock {
             pill(
                 activeSession == nil ? "Start" : "Stop",
                 systemImage: activeSession == nil ? "play.fill" : "stop.fill",
-                action: toggleTimer
+                action: recorder.toggleTimer
             )
         case .count:
             countPill
         case .binary:
-            pill(
-                isDoneToday ? "Done" : "Mark Done",
-                systemImage: isDoneToday ? "checkmark.circle.fill" : "circle",
-                action: toggleDone
-            )
+            binaryPill
         }
     }
 
@@ -67,14 +74,19 @@ extension MetricRecordDock {
     @ViewBuilder
     private var countPill: some View {
         if metric.logsOneUnitImmediately {
-            pill("Log +1", systemImage: "plus", action: logOne)
+            pill("Log +1", systemImage: "plus", action: recorder.logOne)
         } else {
             pill("Log", systemImage: "square.and.pencil", action: onLogManually)
         }
     }
 
-    private var isDoneToday: Bool {
-        SessionStatistics.todayTotal(from: metric.sessions) > 0
+    private var binaryPill: some View {
+        let done = recorder.isDoneToday
+        return pill(
+            done ? "Done" : "Mark Done",
+            systemImage: done ? "checkmark.circle.fill" : "circle",
+            action: recorder.toggleDone
+        )
     }
 
     private func pill(
@@ -101,7 +113,7 @@ extension MetricRecordDock {
     private var countdownButton: some View {
         Menu {
             CountdownOptionsMenu(
-                onPreset: startCountdown,
+                onPreset: recorder.startCountdown,
                 onCustom: { showingCountdownPicker = true }
             )
         } label: {
@@ -125,7 +137,7 @@ extension MetricRecordDock {
     }
 
     private var quickLogOneButton: some View {
-        Button(action: logOne) {
+        Button(action: recorder.logOne) {
             circleLabel("plus")
         }
         .glassCircleButtonStyle()
@@ -148,44 +160,6 @@ extension MetricRecordDock {
         Image(systemName: systemImage)
             .font(.title3.weight(.medium))
             .frame(width: 26, height: 26)
-    }
-}
-
-// MARK: - Actions
-
-extension MetricRecordDock {
-    private func toggleTimer() {
-        withAnimation {
-            SessionService.toggleSession(
-                for: metric,
-                runningSession: activeSession,
-                in: modelContext
-            )
-        }
-    }
-
-    private func startCountdown(_ duration: TimeInterval) {
-        withAnimation {
-            SessionService.startSession(
-                for: metric,
-                in: modelContext,
-                countdownDuration: duration
-            )
-        }
-    }
-
-    private func logOne() {
-        withAnimation {
-            SessionService.logCount(1, for: metric, in: modelContext)
-        }
-        quickLogTrigger.toggle()
-    }
-
-    private func toggleDone() {
-        withAnimation {
-            SessionService.toggleBinaryDay(for: metric, in: modelContext)
-        }
-        quickLogTrigger.toggle()
     }
 }
 

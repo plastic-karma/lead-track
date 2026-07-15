@@ -225,6 +225,19 @@ struct GoalSeasonTests {
         #expect(habit.sessions.count == 1)
     }
 
+    /// Daily completion is judged at the injected instant, so completion
+    /// around midnight and rest-day boundaries is testable deterministically.
+    @Test
+    func dailyCompletionEvaluatesAtTheInjectedInstant() {
+        let habit = makeMetric(name: "Show up", type: .binary, dailyGoal: nil)
+        addSession(habit, at: day(1))
+
+        #expect(GoalSummary.isDailyComplete(habit, now: day(1)))
+        #expect(!GoalSummary.isDailyComplete(habit, now: now))
+        #expect(GoalSummary.daily(for: [habit], now: day(1)).met == 1)
+        #expect(GoalSummary.daily(for: [habit], now: now).met == 0)
+    }
+
     /// The watch mirrors the release: a retired habit leaves the day ring.
     @Test
     func watchRingsDropReleasedBinaryHabit() {
@@ -294,5 +307,24 @@ struct GoalSeasonTests {
         GoalSeason.stampOnSave(metric, amountsChanged: true, at: now)
 
         #expect(metric.goalSeasonStartedAt == now)
+    }
+}
+
+// MARK: - Phase boundaries
+
+extension GoalSeasonTests {
+    @Test
+    func graceBoundaryTipsToPastSeason() {
+        // over == graceWeeks exactly: an off-by-one here would silently
+        // extend or truncate the grace period.
+        let metric = seasoned(8)
+        #expect(GoalSeason.phase(of: metric, now: now) == .pastSeason(weeksOver: 2))
+    }
+
+    @Test
+    func finalActiveDayStillReportsOneWeekRemaining() {
+        let metric = seasoned(0)
+        metric.goalSeasonStartedAt = day(6 * 7 - 1)
+        #expect(GoalSeason.phase(of: metric, now: now) == .active(weeksRemaining: 1))
     }
 }

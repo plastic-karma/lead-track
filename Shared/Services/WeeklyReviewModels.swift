@@ -110,3 +110,37 @@ extension WeeklyReview {
         let icon: String
     }
 }
+
+// MARK: - Hero Presentation
+
+extension WeeklyReview {
+    /// The header's headline number — tracked time when any exists, else the
+    /// session count. Shared by `WeekHeaderStrip` and the PNG share card so
+    /// the on-screen story and the exported one can never drift.
+    var heroText: String {
+        totalDuration > 0
+            ? DurationFormatter.format(totalDuration)
+            : ValueFormatter.sessions(sessionCount)
+    }
+
+    /// "Jul 4 — Jul 10", the reviewed span.
+    var formattedRange: String {
+        "\(start.formatted(.dateTime.month().day()))"
+            + " — \(end.formatted(.dateTime.month().day()))"
+    }
+
+    /// The week's story in one breath: sessions (unless they lead in
+    /// `heroText`), days active, and — when asked — the busiest day.
+    func heroCaption(includeBusiestDay: Bool = false) -> String {
+        var parts: [String] = []
+        if totalDuration > 0 {
+            parts.append(ValueFormatter.sessions(sessionCount))
+        }
+        parts.append("\(activeDays) of \(Self.periodDays) days active")
+        if includeBusiestDay, let offset = busiestDayOffset {
+            let weekday = day(at: offset).formatted(.dateTime.weekday(.abbreviated))
+            parts.append("busiest \(weekday)")
+        }
+        return parts.joined(separator: " · ")
+    }
+}

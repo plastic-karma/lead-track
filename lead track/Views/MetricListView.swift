@@ -21,7 +21,7 @@ struct MetricListView: View {
     /// Raising the responder's review flag slides the app to the Week tab
     /// (see `ContentView`) — the same route a tapped weekly notification
     /// takes, so the menu entry and the notification land identically.
-    @ObservedObject private var notificationResponder = NotificationResponder.shared
+    private let notificationResponder = NotificationResponder.shared
     @State private var showingExport = false
     @State private var showingImport = false
     @State private var showingSettings = false

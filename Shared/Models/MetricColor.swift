@@ -67,6 +67,28 @@ extension MetricColor {
         let blue: Double
     }
 
+    /// The warm-neutral surface formula `Theme` paints with — a faint
+    /// copper warmth over a base luma — plus the two screen-background
+    /// lumas, kept platform-neutral so the WCAG contrast tests certify
+    /// against the real backgrounds instead of hand-copied constants that
+    /// can silently drift.
+    enum WarmNeutral {
+        static let screenLightLuma = 0.96
+        static let screenDarkLuma = 0.055
+
+        static func components(luma: Double) -> Components {
+            Components(
+                red: min(luma + 0.018, 1),
+                green: min(luma + 0.008, 1),
+                blue: luma
+            )
+        }
+
+        /// The screen backgrounds the palette's contrast promises anchor to.
+        static let lightScreenBackground = components(luma: screenLightLuma)
+        static let darkScreenBackground = components(luma: screenDarkLuma)
+    }
+
     /// Identity ink and fills in light mode: every value holds at least 3:1
     /// against the light screen background (`Theme`'s warm 0.96 neutral),
     /// the WCAG floor for large numerals, icons, and other big ink.
@@ -213,7 +235,7 @@ extension Aspiration {
     }
 }
 
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !os(macOS)
 extension TimerActivityAttributes {
     /// The Live Activity's identity color.
     var displayColor: Color {

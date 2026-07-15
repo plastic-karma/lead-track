@@ -77,14 +77,8 @@ extension ClusterCardView {
     /// re-sorted — then the intention rows, with an inset hairline between
     /// neighbors (and before the insight line when one closes the card).
     private var rows: some View {
-        let items = rowItems
-        let showsInsight = insight != nil
-        return ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+        DividedRows(items: rowItems, dividerAfterLast: insight != nil) { item in
             rowView(item)
-            if index < items.count - 1 || showsInsight {
-                Divider()
-                    .padding(.leading, 42)
-            }
         }
     }
 
@@ -95,9 +89,9 @@ extension ClusterCardView {
         var id: String {
             switch self {
             case let .metric(metric):
-                "metric-\(metric.stableID?.uuidString ?? metric.name)"
+                "metric-\(metric.stableIdentity)"
             case let .intention(intention):
-                "intention-\(intention.stableID?.uuidString ?? intention.title)"
+                "intention-\(intention.stableIdentity)"
             }
         }
     }
@@ -189,10 +183,6 @@ extension View {
     /// The cluster card's shell: the standard elevated card surface without
     /// `cardSurface()`'s uniform padding — cluster rows manage their own.
     func clusterCardSurface() -> some View {
-        background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Theme.cardBackground)
-                .shadow(color: Theme.cardShadow, radius: 10, y: 2)
-        )
+        background(Theme.cardShape())
     }
 }

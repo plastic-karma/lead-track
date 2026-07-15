@@ -9,10 +9,14 @@ struct DailyGoalItem: View {
     var measurementType: MeasurementType = .duration
     var unit: String?
     var tint: Color = .accentColor
+    var now: Date = .now
+    var calendar: Calendar = .current
 
     private var isRestDay: Bool {
-        let weekday = Calendar.current.component(.weekday, from: .now)
-        return excludedWeekdays.contains(weekday)
+        // The one weekday-exclusion rule; DayDialView's doc comment demands
+        // this agrees with Metric.isGoalDay/GoalSummary, so all read it
+        // from GoalDayRule.
+        !GoalDayRule.isGoalDay(on: now, excludedWeekdays: excludedWeekdays, calendar: calendar)
     }
 
     var body: some View {

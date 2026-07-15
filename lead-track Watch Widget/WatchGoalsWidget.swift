@@ -33,16 +33,21 @@ struct WatchGoalsProvider: TimelineProvider {
         in _: Context,
         completion: @escaping (Timeline<WatchGoalsEntry>) -> Void
     ) {
-        let snapshot = WatchSnapshotCache.load()
-        let running = snapshot.metrics.contains { $0.runningSince != nil }
-        let dates = ComplicationTimeline.entryDates(from: .now, hasRunningTimer: running)
-        let entries = dates.map { date in
-            WatchGoalsEntry(
-                date: date,
-                lines: ComplicationProgress.goalLines(in: snapshot, at: date)
-            )
-        }
-        completion(Timeline(entries: entries, policy: .atEnd))
+        completion(ComplicationTimeline.timeline(
+            isLive: { snapshot in
+                // Only a timer that moves a rendered goal line earns the
+                // pre-rendered live window; a running goal-less or rest-day
+                // metric changes nothing on this face.
+                ComplicationProgress.metrics(in: snapshot, at: .now)
+                    .contains { $0.hasActiveTarget && $0.isRunning }
+            },
+            makeEntry: { date, snapshot in
+                WatchGoalsEntry(
+                    date: date,
+                    lines: ComplicationProgress.goalLines(in: snapshot, at: date)
+                )
+            }
+        ))
     }
 }
 
@@ -86,7 +91,7 @@ struct WatchGoalsWidgetView: View {
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(line.displayColor)
                 .widgetAccentable()
-            Text("\(line.percent ?? 0)%")
+            Text(line.percent.map { "\($0)%" } ?? "—")
                 .font(.system(size: 10, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
@@ -112,7 +117,7 @@ struct WatchGoalsWidgetView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer(minLength: 2)
-            Text("\(line.percent ?? 0)%")
+            Text(line.percent.map { "\($0)%" } ?? "—")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
@@ -151,52 +156,4 @@ struct WatchGoalsWidget: Widget {
         .description("Progress toward today's goals.")
         .supportedFamilies([.accessoryRectangular, .accessoryCircular])
     }
-}
-
-// MARK: - Preview Data
-
-extension ComplicationMetricProgress {
-    /// A fabricated metric so complication pickers preview something
-    /// realistic before real data exists.
-    static let sample = ComplicationMetricProgress(
-        id: UUID(),
-        name: "Read",
-        icon: "book",
-        colorName: nil,
-        measurementType: .duration,
-        unit: nil,
-        todayTotal: 1350,
-        dailyGoal: 1800,
-        isRestDay: false,
-        isRunning: false
-    )
-
-    /// Three fabricated rows for the Daily Goals placeholder.
-    static let sampleLines = [
-        sample,
-        ComplicationMetricProgress(
-            id: UUID(),
-            name: "Run",
-            icon: "figure.run",
-            colorName: "sage",
-            measurementType: .count,
-            unit: "km",
-            todayTotal: 2,
-            dailyGoal: 5,
-            isRestDay: false,
-            isRunning: false
-        ),
-        ComplicationMetricProgress(
-            id: UUID(),
-            name: "Stretch",
-            icon: "figure.cooldown",
-            colorName: "teal",
-            measurementType: .binary,
-            unit: nil,
-            todayTotal: 1,
-            dailyGoal: nil,
-            isRestDay: false,
-            isRunning: false
-        )
-    ]
 }

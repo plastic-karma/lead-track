@@ -33,7 +33,16 @@ final class WatchSyncController: NSObject {
 
     func perform(_ action: WatchAction) {
         update(to: WatchSnapshotReducer.applying(action, to: snapshot))
-        let message = WatchSyncCodec.message(for: action)
+        guard let message = WatchSyncCodec.message(for: action) else { return }
+        // A live message overtakes transfers still queued from an
+        // unreachable stretch, and out-of-order delivery corrupts state (a
+        // queued start arriving after a live stop strands a phantom running
+        // timer). Stay in the queue until it has fully drained.
+        if !WCSession.default.outstandingUserInfoTransfers.isEmpty {
+            SyncLog.notice("Transfer queue busy; queueing action to keep FIFO order")
+            WCSession.default.transferUserInfo(message)
+            return
+        }
         send(message) {
             WCSession.default.transferUserInfo(message)
         }
@@ -52,9 +61,6 @@ final class WatchSyncController: NSObject {
             fallback?()
             return
         }
-        let errorHandler: ((Error) -> Void)? = fallback.map { handler in
-            { _ in handler() }
-        }
         session.sendMessage(
             message,
             replyHandler: { [weak self] reply in
@@ -62,14 +68,35 @@ final class WatchSyncController: NSObject {
                     self?.receive(context: reply)
                 }
             },
-            errorHandler: errorHandler
+            errorHandler: { error in
+                // WCSession invokes this on a background queue; hop back so
+                // the fallback runs on the same isolation as every other
+                // delivery path.
+                Task { @MainActor in
+                    SyncLog.error("sendMessage failed, using queued fallback: \(error)")
+                    fallback?()
+                }
+            }
         )
     }
 
     private func receive(context: [String: Any]) {
-        guard let snapshot = WatchSyncCodec.snapshot(from: context)
-        else { return }
-        update(to: snapshot)
+        guard let incoming = WatchSyncCodec.snapshot(from: context) else { return }
+        guard WatchSnapshotReducer.shouldAccept(incoming, over: snapshot) else {
+            SyncLog.notice("Ignored stale snapshot replay")
+            return
+        }
+        update(to: replayingPendingActions(on: incoming))
+    }
+
+    /// Re-applies actions still waiting in the transfer queue on top of an
+    /// accepted snapshot. The phone hasn't seen them yet, so its snapshot
+    /// would otherwise roll back optimistic state — un-checking a habit the
+    /// user just checked — until the queue drains.
+    private func replayingPendingActions(on snapshot: WatchSnapshot) -> WatchSnapshot {
+        WCSession.default.outstandingUserInfoTransfers
+            .compactMap { WatchSyncCodec.action(from: $0.userInfo) }
+            .reduce(snapshot) { WatchSnapshotReducer.applying($1, to: $0) }
     }
 
     private func update(to snapshot: WatchSnapshot) {

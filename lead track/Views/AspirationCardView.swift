@@ -1,27 +1,19 @@
 import SwiftUI
 import UIKit
 
-extension Aspiration {
-    /// The decoded cover photo, if one was set.
-    var coverImage: Image? {
-        guard let data = imageData, let uiImage = UIImage(data: data) else {
-            return nil
-        }
-        return Image(uiImage: uiImage)
-    }
-}
-
 /// The cover stand-in everywhere an aspiration is shown small: the photo cropped
 /// to a rounded square, or the icon on a tint of the aspiration's color when
-/// there's no photo.
+/// there's no photo. The photo renders from the cached downsampled thumbnail
+/// (see `Aspiration.coverThumbnail`), so list rows re-created while scrolling
+/// never decode the stored bytes again.
 struct AspirationThumbnail: View {
     let aspiration: Aspiration
     var size: CGFloat = 56
 
     var body: some View {
         Group {
-            if let image = aspiration.coverImage {
-                image.resizable().scaledToFill()
+            if let cover = aspiration.coverThumbnail(fitting: size) {
+                Image(uiImage: cover).resizable().scaledToFill()
             } else {
                 aspiration.displayColor.opacity(0.22)
                     .overlay {

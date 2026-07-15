@@ -43,8 +43,7 @@ extension WeekShareView {
     }
 
     private var formattedRange: String {
-        "\(review.start.formatted(.dateTime.month().day()))"
-            + " — \(review.end.formatted(.dateTime.month().day()))"
+        review.formattedRange
     }
 
     private var heroLine: some View {
@@ -58,16 +57,11 @@ extension WeekShareView {
     }
 
     private var heroText: String {
-        review.totalDuration > 0
-            ? DurationFormatter.format(review.totalDuration)
-            : ValueFormatter.sessions(review.sessionCount)
+        review.heroText
     }
 
     private var heroCaption: String {
-        let days = "\(review.activeDays) of \(WeeklyReview.periodDays) days active"
-        return review.totalDuration > 0
-            ? "\(ValueFormatter.sessions(review.sessionCount)) · \(days)"
-            : days
+        review.heroCaption()
     }
 
     private var metricRows: some View {

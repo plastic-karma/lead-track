@@ -21,6 +21,7 @@
 		D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000030001 /* GoalSeasonTests.swift */; };
 		D1F00100000000000B0002 /* OversubscriptionInsightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */; };
 		D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040001 /* AspirationAlignmentTests.swift */; };
+		D1F0010000000000040012 /* ModelFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000040011 /* ModelFixture.swift */; };
 		D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000050001 /* MeasureHealthTests.swift */; };
 		D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000060001 /* TodayGroupingTests.swift */; };
 		D1F0010000000000070002 /* MomentWeekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000070001 /* MomentWeekTests.swift */; };
@@ -131,6 +132,7 @@
 		D1F0010000000000030001 /* GoalSeasonTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalSeasonTests.swift; sourceTree = "<group>"; };
 		D1F00100000000000B0001 /* OversubscriptionInsightTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OversubscriptionInsightTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000040001 /* AspirationAlignmentTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationAlignmentTests.swift; sourceTree = "<group>"; };
+		D1F0010000000000040011 /* ModelFixture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelFixture.swift; sourceTree = "<group>"; };
 		D1F0010000000000050001 /* MeasureHealthTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MeasureHealthTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000060001 /* TodayGroupingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayGroupingTests.swift; sourceTree = "<group>"; };
 		D1F0010000000000070001 /* MomentWeekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentWeekTests.swift; sourceTree = "<group>"; };
@@ -284,6 +286,7 @@
 				D1F0010000000000020001 /* HealthMetricTests.swift */,
 				D1F0010000000000030001 /* GoalSeasonTests.swift */,
 				D1F0010000000000040001 /* AspirationAlignmentTests.swift */,
+				D1F0010000000000040011 /* ModelFixture.swift */,
 				D1F0010000000000050001 /* MeasureHealthTests.swift */,
 				D1F0010000000000060001 /* TodayGroupingTests.swift */,
 				D1F0010000000000070001 /* MomentWeekTests.swift */,
@@ -660,6 +663,7 @@
 				D1F0010000000000020002 /* HealthMetricTests.swift in Sources */,
 				D1F0010000000000030002 /* GoalSeasonTests.swift in Sources */,
 				D1F0010000000000040002 /* AspirationAlignmentTests.swift in Sources */,
+				D1F0010000000000040012 /* ModelFixture.swift in Sources */,
 				D1F0010000000000050002 /* MeasureHealthTests.swift in Sources */,
 				D1F0010000000000060002 /* TodayGroupingTests.swift in Sources */,
 				D1F0010000000000070002 /* MomentWeekTests.swift in Sources */,
@@ -918,9 +922,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -963,9 +967,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data never leaves your iPhone.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. It is never tracked in the background and never leaves your iPhone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

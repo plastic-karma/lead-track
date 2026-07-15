@@ -91,7 +91,7 @@ struct MarkdownExporterTests {
     @Test
     func documentOpensWithTitleAndReadingInstructions() {
         let markdown = build()
-        #expect(markdown.hasPrefix("# lead track — data export"))
+        #expect(markdown.hasPrefix("# LeadStone — data export"))
         #expect(markdown.contains("## How to read this file"))
     }
 

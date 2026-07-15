@@ -24,6 +24,8 @@ struct MetricFormView: View {
     @State private var unit: String
     @State private var countLogStyle: CountLogStyle
     @State private var saveTrigger = false
+    @State private var saveErrorMessage = ""
+    @State private var showingSaveError = false
 
     init(metric: Metric? = nil) {
         editingMetric = metric
@@ -96,6 +98,11 @@ struct MetricFormView: View {
                 icon = newSource.defaultIcon
             }
         }
+        .alert("Couldn't Save Metric", isPresented: $showingSaveError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage)
+        }
     }
 
     /// Preselects the least-used identity color so metrics differentiate
@@ -126,11 +133,9 @@ struct MetricFormView: View {
         apply(to: metric)
         if editingMetric == nil {
             modelContext.insert(metric)
-            connectHealthIfNeeded(metric)
         }
-        if metric.healthExportRaw != previousExport, metric.healthExportTarget != nil {
-            connectHealthExport(metric)
-        }
+        guard connectHealthIfNeeded(metric, previousExport: previousExport)
+        else { return }
         saveTrigger.toggle()
         dismiss()
     }
@@ -168,31 +173,47 @@ struct MetricFormView: View {
         }
     }
 
-    /// First save of a health metric: persist it, then ask to read its one
-    /// source and backfill the mirror — the only moment LeadStone ever
-    /// requests Health access.
-    private func connectHealthIfNeeded(_ metric: Metric) {
-        guard metric.isHealthLinked, let id = metric.stableID else { return }
-        try? modelContext.save()
-        let container = modelContext.container
-        Task {
-            await HealthMetricSyncService.shared.connect(
-                metricID: id, container: container
-            )
+    /// Kicks off whichever Health connection this save switched on: reading
+    /// a new health metric's one source, or writing an export-enabled
+    /// metric's pending sessions — the only moments LeadStone ever requests
+    /// Health access. Returns false when the changes could not be persisted
+    /// first, keeping the form open.
+    private func connectHealthIfNeeded(_ metric: Metric, previousExport: String?) -> Bool {
+        if editingMetric == nil, metric.isHealthLinked {
+            return persistThenConnect(metric) {
+                await HealthMetricSyncService.shared.connect(metricID: $0, container: $1)
+            }
         }
+        if metric.healthExportRaw != previousExport, metric.healthExportTarget != nil {
+            return persistThenConnect(metric) {
+                await HealthSessionExportService.shared.connect(metricID: $0, container: $1)
+            }
+        }
+        return true
     }
 
-    /// A save that switches export on (or to another record type) persists
-    /// the metric, asks to write that one type, and sends what's pending.
-    private func connectHealthExport(_ metric: Metric) {
-        guard let id = metric.stableID else { return }
-        try? modelContext.save()
+    /// Both connect flows share this shape so a fix to one can't miss the
+    /// other: persist the form's changes — the service re-reads the metric
+    /// by ID from a fresh context, so an unsaved metric would silently never
+    /// get its permission prompt or backfill — then hand off to the service.
+    /// A failed save keeps the form open and shows what went wrong.
+    private func persistThenConnect(
+        _ metric: Metric,
+        connect: @escaping (UUID, ModelContainer) async -> Void
+    ) -> Bool {
+        guard let id = metric.stableID else { return true }
+        do {
+            try modelContext.save()
+        } catch {
+            saveErrorMessage = error.localizedDescription
+            showingSaveError = true
+            return false
+        }
         let container = modelContext.container
         Task {
-            await HealthSessionExportService.shared.connect(
-                metricID: id, container: container
-            )
+            await connect(id, container)
         }
+        return true
     }
 }
 

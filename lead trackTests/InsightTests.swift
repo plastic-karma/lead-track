@@ -42,4 +42,18 @@ struct InsightCopyTests {
                 .detail == "5/7 days vs 2/7 last week"
         )
     }
+
+    @Test
+    func streakSaverDetailTracksTheDetectorConstants() {
+        // The copy derives its figures from MeasureHealth's thresholds, so
+        // tuning a constant can never leave the shipped words describing a
+        // detector that no longer exists.
+        let detail = Insight.streakSaver(occurrences: 2, streak: 12).detail
+
+        #expect(detail.contains("2 evenings"))
+        #expect(detail.contains("\(MeasureHealth.lookbackDays / 7) weeks"))
+        #expect(detail.contains("\(Int(MeasureHealth.saverValueShare * 100))% of"))
+        #expect(detail.contains("after 9 pm"))
+        #expect(detail.hasSuffix("?"))
+    }
 }

@@ -16,7 +16,10 @@ import UIKit
 enum Theme {
     #if os(iOS)
     /// Scrolling dashboard background behind the cards.
-    static let screenBackground = warmNeutral(dark: 0.055, light: 0.96)
+    static let screenBackground = warmNeutral(
+        dark: MetricColor.WarmNeutral.screenDarkLuma,
+        light: MetricColor.WarmNeutral.screenLightLuma
+    )
 
     /// Elevated card surface, a warm charcoal lifted off the background.
     static let cardBackground = warmNeutral(dark: 0.12, light: 0.995)
@@ -59,12 +62,8 @@ enum Theme {
     private static func warmNeutral(dark: Double, light: Double) -> Color {
         Color(uiColor: UIColor { traits in
             let base = traits.userInterfaceStyle == .dark ? dark : light
-            return UIColor(
-                red: min(base + 0.018, 1),
-                green: min(base + 0.008, 1),
-                blue: base,
-                alpha: 1
-            )
+            let warm = MetricColor.WarmNeutral.components(luma: base)
+            return UIColor(red: warm.red, green: warm.green, blue: warm.blue, alpha: 1)
         })
     }
     #endif

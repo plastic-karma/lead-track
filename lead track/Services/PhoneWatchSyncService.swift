@@ -5,13 +5,25 @@ import WidgetKit
 
 /// Phone-side WatchConnectivity endpoint. Receives recording actions from the
 /// watch, applies them to the shared store, and keeps the watch's snapshot of
-/// metrics and running timers up to date.
+/// metrics and running timers up to date. Its store observer is also the one
+/// hub that refreshes the home-screen widgets, so every denormalized copy is
+/// invalidated by the same save.
 final class PhoneWatchSyncService: NSObject {
     static let shared = PhoneWatchSyncService()
+
+    private static let appliedIDsKey = "watchAppliedActionIDs"
+    private static let appliedIDsCap = 64
 
     private var container: ModelContainer?
     private var saveObserver: (any NSObjectProtocol)?
     private var lastPushed: WatchSnapshot?
+    private var propagation: Task<Void, Never>?
+    /// Recently applied action IDs, oldest first. WatchConnectivity delivers
+    /// at-least-once — a reply timeout re-queues a payload the phone already
+    /// applied — so replays are dropped instead of double-applied (a replayed
+    /// toggle would UN-do the day; a replayed log doubles the count).
+    /// Persisted because queued transfers can arrive across relaunches.
+    private lazy var appliedActionIDs: [UUID] = Self.loadAppliedIDs()
     /// When the phone last spent a complication transfer to wake the watch,
     /// so bursts of saves coalesce into one wake (see `WatchComplicationPush`).
     private var lastComplicationWakeAt: Date?
@@ -28,6 +40,9 @@ final class PhoneWatchSyncService: NSObject {
     }
 
     func pushSnapshot() {
+        // Pairing is checked before the snapshot is built, so iPhone-only
+        // users never pay a store scan for a watch they don't have.
+        guard watchAppReachable else { return }
         guard let snapshot = currentSnapshot() else { return }
         push(snapshot)
     }
@@ -36,8 +51,9 @@ final class PhoneWatchSyncService: NSObject {
 
     private func handle(message: [String: Any]) -> [String: Any] {
         applyAction(from: message)
-        guard let snapshot = currentSnapshot() else { return [:] }
-        let context = WatchSyncCodec.context(for: snapshot)
+        guard let snapshot = currentSnapshot(),
+              let context = WatchSyncCodec.context(for: snapshot)
+        else { return [:] }
         push(snapshot, encodedAs: context)
         return context
     }
@@ -46,11 +62,30 @@ final class PhoneWatchSyncService: NSObject {
         guard let container,
               let action = WatchSyncCodec.action(from: message)
         else { return }
-        try? WatchActionHandler.apply(action, in: ModelContext(container))
-        WidgetCenter.shared.reloadAllTimelines()
+        if let id = action.id, appliedActionIDs.contains(id) {
+            SyncLog.notice("Dropped replayed watch action \(id)")
+            return
+        }
+        do {
+            try WatchActionHandler.apply(action, in: ModelContext(container))
+            if let id = action.id { markApplied(id) }
+        } catch {
+            // WCSession consumes a queued transfer exactly once, so a
+            // swallowed throw here would silently lose a wrist recording.
+            SyncLog.error(
+                "Applying watch action \(action.kind.rawValue) for metric \(action.metricID) failed: \(error)"
+            )
+        }
     }
 
     // MARK: - Outgoing
+
+    private var watchAppReachable: Bool {
+        let session = WCSession.default
+        return session.activationState == .activated
+            && session.isPaired
+            && session.isWatchAppInstalled
+    }
 
     private func currentSnapshot() -> WatchSnapshot? {
         guard let container else { return nil }
@@ -58,24 +93,22 @@ final class PhoneWatchSyncService: NSObject {
     }
 
     /// Updates the watch's application context, skipping the transfer when
-    /// the watch already holds identical state.
+    /// the watch already holds identical content.
     private func push(
         _ snapshot: WatchSnapshot,
         encodedAs encoded: [String: Any]? = nil
     ) {
-        let session = WCSession.default
-        guard session.activationState == .activated,
-              session.isPaired,
-              session.isWatchAppInstalled,
-              snapshot != lastPushed
+        guard watchAppReachable else { return }
+        if let lastPushed, snapshot.hasSameContent(as: lastPushed) { return }
+        guard let payload = encoded ?? WatchSyncCodec.context(for: snapshot)
         else { return }
-        let context = encoded ?? WatchSyncCodec.context(for: snapshot)
         do {
-            try session.updateApplicationContext(context)
+            try WCSession.default.updateApplicationContext(payload)
             lastPushed = snapshot
-            wakeComplication(session: session, encoded: context)
+            wakeComplication(encoded: payload)
         } catch {
             // Leave lastPushed stale so the next change retries the transfer.
+            SyncLog.error("Application-context push failed: \(error)")
         }
     }
 
@@ -84,7 +117,8 @@ final class PhoneWatchSyncService: NSObject {
     /// Budget- and rate-gated by `WatchComplicationPush`; degrades silently to
     /// the application-context push above when a complication isn't on the
     /// active face or the day's transfer budget is spent.
-    private func wakeComplication(session: WCSession, encoded: [String: Any]) {
+    private func wakeComplication(encoded: [String: Any]) {
+        let session = WCSession.default
         let secondsSinceLastWake = lastComplicationWakeAt.map { Date.now.timeIntervalSince($0) } ?? .infinity
         let wake = WatchComplicationPush.shouldWake(
             complicationEnabled: session.isComplicationEnabled,
@@ -105,9 +139,39 @@ final class PhoneWatchSyncService: NSObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.pushSnapshot()
+                self?.schedulePropagation()
             }
         }
+    }
+
+    /// Debounced fan-out of a store change to every denormalized copy: the
+    /// home-screen widget timelines and the watch snapshot. Coalescing keeps
+    /// burst saves (a Health sync pass) from rebuilding once per save.
+    private func schedulePropagation() {
+        propagation?.cancel()
+        propagation = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+            } catch {
+                return // superseded by a newer save
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+            self?.pushSnapshot()
+        }
+    }
+
+    private static func loadAppliedIDs() -> [UUID] {
+        let stored = UserDefaults.standard.stringArray(forKey: appliedIDsKey) ?? []
+        return stored.compactMap(UUID.init(uuidString:))
+    }
+
+    private func markApplied(_ id: UUID) {
+        appliedActionIDs.append(id)
+        appliedActionIDs = Array(appliedActionIDs.suffix(Self.appliedIDsCap))
+        UserDefaults.standard.set(
+            appliedActionIDs.map(\.uuidString),
+            forKey: Self.appliedIDsKey
+        )
     }
 }
 

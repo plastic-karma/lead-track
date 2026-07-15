@@ -32,8 +32,9 @@ struct MomentFormView: View {
     @State var latitude: Double?
     @State var longitude: Double?
     @State var placeName: String
-    @State var photoData: [Data]
+    @State var photoData: [PickedPhoto]
     @State var photoItems: [PhotosPickerItem] = []
+    @State var photoImportFailureCount = 0
     @State var locationStatus: LocationStatus = .idle
     @State var reader = MomentLocationReader()
     @State var saveTrigger = false
@@ -56,7 +57,7 @@ struct MomentFormView: View {
         _photoData = State(
             initialValue: (moment?.photos ?? [])
                 .sorted { $0.sortIndex < $1.sortIndex }
-                .map(\.data)
+                .map { PickedPhoto(data: $0.data) }
         )
     }
 
@@ -209,21 +210,35 @@ extension MomentFormView {
 
 extension MomentFormView {
     private var photosSection: some View {
-        Section("Photos") {
+        Section {
             if !photoData.isEmpty {
                 photoStrip
             }
             if photoData.count < Self.photoCap {
                 photoPicker
             }
+        } header: {
+            Text("Photos")
+        } footer: {
+            if photoImportFailureCount > 0 {
+                Text(importFailureNote)
+            }
         }
+    }
+
+    /// The visible outcome of a failed import — an iCloud photo that wouldn't
+    /// download, an undecodable file — so picked photos never just vanish.
+    private var importFailureNote: String {
+        photoImportFailureCount == 1
+            ? "One photo couldn't be imported."
+            : "\(photoImportFailureCount) photos couldn't be imported."
     }
 
     private var photoStrip: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 10) {
-                ForEach(Array(photoData.enumerated()), id: \.offset) { index, data in
-                    photoThumb(data, index: index)
+                ForEach(photoData) { photo in
+                    photoThumb(photo)
                 }
             }
         }
@@ -231,8 +246,8 @@ extension MomentFormView {
     }
 
     @ViewBuilder
-    private func photoThumb(_ data: Data, index: Int) -> some View {
-        if let image = UIImage(data: data) {
+    private func photoThumb(_ photo: PickedPhoto) -> some View {
+        if let image = UIImage(data: photo.data) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -240,7 +255,7 @@ extension MomentFormView {
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     Button {
-                        removePhoto(at: index)
+                        removePhoto(photo)
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.white, .black.opacity(0.5))

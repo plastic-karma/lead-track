@@ -52,8 +52,12 @@
                ReferencedContainer = "container:lead track.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <!-- Skipped deliberately: UI tests have never executed on CI (no
+              bootable simulator), so a returning simulator must not start
+              running them cold and turn an unrelated run red. Flip to "NO"
+              when UI testing is deliberately re-adopted. -->
          <TestableReference
-            skipped = "NO"
+            skipped = "YES"
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"

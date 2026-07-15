@@ -26,12 +26,13 @@ extension GoalSummary {
     /// weekday) are left out entirely, so an off day never counts against you.
     static func daily(
         for metrics: [Metric],
+        now: Date = .now,
         calendar: Calendar = .current
     ) -> GoalSummary {
         let active = metrics.filter {
-            hasDailyTarget($0) && $0.isGoalDay(on: .now, calendar: calendar)
+            hasDailyTarget($0) && $0.isGoalDay(on: now, calendar: calendar)
         }
-        let met = active.filter { isDailyMet($0, calendar: calendar) }
+        let met = active.filter { isDailyMet($0, now: now, calendar: calendar) }
         return GoalSummary(met: met.count, total: active.count)
     }
 
@@ -41,14 +42,15 @@ extension GoalSummary {
     /// target today (no goal, or resting) are never "complete".
     static func isDailyComplete(
         _ metric: Metric,
+        now: Date = .now,
         calendar: Calendar = .current
     ) -> Bool {
         guard hasDailyTarget(metric),
-              metric.isGoalDay(on: .now, calendar: calendar)
+              metric.isGoalDay(on: now, calendar: calendar)
         else {
             return false
         }
-        return isDailyMet(metric, calendar: calendar)
+        return isDailyMet(metric, now: now, calendar: calendar)
     }
 
     /// Binary metrics carry an implicit "do it today" goal until it is
@@ -57,15 +59,20 @@ extension GoalSummary {
     /// private): Today's cluster states and day dial share this exact
     /// definition of "has a daily target".
     static func hasDailyTarget(_ metric: Metric) -> Bool {
-        metric.expectsDailyShowUp || metric.dailyGoal != nil
+        DailyTargetRule.exists(
+            measurementType: metric.measurementType,
+            binaryGoalRetiredAt: metric.binaryGoalRetiredAt,
+            dailyGoal: metric.dailyGoal
+        )
     }
 
     private static func isDailyMet(
         _ metric: Metric,
+        now: Date,
         calendar: Calendar
     ) -> Bool {
         let today = SessionStatistics.todayTotal(
-            from: metric.sessions, calendar: calendar
+            from: metric.sessions, now: now, calendar: calendar
         )
         if metric.measurementType == .binary {
             return today > 0
@@ -74,10 +81,15 @@ extension GoalSummary {
     }
 
     /// Weekly goal completion across metrics.
-    static func weekly(for metrics: [Metric]) -> GoalSummary {
+    static func weekly(
+        for metrics: [Metric],
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> GoalSummary {
         let active = metrics.filter { $0.weeklyGoal != nil }
         let met = active.filter {
-            SessionStatistics.currentWeekTotal(from: $0.sessions) >= ($0.weeklyGoal ?? 0)
+            SessionStatistics.currentWeekTotal(from: $0.sessions, now: now, calendar: calendar)
+                >= ($0.weeklyGoal ?? 0)
         }
         return GoalSummary(met: met.count, total: active.count)
     }

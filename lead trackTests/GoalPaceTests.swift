@@ -122,4 +122,40 @@ struct GoalPaceTests {
         let pace = GoalPace.forWeek(dailyTotals: [], weeklyGoal: 1000, excludedWeekdays: [])
         #expect(pace?.goal == 1000)
     }
+
+    // MARK: - Injected Calendar
+
+    @Test
+    func injectedCalendarPinsTheWeekStart() throws {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = try #require(TimeZone(identifier: "UTC"))
+        utc.firstWeekday = 2 // Monday
+        // Wednesday 2026-07-08 noon: Monday and Tuesday elapsed in full plus
+        // half of Wednesday — 2.5 of 7 goal days.
+        let asOf = try #require(
+            utc.date(from: DateComponents(year: 2026, month: 7, day: 8, hour: 12))
+        )
+
+        let pace = try #require(GoalPace.weekly(actual: 0, goal: 700, asOf: asOf, calendar: utc))
+
+        #expect(abs(pace.expected - 250) < 0.001)
+    }
+
+    @Test
+    func dstDayPacesAgainstItsRealLength() throws {
+        var newYork = Calendar(identifier: .gregorian)
+        newYork.timeZone = try #require(TimeZone(identifier: "America/New_York"))
+        newYork.firstWeekday = 1 // Sunday
+        // 2026-03-08 springs forward: 1 pm EDT is 12 elapsed hours of a
+        // 23-hour day, the sole started goal day of a Sunday-start week.
+        let asOf = try #require(
+            newYork.date(from: DateComponents(year: 2026, month: 3, day: 8, hour: 13))
+        )
+
+        let pace = try #require(
+            GoalPace.weekly(actual: 0, goal: 700, asOf: asOf, calendar: newYork)
+        )
+
+        #expect(abs(pace.expected - 700 * (12.0 / 23.0) / 7.0) < 0.001)
+    }
 }

@@ -45,13 +45,8 @@ struct ClusterStubView: View {
     }
 
     private var intentionRows: some View {
-        let intentions = cluster.intentions
-        return ForEach(Array(intentions.enumerated()), id: \.element.id) { index, intention in
+        DividedRows(items: cluster.intentions) { intention in
             ClusterIntentionRow(intention: intention)
-            if index < intentions.count - 1 {
-                Divider()
-                    .padding(.leading, 42)
-            }
         }
     }
 }

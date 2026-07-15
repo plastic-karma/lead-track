@@ -83,7 +83,7 @@ extension AspirationWeekDetailView {
                     .numeralStyle(.value)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
-                Text("\(ValueFormatter.sessions(week.sessionCount)) · \(week.activeDays) days active")
+                Text("\(ValueFormatter.sessions(week.sessionCount)) · \(ValueFormatter.days(week.activeDays)) active")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

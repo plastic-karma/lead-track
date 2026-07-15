@@ -19,13 +19,24 @@ struct DailyTotal: Identifiable {
     }
 }
 
+/// One bucket of a per-week trend series: `date` is the week's start day and
+/// `duration`/`sessionCount` sum the whole week. Structurally a `DailyTotal`
+/// so chart rows stay reusable — never read one as a single day's figures.
+typealias WeeklyTotal = DailyTotal
+
+/// One smoothed point on a trend line: `date` is the trailing window's last
+/// day, `duration` is the window's mean, and `sessionCount` is always 0.
+typealias TrendPoint = DailyTotal
+
 enum SessionStatistics {
     /// Number of sessions shown in a list before collapsing the remainder
     /// behind a "Show All" toggle.
     static let sessionListPreviewLimit = 10
 
-    static func dailyTotals(from sessions: [Session]) -> [DailyTotal] {
-        let calendar = Calendar.current
+    static func dailyTotals(
+        from sessions: [Session],
+        calendar: Calendar = .current
+    ) -> [DailyTotal] {
         var durations: [Date: TimeInterval] = [:]
         var counts: [Date: Int] = [:]
         for session in sessions where !session.isRunning {
@@ -46,57 +57,60 @@ enum SessionStatistics {
 
     static func recentAverage(
         days: Int,
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
-        guard let cutoff = Calendar.current.date(
-            byAdding: .day,
-            value: -(days - 1),
-            to: Calendar.current.startOfDay(for: .now)
-        ) else { return 0 }
+        guard let cutoff = windowCutoff(days: days, now: now, calendar: calendar) else { return 0 }
         let recent = totals.filter { $0.date >= cutoff }
         let total = recent.reduce(0) { $0 + $1.duration }
         return total / Double(days)
     }
 
     static func overallAverage(
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
         guard let first = totals.first else { return 0 }
-        let dayCount = Calendar.current.dateComponents(
-            [.day],
-            from: first.date,
-            to: Calendar.current.startOfDay(for: .now)
-        ).day.map { max($0 + 1, 1) } ?? 1
         let total = totals.reduce(0) { $0 + $1.duration }
-        return total / Double(dayCount)
+        return total / Double(daysSince(first.date, now: now, calendar: calendar))
     }
 
     static func maxDaily(from totals: [DailyTotal]) -> TimeInterval {
         totals.map(\.duration).max() ?? 0
     }
 
-    static func todayTotal(from totals: [DailyTotal]) -> TimeInterval {
-        let today = Calendar.current.startOfDay(for: .now)
+    static func todayTotal(
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> TimeInterval {
+        let today = calendar.startOfDay(for: now)
         return totals.first { $0.date == today }?.duration ?? 0
     }
 
     /// Today's completed total in one pass over the sessions, without
-    /// building the full per-day history first.
+    /// building the full per-day history first. "Today" is the day of `now`,
+    /// so callers building a snapshot against one instant stay internally
+    /// consistent across midnight.
     static func todayTotal(
         from sessions: [Session],
+        now: Date = .now,
         calendar: Calendar = .current
     ) -> TimeInterval {
         sessions
-            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: .now) }
+            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: now) }
             .reduce(0) { $0 + $1.trackingValue }
     }
 
     /// This calendar week's completed total in one pass over the sessions.
     static func currentWeekTotal(
         from sessions: [Session],
+        now: Date = .now,
         calendar: Calendar = .current
     ) -> TimeInterval {
-        guard let week = calendar.dateInterval(of: .weekOfYear, for: .now)
+        guard let week = calendar.dateInterval(of: .weekOfYear, for: now)
         else { return 0 }
         return sessions
             .filter { !$0.isRunning && $0.startedAt >= week.start && $0.startedAt < week.end }
@@ -108,9 +122,11 @@ enum SessionStatistics {
     }
 
     static func lastSevenDaysTotal(
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
-        windowedTotal(days: 7, from: totals)
+        windowedTotal(days: 7, from: totals, now: now, calendar: calendar)
     }
 
     /// Summed magnitude over the trailing `days` calendar days (today plus the
@@ -119,9 +135,11 @@ enum SessionStatistics {
     /// `recentAverage` convention. Feeds an aspiration's recent rollup figure.
     static func windowedTotal(
         days: Int,
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
-        guard let cutoff = windowCutoff(days: days) else { return 0 }
+        guard let cutoff = windowCutoff(days: days, now: now, calendar: calendar) else { return 0 }
         return totals
             .filter { $0.date >= cutoff }
             .reduce(0) { $0 + $1.duration }
@@ -132,32 +150,23 @@ enum SessionStatistics {
     /// bucket whose magnitude is the number of recordings, not their sum.
     static func windowedSessionCount(
         days: Int,
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> Int {
-        guard let cutoff = windowCutoff(days: days) else { return 0 }
+        guard let cutoff = windowCutoff(days: days, now: now, calendar: calendar) else { return 0 }
         return totals
             .filter { $0.date >= cutoff }
             .reduce(0) { $0 + $1.sessionCount }
     }
 
-    /// First instant of the day `days - 1` days before today — the inclusive
-    /// lower bound shared by every trailing-window total.
-    private static func windowCutoff(
-        days: Int,
-        calendar: Calendar = .current
-    ) -> Date? {
-        calendar.date(
-            byAdding: .day, value: -(days - 1),
-            to: calendar.startOfDay(for: .now)
-        )
-    }
-
     static func currentWeekTotal(
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
-        let calendar = Calendar.current
         guard let week = calendar.dateInterval(
-            of: .weekOfYear, for: .now
+            of: .weekOfYear, for: now
         ) else { return 0 }
         return totals
             .filter { $0.date >= week.start && $0.date < week.end }
@@ -169,25 +178,22 @@ enum SessionStatistics {
     }
 
     static func averageSessionsPerDay(
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> Double {
         guard let first = totals.first else { return 0 }
-        let dayCount = Calendar.current.dateComponents(
-            [.day],
-            from: first.date,
-            to: Calendar.current.startOfDay(for: .now)
-        ).day.map { max($0 + 1, 1) } ?? 1
+        let dayCount = daysSince(first.date, now: now, calendar: calendar)
         return Double(totalSessions(from: totals)) / Double(dayCount)
     }
 
     static func recentAverageSessionsPerDay(
         days: Int,
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> Double {
-        guard let cutoff = Calendar.current.date(
-            byAdding: .day, value: -(days - 1),
-            to: Calendar.current.startOfDay(for: .now)
-        ) else { return 0 }
+        guard let cutoff = windowCutoff(days: days, now: now, calendar: calendar) else { return 0 }
         let count = totals
             .filter { $0.date >= cutoff }
             .reduce(0) { $0 + $1.sessionCount }
@@ -204,12 +210,11 @@ enum SessionStatistics {
 
     static func recentAverageSessionLength(
         days: Int,
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> TimeInterval {
-        guard let cutoff = Calendar.current.date(
-            byAdding: .day, value: -(days - 1),
-            to: Calendar.current.startOfDay(for: .now)
-        ) else { return 0 }
+        guard let cutoff = windowCutoff(days: days, now: now, calendar: calendar) else { return 0 }
         let recent = totals.filter { $0.date >= cutoff }
         let sessions = recent.reduce(0) { $0 + $1.sessionCount }
         guard sessions > 0 else { return 0 }
@@ -219,28 +224,33 @@ enum SessionStatistics {
 
     static func currentStreak(
         from totals: [DailyTotal],
-        excludedWeekdays: Set<Int> = []
+        excludedWeekdays: Set<Int> = [],
+        now: Date = .now,
+        calendar: Calendar = .current
     ) -> Int {
         guard excludedWeekdays.count < 7 else { return 0 }
-        let dates = loggedDays(from: totals)
-        let start = streakStart(dates: dates, excludedWeekdays: excludedWeekdays)
+        let dates = loggedDays(from: totals, calendar: calendar)
+        let start = streakStart(
+            dates: dates, excludedWeekdays: excludedWeekdays, now: now, calendar: calendar
+        )
         return streakEndingAt(
-            start, dates: dates, excludedWeekdays: excludedWeekdays
+            start, dates: dates, excludedWeekdays: excludedWeekdays, calendar: calendar
         )
     }
 
     static func longestStreak(
         from totals: [DailyTotal],
-        excludedWeekdays: Set<Int> = []
+        excludedWeekdays: Set<Int> = [],
+        calendar: Calendar = .current
     ) -> Int {
-        let sorted = loggedDays(from: totals).sorted()
+        let sorted = loggedDays(from: totals, calendar: calendar).sorted()
         guard !sorted.isEmpty else { return 0 }
         var best = 1
         var current = 1
         for index in 1 ..< sorted.count {
             if consecutiveGoalDays(
                 from: sorted[index - 1], to: sorted[index],
-                excludedWeekdays: excludedWeekdays
+                excludedWeekdays: excludedWeekdays, calendar: calendar
             ) {
                 current += 1
                 best = max(best, current)
@@ -252,23 +262,54 @@ enum SessionStatistics {
     }
 }
 
+// MARK: - Window Helpers
+
+extension SessionStatistics {
+    /// First instant of the day `days - 1` days before `now`'s day — the
+    /// inclusive lower bound shared by every trailing-window figure.
+    private static func windowCutoff(
+        days: Int,
+        now: Date,
+        calendar: Calendar
+    ) -> Date? {
+        calendar.date(
+            byAdding: .day, value: -(days - 1),
+            to: calendar.startOfDay(for: now)
+        )
+    }
+
+    /// Inclusive count of calendar days from `first`'s day through `now`'s
+    /// day (never below 1) — the denominator shared by the since-the-start
+    /// averages.
+    private static func daysSince(
+        _ first: Date,
+        now: Date,
+        calendar: Calendar
+    ) -> Int {
+        calendar.dateComponents(
+            [.day], from: first, to: calendar.startOfDay(for: now)
+        ).day.map { max($0 + 1, 1) } ?? 1
+    }
+}
+
 // MARK: - Streak Helpers
 
 extension SessionStatistics {
     private static func loggedDays(
-        from totals: [DailyTotal]
+        from totals: [DailyTotal],
+        calendar: Calendar
     ) -> Set<Date> {
-        let calendar = Calendar.current
-        return Set(totals.map { calendar.startOfDay(for: $0.date) })
+        Set(totals.map { calendar.startOfDay(for: $0.date) })
     }
 
     private static func streakStart(
         dates: Set<Date>,
-        excludedWeekdays: Set<Int>
+        excludedWeekdays: Set<Int>,
+        now: Date,
+        calendar: Calendar
     ) -> Date {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
-        if holdsStreak(on: today, dates: dates, excludedWeekdays: excludedWeekdays) {
+        let today = calendar.startOfDay(for: now)
+        if holdsStreak(on: today, dates: dates, excludedWeekdays: excludedWeekdays, calendar: calendar) {
             return today
         }
         return calendar.date(byAdding: .day, value: -1, to: today) ?? today
@@ -277,12 +318,12 @@ extension SessionStatistics {
     private static func streakEndingAt(
         _ date: Date,
         dates: Set<Date>,
-        excludedWeekdays: Set<Int>
+        excludedWeekdays: Set<Int>,
+        calendar: Calendar
     ) -> Int {
-        let calendar = Calendar.current
         var day = calendar.startOfDay(for: date)
         var count = 0
-        while holdsStreak(on: day, dates: dates, excludedWeekdays: excludedWeekdays) {
+        while holdsStreak(on: day, dates: dates, excludedWeekdays: excludedWeekdays, calendar: calendar) {
             if dates.contains(day) { count += 1 }
             guard let prev = calendar.date(
                 byAdding: .day, value: -1, to: day
@@ -296,10 +337,11 @@ extension SessionStatistics {
     private static func holdsStreak(
         on day: Date,
         dates: Set<Date>,
-        excludedWeekdays: Set<Int>
+        excludedWeekdays: Set<Int>,
+        calendar: Calendar
     ) -> Bool {
         if dates.contains(day) { return true }
-        let weekday = Calendar.current.component(.weekday, from: day)
+        let weekday = calendar.component(.weekday, from: day)
         return excludedWeekdays.contains(weekday)
     }
 
@@ -307,9 +349,9 @@ extension SessionStatistics {
     private static func consecutiveGoalDays(
         from earlier: Date,
         to later: Date,
-        excludedWeekdays: Set<Int>
+        excludedWeekdays: Set<Int>,
+        calendar: Calendar
     ) -> Bool {
-        let calendar = Calendar.current
         var day = calendar.date(byAdding: .day, value: 1, to: earlier) ?? later
         while day < later {
             let weekday = calendar.component(.weekday, from: day)
@@ -331,28 +373,12 @@ extension SessionStatistics {
         from totals: [DailyTotal],
         since cutoff: Date,
         calendar: Calendar = .current
-    ) -> [DailyTotal] {
+    ) -> [WeeklyTotal] {
         let start = calendar.startOfDay(for: cutoff)
         let recent = totals.filter { $0.date >= start }
         let groups = Dictionary(grouping: recent) { weekStart(of: $0.date, calendar: calendar) }
         let weeks = groups.map { weekTotal(weekStart: $0.key, items: $0.value) }
         return weeks.sorted { $0.date < $1.date }
-    }
-
-    /// Per-day totals for the trailing `days` ending today, zero-filled so
-    /// every day is present, ordered oldest to newest. Feeds sparklines that
-    /// need a fixed-width window regardless of which days were logged.
-    static func trailingDailySeries(
-        days: Int,
-        from totals: [DailyTotal],
-        calendar: Calendar = .current
-    ) -> [Double] {
-        let today = calendar.startOfDay(for: .now)
-        let byDay = durationsByDay(from: totals, calendar: calendar)
-        return (0 ..< days).reversed().map { offset in
-            let day = calendar.date(byAdding: .day, value: -offset, to: today)
-            return byDay[day ?? today] ?? 0
-        }
     }
 
     /// Trailing `window`-day moving average, one point per day from `cutoff`
@@ -361,13 +387,14 @@ extension SessionStatistics {
         days window: Int,
         from totals: [DailyTotal],
         since cutoff: Date,
+        now: Date = .now,
         calendar: Calendar = .current
-    ) -> [DailyTotal] {
+    ) -> [TrendPoint] {
         let byDay = durationsByDay(from: totals, calendar: calendar)
-        let today = calendar.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: now)
         let start = calendar.startOfDay(for: cutoff)
         return dayRange(from: start, to: today, calendar: calendar).map { day in
-            DailyTotal(
+            TrendPoint(
                 date: day,
                 duration: trailingAverage(ending: day, window: window, byDay: byDay, calendar: calendar)
             )
@@ -386,8 +413,8 @@ extension SessionStatistics {
     private static func weekTotal(
         weekStart: Date,
         items: [DailyTotal]
-    ) -> DailyTotal {
-        DailyTotal(
+    ) -> WeeklyTotal {
+        WeeklyTotal(
             date: weekStart,
             duration: items.reduce(0) { $0 + $1.duration },
             sessionCount: items.reduce(0) { $0 + $1.sessionCount }

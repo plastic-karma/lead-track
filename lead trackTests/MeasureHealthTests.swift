@@ -205,6 +205,62 @@ struct MeasureHealthTests {
         #expect(MeasureHealth.detectStreakSaver(metric: mirrored, now: now) == nil)
     }
 
+    @Test
+    func streakSaverJudgesTheStreakAsOfTheGivenWeek() {
+        // Sessions live only 10-19 days back: the streak is dead today but
+        // was 10 days long as of day 10. Browsing that week's review must
+        // still see the saver pattern, not today's broken chain.
+        let metric = makeMetric()
+        addDuration(1800, to: metric, at: day(45))
+        for daysAgo in 10 ... 19 {
+            if daysAgo == 12 || daysAgo == 13 {
+                addDuration(300, to: metric, at: hour(21, daysAgo: daysAgo))
+            } else {
+                addDuration(1800, to: metric, at: day(daysAgo))
+            }
+        }
+
+        let insight = MeasureHealth.detectStreakSaver(metric: metric, now: day(10))
+
+        #expect(insight == .streakSaver(occurrences: 2, streak: 10))
+    }
+
+    @Test
+    func medianAveragesTheMiddlePairForEvenSamples() {
+        // 12 completed values sorted [400, 400, 600, 600, 600, 1000, 1800 x 6]:
+        // the true median is (1000 + 1800) / 2 = 1400, ceiling 350 — so a
+        // 400-second save no longer sneaks under the upper-middle's 450.
+        let metric = evenSampleMetric(saveSeconds: 400)
+
+        #expect(MeasureHealth.detectStreakSaver(metric: metric, now: now) == nil)
+
+        // A save under the true-median ceiling still fires.
+        let saved = evenSampleMetric(saveSeconds: 300)
+
+        #expect(
+            MeasureHealth.detectStreakSaver(metric: saved, now: now)
+                == .streakSaver(occurrences: 2, streak: 10)
+        )
+    }
+
+    /// A 10-day streak whose 12 completed values sort to
+    /// [save, save, 600, 600, 600, 1000, 1800 x 6].
+    private func evenSampleMetric(saveSeconds: TimeInterval) -> Metric {
+        let metric = makeMetric()
+        anchorHistory(of: metric)
+        addDuration(1800, to: metric, at: day(36))
+        for daysAgo in [0, 1, 8, 9] {
+            addDuration(1800, to: metric, at: day(daysAgo))
+        }
+        addDuration(saveSeconds, to: metric, at: hour(21, daysAgo: 2))
+        addDuration(saveSeconds, to: metric, at: hour(21, daysAgo: 3))
+        for daysAgo in 4 ... 6 {
+            addDuration(600, to: metric, at: day(daysAgo))
+        }
+        addDuration(1000, to: metric, at: day(7))
+        return metric
+    }
+
     // MARK: - Narrowing
 
     /// Three attached metrics: A dominant recently, B and C active only in

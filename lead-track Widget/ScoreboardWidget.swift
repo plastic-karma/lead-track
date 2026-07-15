@@ -5,6 +5,9 @@ import WidgetKit
 struct ScoreboardEntry: TimelineEntry {
     let date: Date
     let metrics: [MetricSnapshot]
+    /// True when the shared store failed to open or fetch — rendered as its
+    /// own state so a broken store never impersonates "no metrics yet".
+    var loadFailed = false
 }
 
 struct MetricSnapshot: Identifiable {
@@ -35,49 +38,60 @@ struct ScoreboardProvider: TimelineProvider {
         in context: Context,
         completion: @escaping (ScoreboardEntry) -> Void
     ) {
-        completion(
-            ScoreboardEntry(
-                date: .now,
-                metrics: loadMetrics()
-            )
-        )
+        completion(currentEntry())
     }
 
     func getTimeline(
         in context: Context,
         completion: @escaping (Timeline<ScoreboardEntry>) -> Void
     ) {
-        let entry = ScoreboardEntry(
-            date: .now,
-            metrics: loadMetrics()
-        )
-        let nextUpdate = Calendar.current.date(
-            byAdding: .minute, value: 15, to: .now
-        ) ?? .now
-        completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        completion(Timeline(
+            entries: [currentEntry()],
+            policy: .after(WidgetTimeline.nextUpdate())
+        ))
+    }
+
+    private func currentEntry() -> ScoreboardEntry {
+        guard let metrics = loadMetrics() else {
+            return ScoreboardEntry(date: .now, metrics: [], loadFailed: true)
+        }
+        return ScoreboardEntry(date: .now, metrics: metrics)
     }
 }
 
 // MARK: - Data Loading
 
 extension ScoreboardProvider {
-    private func loadMetrics() -> [MetricSnapshot] {
-        guard let container = try? SharedModelContainer.create()
-        else { return [] }
+    /// nil when the store can't be opened or fetched — a different statement
+    /// than an empty scoreboard.
+    private func loadMetrics() -> [MetricSnapshot]? {
+        guard let container = SharedModelContainer.shared else { return nil }
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<Metric>(
+        // The widget renders at most four rows; limiting in the descriptor
+        // keeps the memory-capped extension from faulting every metric.
+        var descriptor = FetchDescriptor<Metric>(
+            // Archived metrics leave the scoreboard so a live one takes
+            // the slot.
+            predicate: #Predicate { $0.archivedAt == nil },
             sortBy: [SortDescriptor(\.createdAt)]
         )
-        guard let metrics = try? context.fetch(descriptor)
-        else { return [] }
-        // Archived metrics leave the scoreboard so a live one takes the slot.
-        return metrics.unarchived.prefix(4).map { snapshot(for: $0) }
+        descriptor.fetchLimit = 4
+        do {
+            return try context.fetch(descriptor).compactMap { snapshot(for: $0) }
+        } catch {
+            StoreLog.error("Scoreboard metric fetch failed: \(error)")
+            return nil
+        }
     }
 
-    private func snapshot(for metric: Metric) -> MetricSnapshot {
+    private func snapshot(for metric: Metric) -> MetricSnapshot? {
+        // Identity keys on stableID like every other surface; names are not
+        // unique. The backfill mints IDs at container creation, so a nil
+        // here is a brand-new row racing the fetch — skip it this refresh.
+        guard let id = metric.stableID?.uuidString else { return nil }
         let totals = SessionStatistics.dailyTotals(from: metric.sessions)
         return MetricSnapshot(
-            id: metric.name,
+            id: id,
             name: metric.name,
             icon: metric.displayIcon,
             colorName: metric.colorName,
@@ -121,10 +135,23 @@ struct ScoreboardWidgetView: View {
     @ScaledMetric(relativeTo: .caption2) private var streakIconSize: CGFloat = 11
 
     var body: some View {
-        if entry.metrics.isEmpty {
+        if entry.loadFailed {
+            loadFailedView
+        } else if entry.metrics.isEmpty {
             emptyView
         } else {
             metricsGrid
+        }
+    }
+
+    private var loadFailedView: some View {
+        VStack {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("Couldn't load data")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -178,6 +205,14 @@ extension ScoreboardWidgetView {
             }
             streakBadge(metric.streak, tint: metric.displayColor)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary(metric))
+        // The row shows exactly what the optional biometric app lock guards —
+        // names, goal progress, streaks — so it is marked privacy-sensitive:
+        // the system redacts it wherever it hides private data (a locked lock
+        // screen or StandBy). On the unlocked Home Screen widgets remain
+        // visible by design; the app lock gates the app, not the widget.
+        .privacySensitive()
     }
 
     @ViewBuilder
@@ -208,20 +243,11 @@ extension ScoreboardWidgetView {
         label: String,
         tint: Color
     ) -> some View {
-        let fraction = goal > 0
-            ? min(current / goal, 1.0) : 0
-        return ZStack {
-            Circle()
-                .stroke(Theme.inactive, lineWidth: 3)
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(
-                    tint,
-                    style: StrokeStyle(
-                        lineWidth: 3, lineCap: .round
-                    )
-                )
-                .rotationEffect(.degrees(-90))
+        RingGauge(
+            fraction: goal > 0 ? min(current / goal, 1.0) : 0,
+            tint: tint,
+            lineWidth: 3
+        ) {
             Text(label)
                 .font(.system(size: ringLabelSize).bold())
                 .foregroundStyle(tint)
@@ -237,6 +263,26 @@ extension ScoreboardWidgetView {
                 .roundedDigits(.caption, weight: .bold)
         }
         .foregroundStyle(days > 0 ? tint : Color.secondary)
+    }
+
+    private func accessibilitySummary(_ metric: MetricSnapshot) -> String {
+        var parts = [metric.name]
+        if let goal = metric.dailyGoal, goal > 0 {
+            parts.append(
+                metric.isRestDay
+                    ? "rest day"
+                    : "\(goalPercent(metric.todayTotal, of: goal)) percent of daily goal"
+            )
+        }
+        if let goal = metric.weeklyGoal, goal > 0 {
+            parts.append("\(goalPercent(metric.weeklyTotal, of: goal)) percent of weekly goal")
+        }
+        parts.append("\(metric.streak) day streak")
+        return parts.joined(separator: ", ")
+    }
+
+    private func goalPercent(_ current: TimeInterval, of goal: TimeInterval) -> Int {
+        Int((min(current / goal, 1) * 100).rounded())
     }
 }
 

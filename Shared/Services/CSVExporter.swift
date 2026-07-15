@@ -12,20 +12,26 @@ enum ExportScope: Hashable {
 #endif
 
 enum CSVExporter {
+    /// Writes the export to the temp file, or nil when the write fails. Any
+    /// previous export is removed first, so a failed write can never hand
+    /// the share sheet a stale file with a different scope or range.
     static func exportFile(
         from sessions: [Session]
-    ) -> URL {
+    ) -> URL? {
         let csv = buildCSV(from: sessions)
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("lead-track-export.csv")
-        try? csv.write(
-            to: url, atomically: true, encoding: .utf8
-        )
-        return url
+        try? FileManager.default.removeItem(at: url)
+        do {
+            try csv.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            return nil
+        }
     }
 
     static func buildCSV(from sessions: [Session]) -> String {
-        var lines = [header]
+        var lines = [CSVSchema.header]
         for session in sessions {
             lines.append(row(for: session))
         }
@@ -62,32 +68,38 @@ enum CSVExporter {
 
     // MARK: - CSV Formatting
 
-    private static let header =
-        "Metric,Project,Date,Start,End,Duration (s),Value,Type"
+    /// The user's local calendar day, printed fixed ("2026-07-10") for
+    /// spreadsheet grouping; the importer reads the Start/End instants.
+    private static let localDay = Date.ISO8601FormatStyle(timeZone: .current)
+        .year().month().day()
 
+    /// One row in `CSVSchema` column order. Start/End carry full ISO-8601
+    /// instants: locale-proof to re-import, and an end that crossed
+    /// midnight keeps its real date instead of borrowing the start's.
     private static func row(for session: Session) -> String {
-        let metric = escape(session.metric?.name ?? "")
-        let project = escape(session.project?.name ?? "")
-        let date = session.startedAt.formatted(
-            date: .numeric, time: .omitted
-        )
-        let start = session.startedAt.formatted(
-            date: .omitted, time: .standard
-        )
-        let end = session.endedAt?.formatted(
-            date: .omitted, time: .standard
-        ) ?? ""
-        let duration = String(format: "%.0f", session.duration)
-        let value = session.value.map {
-            String(format: "%.1f", $0)
-        } ?? ""
-        let type = session.metric?.measurementType.rawValue
-            ?? "duration"
-        return "\(metric),\(project),\(date),\(start),"
-            + "\(end),\(duration),\(value),\(type)"
+        let fields = [
+            escape(session.metric?.name ?? ""),
+            escape(session.project?.name ?? ""),
+            session.startedAt.formatted(localDay),
+            CSVSchema.encodeInstant(session.startedAt),
+            CSVSchema.encodeInstant(session.endedAt),
+            String(format: "%.0f", session.duration),
+            CSVSchema.encodeValue(session.value),
+            session.metric?.measurementType.rawValue ?? "duration"
+        ]
+        return fields.joined(separator: ",")
     }
 
+    /// RFC-4180 quoting plus spreadsheet-formula neutralization (CWE-1236):
+    /// a field starting with =, +, -, @, tab, or CR executes as a formula
+    /// when the export is opened in Excel/LibreOffice/Numbers — and names
+    /// can enter the store from an untrusted imported file. Guarded fields
+    /// get a leading apostrophe, which the importer strips back off.
     static func escape(_ text: String) -> String {
+        var text = text
+        if let first = text.first, "=+-@\t\r".contains(first) {
+            text = "'\(text)"
+        }
         if text.contains(",") || text.contains("\"")
             || text.contains("\n")
         {

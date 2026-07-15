@@ -31,6 +31,11 @@ final class MomentLocationReader: NSObject {
     private let manager = CLLocationManager()
     private var authContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
     private var fixContinuation: CheckedContinuation<CLLocation?, Never>?
+    /// Whether a `resolve()` is in flight. The continuations above are
+    /// single-slot, so a re-entrant call would overwrite — and thereby leak —
+    /// a pending one; the guard lives here, with the state it protects,
+    /// rather than in a caller's `.disabled` modifier.
+    private var isResolving = false
 
     override init() {
         super.init()
@@ -39,8 +44,12 @@ final class MomentLocationReader: NSObject {
     }
 
     /// The whole one-shot: authorize (prompting once when undetermined), take a
-    /// single fix, reverse-geocode it once.
+    /// single fix, reverse-geocode it once. A call that overlaps a pending one
+    /// reports `.failed` instead of disturbing it.
     func resolve() async -> Outcome {
+        guard !isResolving else { return .failed }
+        isResolving = true
+        defer { isResolving = false }
         guard await ensureAuthorized() else { return .denied }
         guard let location = await requestFix() else { return .failed }
         return .resolved(await place(from: location))

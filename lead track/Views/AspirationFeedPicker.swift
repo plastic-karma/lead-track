@@ -102,6 +102,8 @@ extension AspirationFeedPicker {
                 SelectionBadge(isSelected: selectedMetrics.contains(metric), tint: prominentTint)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Include \(metric.name)")
+            .accessibilityAddTraits(selectedMetrics.contains(metric) ? .isSelected : [])
         }
         .padding(14)
     }
@@ -172,6 +174,8 @@ extension AspirationFeedPicker {
         }
         .buttonStyle(.plain)
         .disabled(whole)
+        .accessibilityLabel("Include \(project.name)")
+        .accessibilityAddTraits(whole || selectedProjects.contains(project) ? .isSelected : [])
     }
 }
 
@@ -206,7 +210,7 @@ extension AspirationFeedPicker {
     }
 
     private func sortedProjects(of metric: Metric) -> [Project] {
-        metric.projects.sorted { $0.startedAt < $1.startedAt }
+        metric.projects.inDisplayOrder
     }
 
     private func primaryTap(_ metric: Metric) {

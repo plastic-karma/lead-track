@@ -38,24 +38,13 @@ struct SessionRowView: View {
                 tint: session.metric?.displayColor ?? .accentColor
             )
         } else if session.metric?.measurementType == .binary {
-            Text("Done")
+            Text(session.displayValue(unit: nil))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-        } else if let count = session.value {
-            Text(countText(count))
-                .numeralStyle(.stat)
-                .foregroundStyle(.secondary)
         } else {
-            Text(DurationFormatter.format(session.duration))
+            Text(session.displayValue(unit: session.metric?.unit))
                 .numeralStyle(.stat)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private func countText(_ count: Double) -> String {
-        let unit = session.metric?.unit
-        return ValueFormatter.format(
-            count, type: .count, unit: unit
-        )
     }
 }

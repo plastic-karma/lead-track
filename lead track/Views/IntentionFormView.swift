@@ -218,8 +218,11 @@ extension IntentionFormView {
     private var storedTarget: Double? {
         guard kind != .reflective, !perDay else { return nil }
         if kind == .derived, mode == .valueSum {
-            guard let amount = Double(amountText), amount > 0 else { return nil }
-            return metric?.measurementType == .duration ? amount * 3600 : amount
+            guard let amount = LocaleDoubleParser.parse(amountText), amount > 0 else { return nil }
+            // The weekly-goal convention: duration targets are edited in
+            // hours and stored in seconds (see GoalUnit).
+            guard let type = metric?.measurementType else { return amount }
+            return GoalUnit.weekly(type).stored(fromDisplay: amount)
         }
         return Double(targetCount)
     }

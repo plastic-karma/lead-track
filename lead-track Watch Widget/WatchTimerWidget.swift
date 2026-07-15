@@ -77,7 +77,7 @@ struct WatchTimerWidgetView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                Image(systemName: metric.icon ?? "clock")
+                Image(systemName: metric.displayIcon)
                 Text(metric.name)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

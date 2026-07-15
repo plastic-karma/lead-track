@@ -7,6 +7,10 @@ import SwiftData
 
 struct WeeklyReviewTests {
     private let calendar = Calendar.current
+    /// One anchor per suite, captured at init: helpers that recomputed
+    /// startOfDay(.now) per call could split a test's fixtures and
+    /// assertions across a midnight crossing.
+    private let anchor = Calendar.current.startOfDay(for: .now)
 
     #if canImport(SwiftData)
     /// Relationship arrays only sync through a context on Apple platforms;
@@ -26,7 +30,7 @@ struct WeeklyReviewTests {
     private func day(_ daysAgo: Int) -> Date {
         calendar.date(
             byAdding: .day, value: -daysAgo,
-            to: calendar.startOfDay(for: .now)
+            to: anchor
         )!
     }
 
@@ -90,7 +94,9 @@ struct WeeklyReviewTests {
 
         #expect(review.metricWeeks.map(\.name) == ["Active"])
         #expect(review.quietMetrics.map(\.name) == ["Stale", "Silent"])
-        #expect(review.quietMetrics.last?.icon == "clock")
+        // The shared type-aware icon fallback: an icon-less duration metric
+        // reads as a timer on every surface.
+        #expect(review.quietMetrics.last?.icon == "timer")
         #expect(review.quietMetrics.last?.id == silent.stableID?.uuidString)
     }
 
