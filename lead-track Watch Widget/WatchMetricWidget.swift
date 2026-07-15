@@ -81,6 +81,9 @@ struct WatchMetricWidgetView: View {
     var body: some View {
         content
             .containerBackground(.clear, for: .widget)
+            // A configured complication opens the watch app on its metric;
+            // an unconfigured one (nil) keeps the default root launch.
+            .widgetURL(entry.progress.flatMap { WatchMetricDeepLink.url(metricID: $0.id) })
     }
 
     @ViewBuilder

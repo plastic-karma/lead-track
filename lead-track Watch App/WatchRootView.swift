@@ -2,9 +2,12 @@ import SwiftUI
 
 struct WatchRootView: View {
     @Environment(WatchSyncController.self) private var sync
+    /// Metric IDs pushed onto the stack — a Metric Progress complication tap
+    /// drives this so the app opens on the metric it shows.
+    @State private var path: [UUID] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             // The complications zero totals that went stale overnight; the
             // in-app list resolves against the clock the same way, so both
             // agree when the app opens after midnight with the phone
@@ -13,7 +16,18 @@ struct WatchRootView: View {
                 content(at: timeline.date)
             }
             .navigationTitle("LeadStone")
+            .navigationDestination(for: UUID.self) { metricID in
+                WatchMetricDetailView(metricID: metricID)
+            }
         }
+        .onOpenURL { open($0) }
+    }
+
+    /// Focus the metric a complication points at, ignoring any link that
+    /// isn't one of ours.
+    private func open(_ url: URL) {
+        guard let metricID = WatchMetricDeepLink.metricID(from: url) else { return }
+        path = [metricID]
     }
 
     @ViewBuilder
