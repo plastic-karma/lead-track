@@ -21,7 +21,15 @@ extension View {
             opacity(draggingID.wrappedValue == id ? 0.4 : 1)
                 .onDrag {
                     draggingID.wrappedValue = id
-                    return NSItemProvider(object: id as NSString)
+                    let provider = ReorderDragSessionProvider(object: id as NSString)
+                    provider.dragEnded = {
+                        DispatchQueue.main.async {
+                            if draggingID.wrappedValue == id {
+                                draggingID.wrappedValue = nil
+                            }
+                        }
+                    }
+                    return provider
                 }
                 .onDrop(
                     of: [.text],
@@ -39,6 +47,22 @@ extension View {
     /// the catch-all only clears the dimmed drag source.
     func aspirationReorderDropSurface(draggingID: Binding<String?>) -> some View {
         onDrop(of: [.text], delegate: AspirationReorderEndDelegate(draggingID: draggingID))
+    }
+}
+
+/// The dragged card's payload, doubling as the end-of-session sensor. The
+/// system holds the provider for exactly the drag session's lifetime, so its
+/// release is the one signal that fires however the session ends — dropped
+/// on a card, released between cards, or cancelled. The delegate-side clears
+/// below still run when they fire (they're immediate), but they can't be
+/// relied on alone: after the stack reflows under a stationary finger,
+/// SwiftUI often ends the session without calling `performDrop` at all,
+/// which would leave the source card dimmed until the next drag.
+private final class ReorderDragSessionProvider: NSItemProvider {
+    var dragEnded: (() -> Void)?
+
+    deinit {
+        dragEnded?()
     }
 }
 
