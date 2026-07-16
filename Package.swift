@@ -32,6 +32,7 @@ let swiftDataSources = [
 let swiftDataTests = [
     "CountdownReconcileTests.swift",
     "DefaultProjectTests.swift",
+    "RecordingCommitTests.swift",
     "SessionMoveTests.swift",
     "WatchActionHandlerTests.swift",
     "WatchSnapshotBuilderTests.swift"
