@@ -50,6 +50,11 @@ struct WeeklyReviewView: View {
     /// The group card lifted by a long-press drag, dimmed until the drop.
     /// Held here so the whole scroll surface can close out a drag session.
     @State var draggingGroupID: String?
+    /// The calendar week the user swiped the check-in away in, stored as the
+    /// week start's reference-date offset; the section stays hidden until a
+    /// later week reads past it. 0 — the unset default — dismisses nothing.
+    /// See `WeeklyCheckInDismissal`.
+    @AppStorage(WeeklyCheckInDismissal.dismissedWeekKey) var dismissedCheckInWeek = 0.0
     /// Writes intention closures, renewals, promotions, and check-ins.
     @Environment(\.modelContext) var modelContext
 
