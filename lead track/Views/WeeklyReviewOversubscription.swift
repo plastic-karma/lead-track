@@ -7,23 +7,42 @@ import SwiftUI
 /// per-goal season decisions. Live review only; when there is nothing to raise
 /// the block is simply absent (see `OversubscriptionInsight`).
 extension WeeklyReviewView {
+    /// The header's close button — or a sideways swipe — sends this card away
+    /// until next week; `WeeklyCheckInDismissal` remembers the week, so it
+    /// returns on its own once the week rolls over.
     @ViewBuilder
     func oversubscriptionSection(_ review: WeeklyReview) -> some View {
-        if let checkIn = review.oversubscription {
-            VStack(spacing: 16) {
-                sectionBreak("Check-In")
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(checkIn.headline, systemImage: checkIn.symbol)
-                        .font(.subheadline.weight(.medium))
-                    Text(checkIn.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cardSurface()
+        if let checkIn = review.oversubscription,
+           !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedOversubscriptionWeek)
+        {
+            SwipeToDismiss(onDismiss: dismissOversubscription) {
+                oversubscriptionCard(checkIn)
             }
-            .padding(.horizontal)
+        }
+    }
+
+    private func oversubscriptionCard(_ checkIn: OversubscriptionInsight.CheckIn) -> some View {
+        VStack(spacing: 16) {
+            dismissibleSectionHeader("Check-In", dismiss: dismissOversubscription)
+            VStack(alignment: .leading, spacing: 8) {
+                Label(checkIn.headline, systemImage: checkIn.symbol)
+                    .font(.subheadline.weight(.medium))
+                Text(checkIn.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface()
+        }
+        .padding(.horizontal)
+    }
+
+    /// Hides the oversubscription check-in for the rest of the calendar week;
+    /// it returns on its own next week (see `WeeklyCheckInDismissal`).
+    private func dismissOversubscription() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            dismissedOversubscriptionWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
     }
 }
