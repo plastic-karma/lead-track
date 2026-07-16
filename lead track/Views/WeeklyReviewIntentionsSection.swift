@@ -47,7 +47,8 @@ extension WeeklyReviewView {
             $0.offersCheckIn || pulsedAspirations.contains($0.id)
         }
         if review.weeksBack == 0, !open.isEmpty,
-           !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedCheckInWeek) {
+           !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedCheckInWeek)
+        {
             SwipeToDismiss(onDismiss: dismissCheckIn) {
                 checkInBody(open)
             }

@@ -21,7 +21,9 @@ struct SwipeToDismiss<Content: View>: View {
     }
 
     /// Release past this many points to commit; shorter drags spring back.
-    private static var commitDistance: CGFloat { 100 }
+    private static var commitDistance: CGFloat {
+        100
+    }
 
     var body: some View {
         content
