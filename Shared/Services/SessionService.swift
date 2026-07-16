@@ -54,6 +54,7 @@ enum SessionService {
             countdownDuration: countdownDuration
         )
         context.insert(session)
+        commit(context)
         startLiveActivity(
             metric: metric,
             project: project,
@@ -96,10 +97,28 @@ enum SessionService {
     static func stopSession(_ session: Session, at timestamp: Date = .now) {
         let endedAt = max(min(timestamp, .now), session.startedAt)
         session.endedAt = endedAt
+        commit(session.modelContext)
         stopLiveActivity()
         if let metric = session.metric {
             cancelCountdownIfStoppedEarly(metric, session: session, endedAt: endedAt)
             rescheduleNotifications(for: metric)
+        }
+    }
+
+    /// Commits a recording to the store right away instead of leaving it to
+    /// SwiftData's autosave, which can run many seconds later. The Today
+    /// rings, day dial, and cluster arrangement derive from
+    /// `metric.sessions`, and observers of that to-many relationship only
+    /// re-render once the context saves — deferred to autosave, a met goal
+    /// kept looking unmet for up to ~15 seconds. Saving here also fires the
+    /// `didSave` hooks (watch snapshot push, countdown rearm) the moment the
+    /// user records.
+    private static func commit(_ context: ModelContext?) {
+        guard let context, context.hasChanges else { return }
+        do {
+            try context.save()
+        } catch {
+            StoreLog.error("Recording save failed: \(error)")
         }
     }
 
@@ -157,6 +176,7 @@ enum SessionService {
             value: value
         )
         context.insert(session)
+        commit(context)
         rescheduleNotifications(for: metric)
         return session
     }
@@ -180,6 +200,7 @@ enum SessionService {
             for session in today {
                 context.delete(session)
             }
+            commit(context)
             rescheduleNotifications(for: metric)
             return false
         }
@@ -191,6 +212,7 @@ enum SessionService {
             value: 1
         )
         context.insert(session)
+        commit(context)
         rescheduleNotifications(for: metric)
         return true
     }
@@ -211,6 +233,7 @@ enum SessionService {
             endedAt: startedAt.addingTimeInterval(duration)
         )
         context.insert(session)
+        commit(context)
         rescheduleNotifications(for: metric)
         return session
     }
