@@ -37,22 +37,46 @@ extension WeeklyReviewView {
     /// An answered aspiration stays on stage for the rest of the visit so
     /// its note field doesn't vanish mid-typing; skipping remains
     /// structurally invisible — scrolling past is the dismissal.
+    ///
+    /// The header's close button — or a sideways swipe — sends the whole
+    /// section away until next week; `WeeklyCheckInDismissal` remembers the
+    /// week, so it returns on its own once the week rolls over.
     @ViewBuilder
     func checkInSection(_ review: WeeklyReview) -> some View {
         let open = review.aspirationWeeks.filter {
             $0.offersCheckIn || pulsedAspirations.contains($0.id)
         }
-        if review.weeksBack == 0, !open.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                sectionBreak("Check-in")
-                Text("Is this effort still serving the why?")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                ForEach(open) { week in
-                    pulseRow(for: week)
-                }
+        if review.weeksBack == 0, !open.isEmpty,
+           !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedCheckInWeek)
+        {
+            SwipeToDismiss(onDismiss: dismissCheckIn) {
+                checkInBody(open)
             }
-            .padding(.horizontal)
+        }
+    }
+
+    /// The check-in section's content, split out so `SwipeToDismiss` can carry
+    /// it: a header that closes the section, the prompt, then one
+    /// alignment-pulse row per still-open aspiration.
+    private func checkInBody(_ open: [WeeklyReview.AspirationWeek]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            dismissibleSectionHeader("Check-in", dismiss: dismissCheckIn)
+            Text("Is this effort still serving the why?")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ForEach(open) { week in
+                pulseRow(for: week)
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    /// Hides the check-in for the rest of the current calendar week; it comes
+    /// back on its own once the week rolls over (see `WeeklyCheckInDismissal`).
+    /// Animated so the section slides away and the rows below close the gap.
+    private func dismissCheckIn() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            dismissedCheckInWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
     }
 

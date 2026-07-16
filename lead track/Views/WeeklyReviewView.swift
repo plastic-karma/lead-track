@@ -50,6 +50,14 @@ struct WeeklyReviewView: View {
     /// The group card lifted by a long-press drag, dimmed until the drop.
     /// Held here so the whole scroll surface can close out a drag session.
     @State var draggingGroupID: String?
+    /// The calendar week the user dismissed the alignment pulse in, stored as
+    /// the week start's reference-date offset; the section stays hidden until a
+    /// later week reads past it. 0 — the unset default — dismisses nothing.
+    /// See `WeeklyCheckInDismissal`.
+    @AppStorage(WeeklyCheckInDismissal.alignmentWeekKey) var dismissedCheckInWeek = 0.0
+    /// The same, for the oversubscription "Check-In" card — its own week so
+    /// dismissing one check-in leaves the other.
+    @AppStorage(WeeklyCheckInDismissal.oversubscriptionWeekKey) var dismissedOversubscriptionWeek = 0.0
     /// Writes intention closures, renewals, promotions, and check-ins.
     @Environment(\.modelContext) var modelContext
 
@@ -150,6 +158,28 @@ extension WeeklyReviewView {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// `sectionBreak` plus a quiet close button on the title row, so a section
+    /// can be sent away for the week by a plain tap — the reliable partner to
+    /// `SwipeToDismiss`. Shared by the Week tab's two dismissible check-ins.
+    func dismissibleSectionHeader(_ title: String, dismiss: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            HStack {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(action: dismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss until next week")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
