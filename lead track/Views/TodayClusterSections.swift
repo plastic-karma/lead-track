@@ -6,17 +6,21 @@ import SwiftUI
 /// by default so the screen opens calm and focused; tap a header to expand a
 /// cluster inline. The neediest clusters sort first until the user drags a
 /// card into place — manual order then holds permanently — and once nothing
-/// needs the user anymore, a closing caption sends the day off.
+/// needs the user anymore, a closing caption sends the day off. When the
+/// header chevrons browse an earlier day, the same arrangement replays that
+/// day read-only: no live timers, no send-off, states as the day closed.
 extension MetricListView {
     @ViewBuilder
     var clusterSections: some View {
+        let day = TodayGrouping.day(back: daysBack)
         let clusters = TodayGrouping.clusters(
-            metrics: metrics, aspirations: aspirations, intentions: intentions
+            metrics: metrics, aspirations: aspirations, intentions: intentions, now: day
         )
         ForEach(clusters) { cluster in
             ClusterStubView(
                 cluster: cluster,
-                runningSessions: runningSessions,
+                runningSessions: daysBack == 0 ? runningSessions : [],
+                day: day,
                 isExpanded: expansion(of: cluster)
             )
             .aspirationReorderable(
@@ -26,7 +30,7 @@ extension MetricListView {
                 move(draggedID, over: targetID, visible: clusters)
             }
         }
-        if !clusters.isEmpty, clusters.allSatisfy({ $0.state != .needsYou }) {
+        if daysBack == 0, !clusters.isEmpty, clusters.allSatisfy({ $0.state != .needsYou }) {
             Text("Nothing left to carry. See you tomorrow.")
                 .font(.caption)
                 .foregroundStyle(.secondary.opacity(0.75))

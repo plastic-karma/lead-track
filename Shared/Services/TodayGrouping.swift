@@ -51,4 +51,15 @@ enum TodayGrouping {
         if aspiration.metrics.contains(where: { $0 === metric }) { return true }
         return aspiration.projects.contains { $0.metric === metric }
     }
+
+    /// The calendar day `back` days before `now` — the Today tab's browsed
+    /// day, derived in one place so the header dial and the cluster sections
+    /// always read the same instant.
+    static func day(
+        back: Int,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Date {
+        calendar.date(byAdding: .day, value: -back, to: now) ?? now
+    }
 }

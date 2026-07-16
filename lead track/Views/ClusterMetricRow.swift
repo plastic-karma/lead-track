@@ -2,15 +2,19 @@ import SwiftData
 import SwiftUI
 
 /// One metric's row inside a Today cluster card. An active row carries the
-/// identity icon, today's value against its goal over a slim progress track,
-/// and a 44 pt circular action — the same one-tap start/log/check the old
-/// full-width button offered, just quiet. A done row folds in place to a
+/// identity icon, the day's value against its goal over a slim progress
+/// track, and a 44 pt circular action — the same one-tap start/log/check the
+/// old full-width button offered, just quiet. A done row folds in place to a
 /// checkmark and its final value instead of moving to a bottom section.
-/// Tapping the row still navigates to the metric's detail screen.
+/// Tapping the row still navigates to the metric's detail screen. On a
+/// browsed earlier day the row is testimony, not a control: the action
+/// circle stays home and the figures read as that day closed.
 struct ClusterMetricRow: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
     let runningSession: Session?
+    /// The day the row reads — recording is only offered when it is today.
+    let day: Date
     @State private var showingCountEntry = false
     @State private var showingCountdownPicker = false
     @State private var showingDeleteConfirmation = false
@@ -56,7 +60,7 @@ struct ClusterMetricRow: View {
     /// which keeps the live row so the effort stays stoppable.
     @ViewBuilder
     private func row(_ total: TimeInterval) -> some View {
-        if GoalSummary.isDailyComplete(metric), runningSession == nil {
+        if GoalSummary.isDailyComplete(metric, now: day), runningSession == nil {
             doneRow(total)
         } else {
             activeRow(total)
@@ -88,7 +92,7 @@ extension ClusterMetricRow {
                         .frame(height: 4)
                 }
             }
-            if !metric.isHealthLinked {
+            if !metric.isHealthLinked, Calendar.current.isDateInToday(day) {
                 actionButton(total)
             }
         }
@@ -149,7 +153,7 @@ extension ClusterMetricRow {
     }
 
     private var todayTotal: TimeInterval {
-        SessionStatistics.todayTotal(from: metric.sessions)
+        SessionStatistics.todayTotal(from: metric.sessions, now: day)
     }
 }
 
