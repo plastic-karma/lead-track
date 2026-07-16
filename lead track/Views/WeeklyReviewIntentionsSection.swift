@@ -38,8 +38,8 @@ extension WeeklyReviewView {
     /// its note field doesn't vanish mid-typing; skipping remains
     /// structurally invisible — scrolling past is the dismissal.
     ///
-    /// A sideways swipe (or the matching accessibility action) sends the whole
-    /// section away until next week — `WeeklyCheckInDismissal` remembers the
+    /// The header's close button — or a sideways swipe — sends the whole
+    /// section away until next week; `WeeklyCheckInDismissal` remembers the
     /// week, so it returns on its own once the week rolls over.
     @ViewBuilder
     func checkInSection(_ review: WeeklyReview) -> some View {
@@ -52,15 +52,15 @@ extension WeeklyReviewView {
             SwipeToDismiss(onDismiss: dismissCheckIn) {
                 checkInBody(open)
             }
-            .accessibilityAction(named: Text("Dismiss until next week"), dismissCheckIn)
         }
     }
 
     /// The check-in section's content, split out so `SwipeToDismiss` can carry
-    /// it: the prompt above one alignment-pulse row per still-open aspiration.
+    /// it: a header that closes the section, the prompt, then one
+    /// alignment-pulse row per still-open aspiration.
     private func checkInBody(_ open: [WeeklyReview.AspirationWeek]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionBreak("Check-in")
+            checkInHeader
             Text("Is this effort still serving the why?")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -69,6 +69,28 @@ extension WeeklyReviewView {
             }
         }
         .padding(.horizontal)
+    }
+
+    /// The section seam with a quiet close button on the title row, so the
+    /// check-in can be sent away for the week by an obvious tap — not only the
+    /// swipe, which is easy to miss on a scrolling screen.
+    private var checkInHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            HStack {
+                Text("Check-in")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(action: dismissCheckIn) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss until next week")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Hides the check-in for the rest of the current calendar week; it comes

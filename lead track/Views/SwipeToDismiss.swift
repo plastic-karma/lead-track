@@ -7,9 +7,9 @@ import SwiftUI
 /// to the enclosing scroll view and the page keeps scrolling over the section.
 ///
 /// Purely presentational: it fades and flings the content and reports the
-/// commit, leaving the caller to actually remove the section (and to offer an
-/// `accessibilityAction` alongside, since a swipe alone is unreachable by
-/// assistive technologies).
+/// commit, leaving the caller to actually remove the section — and to pair it
+/// with a visible control, since a swipe alone is easy to miss on a scrolling
+/// screen and unreachable by assistive technologies.
 struct SwipeToDismiss<Content: View>: View {
     private let onDismiss: () -> Void
     private let content: Content
@@ -29,7 +29,10 @@ struct SwipeToDismiss<Content: View>: View {
         content
             .offset(x: offset)
             .opacity(contentOpacity)
-            .gesture(swipe)
+            // Simultaneous, not exclusive: the enclosing scroll view keeps its
+            // vertical pan while this reads horizontal drags — a plain
+            // `.gesture` loses the race and never fires inside a ScrollView.
+            .simultaneousGesture(swipe)
     }
 
     /// Fades with the drag so the section is invisible by the time a committed
