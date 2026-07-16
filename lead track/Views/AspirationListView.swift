@@ -8,7 +8,6 @@ struct AspirationListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @State private var showingAddSheet = false
-    @State private var aspirationPendingDelete: Aspiration?
     /// The card lifted by a long-press drag, dimmed in place until the drop.
     @State private var draggingID: String?
 
@@ -35,44 +34,22 @@ struct AspirationListView: View {
         .sheet(isPresented: $showingAddSheet) {
             AspirationFormView()
         }
-        .confirmationDialog(
-            "Delete \(aspirationPendingDelete?.title ?? "Aspiration")?",
-            isPresented: deleteConfirmationPresented,
-            titleVisibility: .visible,
-            presenting: aspirationPendingDelete
-        ) { aspiration in
-            Button("Delete Aspiration", role: .destructive) { delete(aspiration) }
-        } message: { _ in
-            Text("Its metrics and projects stay in your library. Its intentions go with it.")
-        }
         .overlay { emptyState }
-    }
-
-    /// Drives the delete dialog off the optional the context-menu action sets,
-    /// mirroring the detail screen — the cascade is never one tap away.
-    private var deleteConfirmationPresented: Binding<Bool> {
-        Binding(
-            get: { aspirationPendingDelete != nil },
-            set: { presented in if !presented { aspirationPendingDelete = nil } }
-        )
     }
 }
 
 // MARK: - Pieces
 
 extension AspirationListView {
+    /// One aspiration card: tap navigates, long-press lifts it for reorder —
+    /// deliberately nothing else on long-press. Deleting lives on the detail
+    /// screen alone, so the cascade is never one hold-and-tap away from the
+    /// list and the drag never competes with a context menu.
     private func card(_ aspiration: Aspiration) -> some View {
         NavigationLink(value: aspiration) {
             AspirationCardView(aspiration: aspiration)
         }
         .buttonStyle(.plain)
-        .contextMenu {
-            Button(role: .destructive) {
-                aspirationPendingDelete = aspiration
-            } label: {
-                Label("Delete Aspiration", systemImage: "trash")
-            }
-        }
         .aspirationReorderable(
             id: aspiration.stableIdentity, draggingID: $draggingID, move: move
         )
@@ -104,22 +81,17 @@ extension AspirationListView {
             }
         }
     }
-
-    private func delete(_ aspiration: Aspiration) {
-        withAnimation {
-            modelContext.deleteAspiration(aspiration)
-        }
-    }
 }
 
 // MARK: - The one delete path
 
 extension ModelContext {
-    /// The single aspiration delete path, shared by the list's context menu
-    /// and the detail screen: the dependents go with no per-row hook, so
-    /// their pending daily-question notifications are cancelled explicitly
-    /// before the delete (see `deleteAspirationAndDependents` for why the
-    /// dependents are deleted explicitly too).
+    /// The single aspiration delete path, called from the detail screen —
+    /// deliberately the only place an aspiration can be deleted: the
+    /// dependents go with no per-row hook, so their pending daily-question
+    /// notifications are cancelled explicitly before the delete (see
+    /// `deleteAspirationAndDependents` for why the dependents are deleted
+    /// explicitly too).
     func deleteAspiration(_ aspiration: Aspiration) {
         NotificationService.cancelQuestions(for: aspiration)
         do {
