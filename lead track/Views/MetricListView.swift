@@ -17,6 +17,11 @@ struct MetricListView: View {
     /// per-cluster and transient by design, so tomorrow always starts with
     /// every cluster folded again.
     @State var expansionOverrides: [String: Bool] = [:]
+    /// The cluster card lifted by a long-press drag, dimmed until the drop.
+    /// Internal so the cluster arrangement in its own file can drive it.
+    @State var draggingClusterID: String?
+    /// Writes the drag-reorder rank rewrites; internal like the queries.
+    @Environment(\.modelContext) var modelContext
     @State private var showingAddSheet = false
     /// Raising the responder's review flag slides the app to the Week tab
     /// (see `ContentView`) — the same route a tapped weekly notification
@@ -36,6 +41,7 @@ struct MetricListView: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
+        .aspirationReorderDropSurface(draggingID: $draggingClusterID)
         .background(Theme.washedScreen)
         .navigationTitle("Today")
         .toolbar {

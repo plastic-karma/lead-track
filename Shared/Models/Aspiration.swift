@@ -35,6 +35,13 @@ final class Aspiration {
 
     var createdAt: Date
 
+    /// The card's manual rank across the three tabs — Today's clusters, the
+    /// Week tab's groups, the Aspirations list — written by drag-to-reorder
+    /// (see `AspirationReorder`) and rewritten on every drop. nil until the
+    /// user first drags a card anywhere: the surfaces then fall back to
+    /// creation order, and Today keeps its smart state ordering.
+    var displayOrder: Int?
+
     // Both attachments are many-to-many. The `inverse:` macro lives here and
     // here only — SwiftData requires it on exactly one side, and Aspiration is
     // the type introducing the relationship. `Metric`/`Project` carry plain
