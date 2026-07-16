@@ -155,6 +155,15 @@ extension Intention {
         Self.week(starting: weekStart, contains: now, calendar: calendar)
     }
 
+    /// The last calendar day of the intention's week — the day Today's
+    /// "held through Sunday" whisper names. Derived from the half-open week
+    /// interval by calendar arithmetic, so DST weeks and non-Monday week
+    /// starts stay correct.
+    func weekLastDay(calendar: Calendar = .current) -> Date {
+        let interval = weekInterval(calendar: calendar)
+        return calendar.date(byAdding: .day, value: -1, to: interval.end) ?? weekStart
+    }
+
     /// Whether `date` falls inside the calendar week whose persisted start
     /// is `weekStart`. Containment, not Date equality: the stored start was
     /// normalized by the calendar/zone in effect at creation, and a

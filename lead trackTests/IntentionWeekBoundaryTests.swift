@@ -145,6 +145,42 @@ extension IntentionWeekBoundaryTests {
     }
 }
 
+// MARK: - Week close day
+
+extension IntentionWeekBoundaryTests {
+    /// Today's "held through Sunday" whisper names the week's last calendar
+    /// day: the day before the next week's first midnight, matching the
+    /// half-open convention of every week window in the app.
+    @Test
+    func weekLastDayIsTheDayBeforeTheNextWeekStarts() throws {
+        let calendar = berlin
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 6, day: 1, hour: 9)))
+        let intention = try perDayCounted(createdAt: created, calendar: calendar)
+        let week = intention.weekInterval(calendar: calendar)
+
+        let lastDay = intention.weekLastDay(calendar: calendar)
+
+        #expect(calendar.component(.weekday, from: lastDay) == 1)
+        #expect(week.start <= lastDay && lastDay < week.end)
+        #expect(calendar.isDate(lastDay, inSameDayAs: week.end.addingTimeInterval(-1)))
+    }
+
+    /// The fall-back week's 25-hour Sunday is still the last day — the
+    /// computation rides the calendar, never 86 400-second arithmetic.
+    @Test
+    func weekLastDaySurvivesTheFallBackWeek() throws {
+        let calendar = berlin
+        let created = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 19, hour: 10)))
+        let intention = try perDayCounted(createdAt: created, calendar: calendar)
+        let week = intention.weekInterval(calendar: calendar)
+
+        let lastDay = intention.weekLastDay(calendar: calendar)
+
+        #expect(calendar.component(.weekday, from: lastDay) == 1)
+        #expect(calendar.isDate(lastDay, inSameDayAs: week.end.addingTimeInterval(-1)))
+    }
+}
+
 // MARK: - Undo
 
 extension IntentionWeekBoundaryTests {
