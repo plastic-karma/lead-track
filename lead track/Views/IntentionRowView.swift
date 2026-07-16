@@ -9,7 +9,9 @@ import SwiftUI
 /// Two skins: the classic row wears the aspiration's glyph; with
 /// `showsPrinciple` (the aspiration detail, where the page is the
 /// aspiration) the glyph goes and a serif "serves …" line beneath the title
-/// carries the identity instead — the why threaded through the row.
+/// carries the identity instead — the why threaded through the row. On
+/// every skin the title speaks in `IntentionVoice`, the serif vow register
+/// that sets commitments apart from the sans-serif world of metrics.
 ///
 /// Reflective rows deliberately carry no completion control of any kind, and
 /// no row ever wears a red state, an overdue style, or a badge — progress is
@@ -44,20 +46,42 @@ struct IntentionRowView: View {
         if let serves = servesLine {
             VStack(alignment: .leading, spacing: 3) {
                 Text(intention.title)
-                    .font(.subheadline)
-                Text("serves \(serves)")
-                    .font(.system(size: 12.5, design: .serif))
-                    .italic()
-                    .foregroundStyle(accent)
+                    .font(IntentionVoice.title)
+                IntentionServesLine(text: serves, accent: accent)
             }
         } else {
             Text(intention.title)
-                .font(.subheadline)
+                .font(IntentionVoice.title)
         }
     }
 
     private var accent: Color {
         MetricColor.color(named: intention.aspiration?.colorName)
+    }
+}
+
+// MARK: - Voice
+
+/// The serif italic register every intention speaks in — the voice of the
+/// why, shared by all row skins so the vow reads as the same kind of thing
+/// on Today, the review, and the aspiration detail.
+enum IntentionVoice {
+    /// The commitment itself.
+    static let title = Font.system(.subheadline, design: .serif).italic()
+    /// The quieter lines threaded beneath it.
+    static let detail = Font.system(size: 12.5, design: .serif).italic()
+}
+
+/// The "serves …" line — the principle threaded through an intention row,
+/// in the owning aspiration's ink.
+struct IntentionServesLine: View {
+    let text: String
+    let accent: Color
+
+    var body: some View {
+        Text("serves \(text)")
+            .font(IntentionVoice.detail)
+            .foregroundStyle(accent)
     }
 }
 
