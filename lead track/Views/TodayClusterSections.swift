@@ -4,7 +4,8 @@ import SwiftUI
 /// Today's smart-ordered cluster arrangement (see `TodayGrouping.clusters`):
 /// every cluster is one collapsible card, all folded to their one-line stubs
 /// by default so the screen opens calm and focused; tap a header to expand a
-/// cluster inline. The neediest clusters still sort first, and once nothing
+/// cluster inline. The neediest clusters sort first until the user drags a
+/// card into place — manual order then holds permanently — and once nothing
 /// needs the user anymore, a closing caption sends the day off.
 extension MetricListView {
     @ViewBuilder
@@ -18,6 +19,12 @@ extension MetricListView {
                 runningSessions: runningSessions,
                 isExpanded: expansion(of: cluster)
             )
+            .aspirationReorderable(
+                id: cluster.aspiration == nil ? nil : cluster.id,
+                draggingID: $draggingClusterID
+            ) { draggedID, targetID in
+                move(draggedID, over: targetID, visible: clusters)
+            }
         }
         if !clusters.isEmpty, clusters.allSatisfy({ $0.state != .needsYou }) {
             Text("Nothing left to carry. See you tomorrow.")
@@ -25,6 +32,26 @@ extension MetricListView {
                 .foregroundStyle(.secondary.opacity(0.75))
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
+        }
+    }
+
+    /// One hover step of a cluster drag: the first ever seeds the ranks from
+    /// the on-screen smart order (so nothing jumps but the dragged card),
+    /// then the ranks are rewritten and saved. The unaligned pseudo-cluster
+    /// never takes part — it always trails.
+    private func move(
+        _ draggedID: String,
+        over targetID: String,
+        visible clusters: [TodayGrouping.Cluster]
+    ) {
+        withAnimation(.snappy) {
+            AspirationReorder.applyMove(
+                all: aspirations,
+                visibleIDs: clusters.compactMap { $0.aspiration == nil ? nil : $0.id },
+                draggedID: draggedID,
+                targetID: targetID
+            )
+            try? modelContext.save()
         }
     }
 

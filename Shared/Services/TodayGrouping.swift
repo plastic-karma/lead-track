@@ -19,16 +19,17 @@ enum TodayGrouping {
     /// Partitions `metrics` under the aspirations they serve. A metric
     /// belongs to an aspiration when the metric itself *or any of its
     /// projects* is attached (matching rollup semantics); with several
-    /// candidates the earliest-created aspiration wins, so no card is ever
-    /// duplicated — a duplicate would double live timer affordances and break
-    /// the day's arithmetic. Groups follow aspiration creation order (the
-    /// app's canonical aspiration order), metrics keep their incoming order,
-    /// and metrics serving no aspiration return in `unaligned`.
+    /// candidates the first aspiration in canonical order wins, so no card
+    /// is ever duplicated — a duplicate would double live timer affordances
+    /// and break the day's arithmetic. Groups follow the canonical
+    /// aspiration order (manual drag ranks, then creation — see
+    /// `DisplayOrder.swift`), metrics keep their incoming order, and metrics
+    /// serving no aspiration return in `unaligned`.
     static func groups(
         metrics: [Metric],
         aspirations: [Aspiration]
     ) -> (groups: [Group], unaligned: [Metric]) {
-        let ordered = aspirations.sorted { $0.createdAt < $1.createdAt }
+        let ordered = aspirations.inDisplayOrder
         var members: [[Metric]] = Array(repeating: [], count: ordered.count)
         var unaligned: [Metric] = []
         for metric in metrics {

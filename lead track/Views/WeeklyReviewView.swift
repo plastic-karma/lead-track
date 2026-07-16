@@ -47,6 +47,9 @@ struct WeeklyReviewView: View {
     /// Aspirations whose alignment pulse was answered this visit, kept on
     /// stage so the note field doesn't vanish the moment a rating lands.
     @State var pulsedAspirations: Set<String> = []
+    /// The group card lifted by a long-press drag, dimmed until the drop.
+    /// Held here so the whole scroll surface can close out a drag session.
+    @State var draggingGroupID: String?
     /// Writes intention closures, renewals, promotions, and check-ins.
     @Environment(\.modelContext) var modelContext
 
@@ -116,6 +119,7 @@ extension WeeklyReviewView {
             .padding(.vertical, 8)
             .padding(.bottom, 16)
         }
+        .aspirationReorderDropSurface(draggingID: $draggingGroupID)
     }
 
     /// The metrics grouped by the aspiration they serve, each aspiration one
@@ -129,7 +133,10 @@ extension WeeklyReviewView {
             weeks: review.metricWeeks, quiet: review.quietMetrics
         )
         if !groups.isEmpty {
-            MetricGroupsSection(groups: groups, metric: metric(for:))
+            MetricGroupsSection(
+                groups: groups, aspirations: aspirations,
+                metric: metric(for:), draggingID: $draggingGroupID
+            )
         }
     }
 
@@ -188,21 +195,47 @@ extension WeeklyReviewView {
 /// any model change rebuilds them exactly as before.
 private struct MetricGroupsSection: View {
     let groups: [WeeklyReview.MetricGroup]
+    /// The full aspiration set a drag rewrites ranks over.
+    let aspirations: [Aspiration]
     /// Maps a ledger row back to its model for the drill-in link.
     let metric: (String) -> Metric?
+    /// The lifted card, owned by the parent so its scroll surface can close
+    /// out drag sessions released outside this section.
+    @Binding var draggingID: String?
     /// The group cards the user has expanded from their default folded
     /// state — per-card, transient, never persisted, like the Today tab's
     /// cluster stubs. Empty (the default) means every card is folded to its
     /// header line for a calmer, more focused screen.
     @State private var expandedGroups: Set<String> = []
+    /// Writes the drag-reorder rank rewrites.
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(spacing: 16) {
             ForEach(groups) { group in
                 groupCard(group)
+                    .aspirationReorderable(
+                        id: group.id == AspirationGrouping.unalignedID ? nil : group.id,
+                        draggingID: $draggingID,
+                        move: move
+                    )
             }
         }
         .padding(.horizontal)
+    }
+
+    /// One hover step of a drag: rewrite the ranks and save. The unaligned
+    /// group never takes part — it always trails.
+    private func move(_ draggedID: String, over targetID: String) {
+        withAnimation(.snappy) {
+            AspirationReorder.applyMove(
+                all: aspirations,
+                visibleIDs: groups.map(\.id).filter { $0 != AspirationGrouping.unalignedID },
+                draggedID: draggedID,
+                targetID: targetID
+            )
+            try? modelContext.save()
+        }
     }
 
     private func groupCard(_ group: WeeklyReview.MetricGroup) -> some View {

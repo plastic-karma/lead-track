@@ -9,17 +9,20 @@ struct AspirationListView: View {
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @State private var showingAddSheet = false
     @State private var aspirationPendingDelete: Aspiration?
+    /// The card lifted by a long-press drag, dimmed in place until the drop.
+    @State private var draggingID: String?
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(aspirations) { aspiration in
+                ForEach(aspirations.inDisplayOrder) { aspiration in
                     card(aspiration)
                 }
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
+        .aspirationReorderDropSurface(draggingID: $draggingID)
         .background(Theme.washedScreen)
         .navigationTitle("Aspirations")
         .toolbar {
@@ -69,6 +72,23 @@ extension AspirationListView {
             } label: {
                 Label("Delete Aspiration", systemImage: "trash")
             }
+        }
+        .aspirationReorderable(
+            id: aspiration.stableIdentity, draggingID: $draggingID, move: move
+        )
+    }
+
+    /// One hover step of a drag: rewrite the ranks and save, so the order
+    /// survives however the drag session ends.
+    private func move(_ draggedID: String, over targetID: String) {
+        withAnimation(.snappy) {
+            AspirationReorder.applyMove(
+                all: aspirations,
+                visibleIDs: aspirations.inDisplayOrder.map(\.stableIdentity),
+                draggedID: draggedID,
+                targetID: targetID
+            )
+            try? modelContext.save()
         }
     }
 

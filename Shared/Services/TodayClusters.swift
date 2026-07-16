@@ -110,7 +110,10 @@ extension TodayGrouping {
     /// holding metrics or open intentions this week — needsYou first
     /// (closest to completion leading), then resting, done, and self-filling
     /// stubs — with the unaligned metrics as one trailing cluster, always
-    /// last regardless of state. Archived metrics never enter the day.
+    /// last regardless of state. Once the user has dragged any card into
+    /// place, the manual aspiration order replaces the state sort for good
+    /// (state still decides stub-vs-card rendering); the unaligned cluster
+    /// keeps trailing. Archived metrics never enter the day.
     static func clusters(
         metrics: [Metric],
         aspirations: [Aspiration],
@@ -138,8 +141,7 @@ extension TodayGrouping {
         groups: [Group], aspirations: [Aspiration],
         intentions: [Intention], calendar: Calendar
     ) -> [Cluster] {
-        let clusters = aspirations
-            .sorted { $0.createdAt < $1.createdAt }
+        let clusters = aspirations.inDisplayOrder
             .compactMap { aspiration -> Cluster? in
                 let members = groups.first { $0.aspiration === aspiration }?.metrics ?? []
                 let mine = intentions.filter { $0.aspiration === aspiration }
@@ -149,6 +151,9 @@ extension TodayGrouping {
                     state: clusterState(of: members, calendar: calendar)
                 )
             }
+        // One drag anywhere retires the smart sort permanently: the cards
+        // sit where the user put them, in every state.
+        guard !aspirations.hasManualOrder else { return clusters }
         return ordered(clusters, calendar: calendar)
     }
 
