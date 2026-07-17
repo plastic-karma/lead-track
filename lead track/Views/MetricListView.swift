@@ -5,7 +5,9 @@ import SwiftUI
 /// header. Every cluster folds (see `TodayClusterSections`) and starts folded
 /// to a one-line stub — neediest first — so the screen opens calm and focused;
 /// tap a header to expand a cluster inline. Rows act in place; tapping one
-/// still navigates to the metric.
+/// still navigates to the metric. Chevrons on the header browse earlier days
+/// (the Week tab's controls one timescale down): the dial and clusters replay
+/// the browsed day read-only, and the right chevron walks back to today.
 struct MetricListView: View {
     /// Internal (not private) so the cluster arrangement in its own file can
     /// render under the same queries.
@@ -20,6 +22,10 @@ struct MetricListView: View {
     /// The cluster card lifted by a long-press drag, dimmed until the drop.
     /// Internal so the cluster arrangement in its own file can drive it.
     @State var draggingClusterID: String?
+    /// How many days back the screen is browsing (0 = today) — the Week
+    /// tab's `weeksBack` one timescale down. The header chevrons drive it;
+    /// the day dial and the cluster sections both render the browsed day.
+    @State var daysBack = 0
     /// Writes the drag-reorder rank rewrites; internal like the queries.
     @Environment(\.modelContext) var modelContext
     @State private var showingAddSheet = false
@@ -35,7 +41,7 @@ struct MetricListView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
-                DayDialView(metrics: metrics.unarchived)
+                DayDialView(metrics: metrics.unarchived, daysBack: $daysBack)
                 clusterSections
             }
             .padding(.horizontal)

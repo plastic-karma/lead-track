@@ -9,6 +9,9 @@ import SwiftUI
 struct ClusterCardView: View {
     let cluster: TodayGrouping.Cluster
     let runningSessions: [Session]
+    /// The day the card describes — its rows read this day's totals, and the
+    /// insight line (advice for the living day) only speaks on today.
+    let day: Date
     /// The header carries the rotated chevron and folds the cluster back to
     /// its stub.
     let onCollapse: () -> Void
@@ -28,8 +31,12 @@ struct ClusterCardView: View {
         .clusterCardSurface()
     }
 
+    /// Present-tense counsel ("1m more brings today home", "resting until
+    /// Monday") — meaningful only on the living day, so browsed days close
+    /// on their rows alone.
     private var insight: ClusterInsight? {
-        ClusterInsight.make(for: cluster)
+        guard Calendar.current.isDateInToday(day) else { return nil }
+        return ClusterInsight.make(for: cluster)
     }
 }
 
@@ -104,7 +111,7 @@ extension ClusterCardView {
     private func rowView(_ item: RowItem) -> some View {
         switch item {
         case let .metric(metric):
-            ClusterMetricRow(metric: metric, runningSession: runningSession(for: metric))
+            ClusterMetricRow(metric: metric, runningSession: runningSession(for: metric), day: day)
         case let .intention(intention):
             ClusterIntentionRow(intention: intention)
         }

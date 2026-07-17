@@ -11,11 +11,14 @@ import SwiftUI
 struct ClusterStubView: View {
     let cluster: TodayGrouping.Cluster
     let runningSessions: [Session]
+    /// The day the cluster describes — today, or an earlier day the header
+    /// chevrons browsed to; every status reading below is anchored to it.
+    let day: Date
     @Binding var isExpanded: Bool
 
     var body: some View {
         if isExpanded {
-            ClusterCardView(cluster: cluster, runningSessions: runningSessions) {
+            ClusterCardView(cluster: cluster, runningSessions: runningSessions, day: day) {
                 withAnimation(.snappy) { isExpanded = false }
             }
         } else {
@@ -88,7 +91,7 @@ extension ClusterStubView {
     /// What a folded needy cluster still holds: "1m 18s left" or
     /// "2 still open".
     private var openStatus: some View {
-        Text(TodayGrouping.openSummary(for: cluster.metrics))
+        Text(TodayGrouping.openSummary(for: cluster.metrics, now: day))
             .font(.caption2)
             .foregroundStyle(.secondary)
             .lineLimit(1)
@@ -99,7 +102,7 @@ extension ClusterStubView {
             Image(systemName: "checkmark.circle.fill")
                 .font(.caption)
                 .foregroundStyle(cluster.aspiration?.displayColor ?? .accentColor)
-            Text(TodayGrouping.doneSummary(for: cluster.metrics))
+            Text(TodayGrouping.doneSummary(for: cluster.metrics, now: day))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -108,7 +111,7 @@ extension ClusterStubView {
 
     @ViewBuilder
     private var restingStatus: some View {
-        if let date = TodayGrouping.nextGoalDate(for: cluster.metrics) {
+        if let date = TodayGrouping.nextGoalDate(for: cluster.metrics, now: day) {
             Text("resting until \(date.formatted(.dateTime.weekday(.wide)))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -134,12 +137,12 @@ extension ClusterStubView {
             .lineLimit(1)
     }
 
-    /// Today's mirrored figure when the stub holds a single health metric;
+    /// The day's mirrored figure when the stub holds a single health metric;
     /// several can't share one number, so the line stays wordless.
     private var selfFillingValue: String? {
         guard cluster.metrics.count == 1, let metric = cluster.metrics.first
         else { return nil }
-        let today = SessionStatistics.todayTotal(from: metric.sessions)
-        return ValueFormatter.format(today, type: metric.measurementType, unit: metric.unit)
+        let total = SessionStatistics.todayTotal(from: metric.sessions, now: day)
+        return ValueFormatter.format(total, type: metric.measurementType, unit: metric.unit)
     }
 }
