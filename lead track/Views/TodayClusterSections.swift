@@ -8,7 +8,8 @@ import SwiftUI
 /// card into place — manual order then holds permanently — and once nothing
 /// needs the user anymore, a closing caption sends the day off. When the
 /// header chevrons browse an earlier day, the same arrangement replays that
-/// day read-only: no live timers, no send-off, states as the day closed.
+/// day with no live timers and no send-off — but its rows still record,
+/// onto the browsed day, so a forgotten log can be added after the fact.
 extension MetricListView {
     @ViewBuilder
     var clusterSections: some View {

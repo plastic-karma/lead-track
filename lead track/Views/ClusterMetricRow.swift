@@ -7,16 +7,19 @@ import SwiftUI
 /// old full-width button offered, just quiet. A done row folds in place to a
 /// checkmark and its final value instead of moving to a bottom section.
 /// Tapping the row still navigates to the metric's detail screen. On a
-/// browsed earlier day the row is testimony, not a control: the action
-/// circle stays home and the figures read as that day closed.
+/// browsed earlier day the figures read as that day closed — and the action
+/// circle keeps working, writing onto that day, so a forgotten log can be
+/// added late. Only the timer belongs to the present: in the past its play
+/// becomes a plus that logs a finished duration.
 struct ClusterMetricRow: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
     let runningSession: Session?
-    /// The day the row reads — recording is only offered when it is today.
+    /// The day the row reads — and the day its action circle records onto.
     let day: Date
     @State private var showingCountEntry = false
     @State private var showingCountdownPicker = false
+    @State private var showingDurationEntry = false
     @State private var showingDeleteConfirmation = false
     @State private var quickLogTrigger = false
 
@@ -47,10 +50,13 @@ struct ClusterMetricRow: View {
             Text("All of its logged sessions and projects are deleted with it. This can't be undone.")
         }
         .sheet(isPresented: $showingCountEntry) {
-            CountEntryView(metric: metric, project: nil)
+            CountEntryView(metric: metric, project: nil, day: recordingDay)
         }
         .sheet(isPresented: $showingCountdownPicker) {
             CountdownStartView(metric: metric)
+        }
+        .sheet(isPresented: $showingDurationEntry) {
+            DurationEntryView(metric: metric, project: nil, day: recordingDay)
         }
         .sensoryFeedback(.increase, trigger: quickLogTrigger)
         .recordingFeedback(isActive: runningSession != nil)
@@ -67,12 +73,23 @@ struct ClusterMetricRow: View {
         }
     }
 
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(day)
+    }
+
+    /// The instant recordings land on: nil on the living today (record at
+    /// the moment of the tap), the browsed instant on an earlier day.
+    private var recordingDay: Date? {
+        isToday ? nil : day
+    }
+
     /// The shared record actions — the row supplies only layout.
     private var recorder: MetricRecorder {
         MetricRecorder(
             metric: metric,
             runningSession: runningSession,
-            modelContext: modelContext
+            modelContext: modelContext,
+            day: recordingDay
         ) {
             quickLogTrigger.toggle()
         }
@@ -92,7 +109,7 @@ extension ClusterMetricRow {
                         .frame(height: 4)
                 }
             }
-            if !metric.isHealthLinked, Calendar.current.isDateInToday(day) {
+            if !metric.isHealthLinked {
                 actionButton(total)
             }
         }
@@ -188,12 +205,26 @@ extension ClusterMetricRow {
     private func actionButton(_ total: TimeInterval) -> some View {
         switch metric.measurementType {
         case .duration:
-            timerButton
+            if isToday {
+                timerButton
+            } else {
+                pastTimeButton
+            }
         case .count:
             countButton
         case .binary:
             binaryButton(total)
         }
+    }
+
+    /// A timer only runs in the present, so on a browsed earlier day the
+    /// play becomes a plus that logs a finished duration onto that day.
+    private var pastTimeButton: some View {
+        Button { showingDurationEntry = true } label: {
+            actionCircle("plus")
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log Time")
     }
 
     /// Tap starts (count-up) or stops the timer; the menu offers count-down
@@ -260,7 +291,14 @@ extension ClusterMetricRow {
             actionCircle(total > 0 ? "checkmark" : "circle")
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(total > 0 ? "Mark not done today" : "Mark done today")
+        .accessibilityLabel(binaryLabel(total))
+    }
+
+    /// Today keeps its familiar wording; a browsed day drops the "today" —
+    /// the header already names the day the mark lands on.
+    private func binaryLabel(_ total: TimeInterval) -> String {
+        let base = total > 0 ? "Mark not done" : "Mark done"
+        return isToday ? "\(base) today" : base
     }
 
     /// The quiet action: the metric's glyph-on-wash circle, pulsing gently
