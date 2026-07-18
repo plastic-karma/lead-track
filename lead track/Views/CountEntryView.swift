@@ -45,7 +45,6 @@ struct CountEntryView: View {
 
     /// The unit reminder, joined — on a browsed earlier day — by which day
     /// the log lands on, so backfilling never writes into today unnoticed.
-    @ViewBuilder
     private var footer: some View {
         VStack(alignment: .leading, spacing: 2) {
             if let unit = metric.unit, !unit.isEmpty {
