@@ -7,7 +7,8 @@ import SwiftUI
 /// tap a header to expand a cluster inline. Rows act in place; tapping one
 /// still navigates to the metric. Chevrons on the header browse earlier days
 /// (the Week tab's controls one timescale down): the dial and clusters replay
-/// the browsed day read-only, and the right chevron walks back to today.
+/// the browsed day — rows keep recording, onto that day, so a missed log can
+/// be added late — and the right chevron walks back to today.
 struct MetricListView: View {
     /// Internal (not private) so the cluster arrangement in its own file can
     /// render under the same queries.

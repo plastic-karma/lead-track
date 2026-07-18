@@ -3,6 +3,10 @@ import SwiftUI
 struct CountEntryView: View {
     let metric: Metric
     let project: Project?
+    /// The instant the log lands on — nil logs at the moment of saving (the
+    /// living today); the Today rows pass a browsed earlier day's instant so
+    /// the amount writes into that day.
+    var day: Date?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var valueText = ""
@@ -20,9 +24,7 @@ struct CountEntryView: View {
                     .keyboardType(.decimalPad)
                     .focused($isFocused)
                 } footer: {
-                    if let unit = metric.unit, !unit.isEmpty {
-                        Text("Enter number of \(unit)")
-                    }
+                    footer
                 }
             }
             .navigationTitle("Log \(metric.name)")
@@ -41,6 +43,20 @@ struct CountEntryView: View {
         }
     }
 
+    /// The unit reminder, joined — on a browsed earlier day — by which day
+    /// the log lands on, so backfilling never writes into today unnoticed.
+    @ViewBuilder
+    private var footer: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let unit = metric.unit, !unit.isEmpty {
+                Text("Enter number of \(unit)")
+            }
+            if let day {
+                Text("Logs to \(day.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
+            }
+        }
+    }
+
     private var parsedValue: Double? {
         LocaleDoubleParser.parse(valueText).flatMap { $0 > 0 ? $0 : nil }
     }
@@ -51,7 +67,8 @@ struct CountEntryView: View {
             value,
             for: metric,
             project: project,
-            in: modelContext
+            in: modelContext,
+            at: day ?? .now
         )
         saveTrigger.toggle()
         dismiss()
