@@ -38,6 +38,7 @@
 		0A1CAF010000000000000022 /* ComplicationTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */; };
 		0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */; };
 		0A1CAF0100000000000000F2 /* WatchComplicationPushTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */; };
+		CA1E4DA20260719000000002 /* GoalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1E4DA20260719000000001 /* GoalCalendarTests.swift */; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
 		DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */; };
@@ -155,6 +156,7 @@
 		0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComplicationTimelineTests.swift; sourceTree = "<group>"; };
 		0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSnapshotBuilderTests.swift; sourceTree = "<group>"; };
 		0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchComplicationPushTests.swift; sourceTree = "<group>"; };
+		CA1E4DA20260719000000001 /* GoalCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalCalendarTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -303,6 +305,7 @@
 				0A1CAF010000000000000021 /* ComplicationTimelineTests.swift */,
 				0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */,
 				0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */,
+				CA1E4DA20260719000000001 /* GoalCalendarTests.swift */,
 			);
 			path = "lead trackTests";
 			sourceTree = "<group>";
@@ -681,6 +684,7 @@
 				0A1CAF010000000000000022 /* ComplicationTimelineTests.swift in Sources */,
 				0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */,
 				0A1CAF0100000000000000F2 /* WatchComplicationPushTests.swift in Sources */,
+				CA1E4DA20260719000000002 /* GoalCalendarTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

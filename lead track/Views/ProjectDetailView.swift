@@ -8,6 +8,7 @@ struct ProjectDetailView: View {
     @Query private var sessions: [Session]
     @Query(sort: \Aspiration.createdAt) private var allAspirations: [Aspiration]
     @State private var showingDetailedStats = false
+    @State private var showingCalendar = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
     @State private var showingAllSessions = false
@@ -108,8 +109,16 @@ struct ProjectDetailView: View {
         .sheet(item: $sessionToMove) { session in
             MoveSessionView(session: session)
         }
+        .sheet(isPresented: $showingCalendar) {
+            GoalCalendarView(filter: .project(project))
+        }
         .navigationTitle(project.name)
         .toolbar {
+            ToolbarItem {
+                Button { showingCalendar = true } label: {
+                    Label("Calendar", systemImage: "calendar")
+                }
+            }
             ToolbarItem(placement: .destructiveAction) {
                 Button("Delete", role: .destructive) {
                     showingDeleteConfirmation = true
