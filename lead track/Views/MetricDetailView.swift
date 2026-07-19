@@ -15,6 +15,7 @@ struct MetricDetailView: View {
     @State private var showingProjectForm = false
     @State private var showingDetailedStats = false
     @State private var showingGoalSettings = false
+    @State private var showingCalendar = false
     @State private var showingCountEntry = false
     @State private var showingDurationEntry = false
     @State private var showingEdit = false
@@ -40,6 +41,7 @@ struct MetricDetailView: View {
             .sheet(isPresented: $showingProjectForm) { ProjectFormView(metric: metric) }
             .sheet(isPresented: $showingDetailedStats) { detailedStats }
             .sheet(isPresented: $showingGoalSettings) { GoalSettingsView(metric: metric) }
+            .sheet(isPresented: $showingCalendar) { GoalCalendarView(filter: .metric(metric)) }
             .sheet(isPresented: $showingEdit) { editSheet }
             .sheet(isPresented: $showingCountEntry) { CountEntryView(metric: metric, project: nil) }
             .sheet(isPresented: $showingDurationEntry) { DurationEntryView(metric: metric, project: nil) }
@@ -224,6 +226,7 @@ extension MetricDetailView {
                         showingDetailedStats = true
                     }
                 }
+                Button("Calendar", systemImage: "calendar") { showingCalendar = true }
                 if !metric.isHealthLinked {
                     Button("Add Project", systemImage: "folder.badge.plus") {
                         showingProjectForm = true

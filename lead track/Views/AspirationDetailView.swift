@@ -14,6 +14,7 @@ struct AspirationDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let aspiration: Aspiration
     @State private var showingEdit = false
+    @State private var showingCalendar = false
     @State private var showingDeleteConfirmation = false
     /// Internal for the "This week" card in `AspirationIntentionSections`.
     @State var showingSetIntention = false
@@ -48,6 +49,9 @@ struct AspirationDetailView: View {
             }
             .sheet(isPresented: $showingEdit) {
                 AspirationFormView(aspiration: aspiration)
+            }
+            .sheet(isPresented: $showingCalendar) {
+                GoalCalendarView(filter: .aspiration(aspiration))
             }
             .sheet(isPresented: $showingSetIntention) {
                 IntentionFormView(aspiration: aspiration)
@@ -273,6 +277,8 @@ extension AspirationDetailView {
         }
         ToolbarItem {
             Menu {
+                Button("Calendar", systemImage: "calendar") { showingCalendar = true }
+                Divider()
                 Button("Delete Aspiration", systemImage: "trash", role: .destructive) {
                     showingDeleteConfirmation = true
                 }

@@ -38,6 +38,7 @@ struct MetricListView: View {
     @State private var showingImport = false
     @State private var showingSettings = false
     @State private var showingArchived = false
+    @State private var showingCalendar = false
 
     var body: some View {
         ScrollView {
@@ -86,6 +87,9 @@ struct MetricListView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingCalendar) {
+            GoalCalendarView()
+        }
         .overlay {
             if showsEmptyState {
                 ContentUnavailableView(
@@ -117,6 +121,9 @@ extension MetricListView {
             }
             Button { notificationResponder.showWeeklyReview = true } label: {
                 Label("Weekly Review", systemImage: "calendar.badge.clock")
+            }
+            Button { showingCalendar = true } label: {
+                Label("Calendar", systemImage: "calendar")
             }
             if metrics.contains(where: \.isArchived) {
                 Button { showingArchived = true } label: {
