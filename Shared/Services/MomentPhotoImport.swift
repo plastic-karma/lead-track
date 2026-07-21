@@ -13,13 +13,13 @@ import UIKit
 enum MomentPhotoImport {
     /// Longest edge in pixels after downscaling — enough for a full-screen
     /// Retina view, far below an original camera frame.
-    static let maxPixelSize = 2048
-    static let jpegQuality: CGFloat = 0.8
+    nonisolated static let maxPixelSize = 2048
+    nonisolated static let jpegQuality: CGFloat = 0.8
 
     /// Downscaled JPEG bytes, or nil when the data isn't a decodable image.
     /// EXIF orientation is baked in, so the stored bytes render upright with
     /// no further transform.
-    static func downscaledJPEG(from data: Data) -> Data? {
+    nonisolated static func downscaledJPEG(from data: Data) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         return downscaledJPEG(from: source)
     }
@@ -27,12 +27,12 @@ enum MomentPhotoImport {
     /// URL-backed variant for Share Extension item providers. The provider's
     /// temporary file is decoded while its callback is still alive, avoiding a
     /// full compressed-original copy in the extension's constrained process.
-    static func downscaledJPEG(from url: URL) -> Data? {
+    nonisolated static func downscaledJPEG(from url: URL) -> Data? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
         return downscaledJPEG(from: source)
     }
 
-    private static func downscaledJPEG(from source: CGImageSource) -> Data? {
+    private nonisolated static func downscaledJPEG(from source: CGImageSource) -> Data? {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,

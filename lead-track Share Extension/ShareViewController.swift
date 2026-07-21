@@ -54,7 +54,9 @@ final class ShareViewController: UIViewController {
 
     private func presentComposer(_ extensionContext: NSExtensionContext) {
         guard let container = SharedModelContainer.shared else {
-            embed(ShareUnavailableView { cancel(extensionContext) })
+            embed(ShareUnavailableView { [weak self] in
+                self?.cancel(extensionContext)
+            })
             return
         }
         embed(
