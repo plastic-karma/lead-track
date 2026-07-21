@@ -4,11 +4,13 @@ import SwiftUI
 import UIKit
 
 /// The moment composer — "Keep a moment", the counterpart of an intention's
-/// *let go*. Always born with its aspiration (capture only ever starts from an
-/// aspiration surface), so there is no aspiration picker. Only the text is
-/// required; the `occurredAt` picker backdates freely but never past now, the
-/// location chip fetches once on an explicit tap, photos downscale on import,
-/// and provenance optionally records the metric or project it came from.
+/// *let go*. Capture from an aspiration arrives pre-bound; an unbound weekly
+/// photo draft asks for its aspiration here, while sharing uses the extension's
+/// focused composer. Only the text and aspiration are required; the
+/// `occurredAt` picker backdates freely but never
+/// past now, the location chip fetches once on an explicit tap, photos
+/// downscale on import, and provenance optionally records the metric or project
+/// it came from.
 /// Passing an existing moment switches to edit; the owning aspiration and
 /// `createdAt` never change.
 struct MomentFormView: View {
@@ -19,12 +21,14 @@ struct MomentFormView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.openURL) var openURL
 
-    let aspiration: Aspiration
     let editing: Moment?
+    let choosesAspiration: Bool
 
+    @Query(sort: \Aspiration.createdAt) var allAspirations: [Aspiration]
     @Query(sort: \Metric.createdAt) private var allMetrics: [Metric]
     @Query(sort: \Project.startedAt) private var allProjects: [Project]
 
+    @State var aspiration: Aspiration?
     @State var text: String
     @State var occurredAt: Date
     @State var provenance: MomentProvenance
@@ -34,7 +38,7 @@ struct MomentFormView: View {
     @State var placeName: String
     @State var photoData: [PickedPhoto]
     @State var photoItems: [PhotosPickerItem] = []
-    @State var photoImportFailureCount = 0
+    @State var photoImportFailureCount: Int
     @State var locationStatus: LocationStatus = .idle
     @State var reader = MomentLocationReader()
     @State var saveTrigger = false
@@ -42,11 +46,16 @@ struct MomentFormView: View {
     /// Soft cap, enforced here in the composer, never in the schema.
     static let photoCap = 4
 
-    init(aspiration: Aspiration, moment: Moment? = nil) {
-        self.aspiration = aspiration
+    init(
+        aspiration: Aspiration? = nil,
+        moment: Moment? = nil,
+        seed: MomentFormSeed = MomentFormSeed()
+    ) {
         editing = moment
+        choosesAspiration = moment == nil && aspiration == nil
+        _aspiration = State(initialValue: moment?.aspiration ?? aspiration)
         _text = State(initialValue: moment?.text ?? "")
-        _occurredAt = State(initialValue: moment?.occurredAt ?? .now)
+        _occurredAt = State(initialValue: moment?.occurredAt ?? min(seed.occurredAt, Date.now))
         _provenance = State(
             initialValue: MomentProvenance(metric: moment?.metric, project: moment?.project)
         )
@@ -54,16 +63,22 @@ struct MomentFormView: View {
         _latitude = State(initialValue: moment?.latitude)
         _longitude = State(initialValue: moment?.longitude)
         _placeName = State(initialValue: moment?.placeName ?? "")
-        _photoData = State(
-            initialValue: (moment?.photos ?? [])
-                .sorted { $0.sortIndex < $1.sortIndex }
-                .map { PickedPhoto(data: $0.data) }
+        let existingPhotos = moment?.photos
+            .sorted { $0.sortIndex < $1.sortIndex }
+            .map { PickedPhoto(data: $0.data) }
+        let seededPhotos = seed.photos.prefix(Self.photoCap).map(PickedPhoto.init(data:))
+        _photoData = State(initialValue: existingPhotos ?? seededPhotos)
+        _photoImportFailureCount = State(
+            initialValue: moment == nil ? seed.importFailureCount : 0
         )
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if choosesAspiration {
+                    aspirationSection
+                }
                 textSection
                 whenSection
                 locationSection
@@ -132,7 +147,15 @@ extension MomentFormView {
         } header: {
             Text("Moment")
         } footer: {
-            Text("Kept under \(aspiration.title). Only you will ever read it.")
+            Text(momentPrivacyNote)
+        }
+    }
+
+    private var momentPrivacyNote: String {
+        if let aspiration {
+            "Kept under \(aspiration.title). Only you will ever read it."
+        } else {
+            "Choose where this moment belongs. Only you will ever read it."
         }
     }
 
@@ -261,6 +284,8 @@ extension MomentFormView {
                             .foregroundStyle(.white, .black.opacity(0.5))
                     }
                     .padding(4)
+                    .accessibilityLabel("Remove photo")
+                    .accessibilityHint("Removes this photo from the moment")
                 }
         }
     }
@@ -310,11 +335,11 @@ extension MomentFormView {
     }
 
     private func isAttachedMetric(_ metric: Metric) -> Bool {
-        aspiration.metrics.contains { $0 === metric }
+        aspiration?.metrics.contains { $0 === metric } == true
     }
 
     private func isAttachedProject(_ project: Project) -> Bool {
-        aspiration.projects.contains { $0 === project }
+        aspiration?.projects.contains { $0 === project } == true
     }
 }
 
@@ -340,6 +365,6 @@ extension MomentFormView {
     }
 
     private var heldPrinciples: [Principle] {
-        aspiration.principles.sorted { $0.createdAt < $1.createdAt }
+        (aspiration?.principles ?? []).sorted { $0.createdAt < $1.createdAt }
     }
 }

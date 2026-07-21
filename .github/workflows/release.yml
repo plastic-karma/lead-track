@@ -25,10 +25,10 @@
 # "Cloud signing permission error". An app record for plastickarma.lead-track
 # must exist in App Store Connect; the bundle IDs themselves (app, .widget,
 # .watchkitapp) are registered automatically by cloud signing during Archive.
-# The fourth, .watchkitapp.widget, requests an app group, which cloud signing
-# cannot create — a workflow step pre-registers it (see
-# register-watch-widget-bundle-id.rb); assigning the group to that App ID
-# stays a one-time manual portal step. Details: docs/RELEASE.md.
+# The watch widget and share extension (.watchkitapp.widget and .share) request
+# app groups, which cloud signing cannot create — a workflow step pre-registers
+# both (see register-app-group-bundle-ids.rb). Assigning the group to those App
+# IDs stays a one-time manual portal step. Details: docs/RELEASE.md.
 
 name: Release IPA
 
@@ -172,16 +172,16 @@ jobs:
           echo "MARKETING_VERSION=$MKT" >> "$GITHUB_ENV"
           echo "Build number: $BUILD ; marketing version override: '${MKT:-<none>}'"
 
-      - name: Register watch widget bundle ID
+      - name: Register app-group bundle IDs
         # Cloud signing can't create App IDs whose entitlements include app
         # groups (API-key auth is rejected for that write), so pre-register
-        # the bundle ID via the ASC API. Group assignment remains a one-time
+        # both bundle IDs via the ASC API. Group assignment remains a one-time
         # manual portal step.
         continue-on-error: true
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: ruby .github/scripts/register-watch-widget-bundle-id.rb
+        run: ruby .github/scripts/register-app-group-bundle-ids.rb
 
       - name: Diagnose bundle IDs & profiles
         # Read-only: prints the account's bundle IDs, capabilities, and

@@ -45,7 +45,12 @@ struct AspirationDetailView: View {
             ) {
                 Button("Delete Aspiration", role: .destructive, action: deleteAspiration)
             } message: {
-                Text("Its metrics and projects stay in your library. Its intentions go with it.")
+                Text(
+                    """
+                    Its metrics and projects stay in your library. Its intentions, moments, \
+                    and photos go with it.
+                    """
+                )
             }
             .sheet(isPresented: $showingEdit) {
                 AspirationFormView(aspiration: aspiration)

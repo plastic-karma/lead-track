@@ -82,7 +82,7 @@ struct WeeklyReviewView: View {
 
     @ViewBuilder
     private func content(_ review: WeeklyReview) -> some View {
-        if metrics.unarchived.isEmpty {
+        if metrics.unarchived.isEmpty, aspirations.isEmpty {
             emptyState
         } else {
             reviewScroll(review)
@@ -118,6 +118,7 @@ extension WeeklyReviewView {
                 )
                 .padding(.horizontal)
                 metricGroupsSection(review)
+                recentPhotosSection(review)
                 intentionsSection(review)
                 checkInSection(review)
                 oversubscriptionSection(review)

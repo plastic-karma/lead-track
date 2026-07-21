@@ -1,9 +1,15 @@
 import SwiftUI
 
 struct AppLockSettingsView: View {
-    @AppStorage(AppLockService.enabledKey)
+    @AppStorage(
+        AppPrivacySettings.appLockEnabledKey,
+        store: AppPrivacySettings.store
+    )
     private var enabled = false
-    @AppStorage(AppLockService.gracePeriodKey)
+    @AppStorage(
+        AppPrivacySettings.appLockGracePeriodKey,
+        store: AppPrivacySettings.store
+    )
     private var gracePeriodRaw = AppLockGracePeriod.immediately.rawValue
 
     var body: some View {

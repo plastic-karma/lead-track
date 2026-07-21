@@ -9,8 +9,8 @@ machine (including Linux/Windows, where Xcode isn't available). You download the
 
 You need an **App Store Connect API key** (the modern, no-`.p12`-juggling way to sign
 in CI). Xcode uses it to create the distribution certificate and provisioning
-profiles automatically for all four signed targets: the app, its widget extension,
-the watch app, and the watch widget extension.
+profiles automatically for all five signed targets: the app, its widget extension,
+its share extension, the watch app, and the watch widget extension.
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access**
    → **Integrations** → **App Store Connect API** (Team Keys).
@@ -22,19 +22,20 @@ the watch app, and the watch widget extension.
    **Issuer ID** shown on the page.
 3. Download the `AuthKey_<KEYID>.p8` file. **You can only download it once.**
 4. Make sure an app record for `plastickarma.lead-track` exists in App Store
-   Connect → **My Apps**. Four bundle IDs are signed: `plastickarma.lead-track`,
-   `.widget`, `.watchkitapp`, and `.watchkitapp.widget`. The first three don't
-   need manual registration: with an Admin key, cloud signing registers missing
-   bundle IDs automatically during Archive (observed when the watch app shipped
-   for the first time). The watch widget's App ID is the exception — its
-   entitlements request an App Group, which API-key cloud signing cannot
-   create — so the release workflow pre-registers it via
-   [`register-watch-widget-bundle-id.rb`](../.github/scripts/register-watch-widget-bundle-id.rb).
-   Assigning the actual App Group to that App ID is not supported by the public
-   API and remains a **one-time manual step**: in the
+   Connect → **My Apps**. Five bundle IDs are signed: `plastickarma.lead-track`,
+   `.widget`, `.share`, `.watchkitapp`, and `.watchkitapp.widget`. The app, widget,
+   and watch app don't need manual registration: with an Admin key, cloud signing
+   registers missing bundle IDs automatically during Archive (observed when the
+   watch app shipped for the first time). The share extension and watch widget
+   App IDs are exceptions: their entitlements request an App Group, which API-key
+   cloud signing cannot create, so the release workflow pre-registers both via
+   [`register-app-group-bundle-ids.rb`](../.github/scripts/register-app-group-bundle-ids.rb).
+   Assigning the actual App Group to those App IDs is not supported by the public
+   API and remains a **one-time manual step**. In the
    [developer portal](https://developer.apple.com/account/resources/identifiers/list),
-   edit the `plastickarma.lead-track.watchkitapp.widget` identifier and assign
-   the app group under its App Groups capability.
+   edit both the `plastickarma.lead-track.share` and
+   `plastickarma.lead-track.watchkitapp.widget` identifiers and assign
+   `group.plastickarma.lead-track` under the App Groups capability for each.
 5. Add three repository secrets (**Settings → Secrets and variables → Actions →
    New repository secret**):
 

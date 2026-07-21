@@ -30,7 +30,7 @@ extension MomentFormView {
         }
         ToolbarItem(placement: .confirmationAction) {
             Button("Keep", action: save)
-                .disabled(trimmedText.isEmpty)
+                .disabled(trimmedText.isEmpty || aspiration == nil)
         }
     }
 
@@ -101,6 +101,7 @@ extension MomentFormView {
 
 extension MomentFormView {
     func save() {
+        guard let aspiration else { return }
         let moment = editing ?? Moment(text: trimmedText, aspiration: aspiration)
         moment.text = trimmedText
         moment.occurredAt = occurredAt
@@ -113,22 +114,8 @@ extension MomentFormView {
         if editing == nil {
             modelContext.insert(moment)
         }
-        syncPhotos(of: moment)
+        MomentPhotoReconciler.sync(photoData.map(\.data), with: moment, in: modelContext)
         saveTrigger.toggle()
         dismiss()
-    }
-
-    /// Rebuilds the photo children only when the set actually changed, so a
-    /// no-op edit never churns external blobs. Cascade means old photos are
-    /// explicitly deleted before the new set is inserted.
-    private func syncPhotos(of moment: Moment) {
-        let existing = moment.photos.sorted { $0.sortIndex < $1.sortIndex }
-        guard existing.map(\.data) != photoData.map(\.data) else { return }
-        for photo in existing {
-            modelContext.delete(photo)
-        }
-        for (index, photo) in photoData.enumerated() {
-            modelContext.insert(MomentPhoto(data: photo.data, sortIndex: index, moment: moment))
-        }
     }
 }

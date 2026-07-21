@@ -30,6 +30,7 @@
 		D1F0010000000000090002 /* ReminderPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F0010000000000090001 /* ReminderPlannerTests.swift */; };
 		D1F00100000000000A0002 /* TodayClusterReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F00100000000000A0001 /* TodayClusterReadingTests.swift */; };
 		89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5A4E5A00000000000000000C /* lead-track Share Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 5A4E5A000000000000000001 /* lead-track Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000010 /* lead-track Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000002 /* lead-track Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF020000000000000010 /* lead-track Watch Widget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0A1CAF020000000000000002 /* lead-track Watch Widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0A1CAF010000000000000015 /* WatchSyncCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000014 /* WatchSyncCodecTests.swift */; };
@@ -39,6 +40,10 @@
 		0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */; };
 		0A1CAF0100000000000000F2 /* WatchComplicationPushTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */; };
 		CA1E4DA20260719000000002 /* GoalCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1E4DA20260719000000001 /* GoalCalendarTests.swift */; };
+		5A4E5A100000000000000002 /* AppPrivacySettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000001 /* AppPrivacySettingsTests.swift */; };
+		5A4E5A100000000000000004 /* MomentPhotoImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */; };
+		5A4E5A100000000000000006 /* RecentPhotoWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */; };
+		5A4E5A100000000000000008 /* MomentPhotoPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
 		DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */; };
@@ -80,6 +85,13 @@
 			remoteGlobalIDString = 0A1CAF020000000000000003;
 			remoteInfo = "lead-track Watch Widget";
 		};
+		5A4E5A00000000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 89AF8B542F723550005F7ED1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5A4E5A000000000000000003;
+			remoteInfo = "lead-track Share Extension";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -90,6 +102,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				89AF8CA92F800000005F7ED1 /* lead-track Widget.appex in Embed App Extensions */,
+				5A4E5A00000000000000000C /* lead-track Share Extension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -147,6 +160,7 @@
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A4E5A000000000000000001 /* lead-track Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "lead trackTests.xctest"; path = lead_trackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1CAF010000000000000002 /* lead-track Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead-track Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A1CAF020000000000000002 /* lead-track Watch Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Watch Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -157,6 +171,10 @@
 		0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSnapshotBuilderTests.swift; sourceTree = "<group>"; };
 		0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchComplicationPushTests.swift; sourceTree = "<group>"; };
 		CA1E4DA20260719000000001 /* GoalCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalCalendarTests.swift; sourceTree = "<group>"; };
+		5A4E5A100000000000000001 /* AppPrivacySettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppPrivacySettingsTests.swift; sourceTree = "<group>"; };
+		5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentPhotoImportTests.swift; sourceTree = "<group>"; };
+		5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecentPhotoWindowTests.swift; sourceTree = "<group>"; };
+		5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentPhotoPersistenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -180,6 +198,13 @@
 				Info.plist,
 			);
 			target = 0A1CAF020000000000000003 /* lead-track Watch Widget */;
+		};
+		5A4E5A00000000000000000D /* Exceptions for "lead-track Share Extension" folder in "lead-track Share Extension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5A4E5A000000000000000003 /* lead-track Share Extension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -221,6 +246,14 @@
 				0A1CAF020000000000000018 /* Exceptions for "lead-track Watch Widget" folder in "lead-track Watch Widget" target */,
 			);
 			path = "lead-track Watch Widget";
+			sourceTree = "<group>";
+		};
+		5A4E5A000000000000000002 /* lead-track Share Extension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5A4E5A00000000000000000D /* Exceptions for "lead-track Share Extension" folder in "lead-track Share Extension" target */,
+			);
+			path = "lead-track Share Extension";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -269,6 +302,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5A4E5A000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -306,6 +346,10 @@
 				0A1CAF010000000000000023 /* WatchSnapshotBuilderTests.swift */,
 				0A1CAF0100000000000000F1 /* WatchComplicationPushTests.swift */,
 				CA1E4DA20260719000000001 /* GoalCalendarTests.swift */,
+				5A4E5A100000000000000001 /* AppPrivacySettingsTests.swift */,
+				5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */,
+				5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */,
+				5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */,
 			);
 			path = "lead trackTests";
 			sourceTree = "<group>";
@@ -326,6 +370,7 @@
 				0A1CAF010000000000000001 /* lead-track Watch App */,
 				0A1CAF020000000000000001 /* lead-track Watch Widget */,
 				89AF8CA22F800000005F7ED1 /* lead-track Widget */,
+				5A4E5A000000000000000002 /* lead-track Share Extension */,
 				89593D982FA017B600A16861 /* lead trackUITests */,
 				89AF8B5D2F723550005F7ED1 /* Products */,
 				8A52529E3C17535377F2910D /* Frameworks */,
@@ -340,6 +385,7 @@
 				0A1CAF010000000000000002 /* lead-track Watch App.app */,
 				0A1CAF020000000000000002 /* lead-track Watch Widget.appex */,
 				89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */,
+				5A4E5A000000000000000001 /* lead-track Share Extension.appex */,
 				9547E3818025DA4A52B0CEC5 /* lead trackTests.xctest */,
 				89593D972FA017B600A16861 /* lead trackUITests.xctest */,
 			);
@@ -415,6 +461,7 @@
 			dependencies = (
 				89AF8CAC2F800000005F7ED1 /* PBXTargetDependency */,
 				0A1CAF010000000000000008 /* PBXTargetDependency */,
+				5A4E5A00000000000000000B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				89AF8B5E2F723550005F7ED1 /* lead track */,
@@ -490,6 +537,27 @@
 			productReference = 89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		5A4E5A000000000000000003 /* lead-track Share Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A4E5A000000000000000007 /* Build configuration list for PBXNativeTarget "lead-track Share Extension" */;
+			buildPhases = (
+				5A4E5A000000000000000004 /* Sources */,
+				5A4E5A000000000000000005 /* Frameworks */,
+				5A4E5A000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				89AF8BA02F723700005F7ED1 /* Shared */,
+				5A4E5A000000000000000002 /* lead-track Share Extension */,
+			);
+			name = "lead-track Share Extension";
+			productName = "lead-track Share Extension";
+			productReference = 5A4E5A000000000000000001 /* lead-track Share Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -516,6 +584,9 @@
 					89AF8CA02F800000005F7ED1 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					5A4E5A000000000000000003 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = 89AF8B572F723550005F7ED1 /* Build configuration list for PBXProject "lead track" */;
@@ -536,6 +607,7 @@
 				0A1CAF010000000000000003 /* lead-track Watch App */,
 				0A1CAF020000000000000003 /* lead-track Watch Widget */,
 				89AF8CA02F800000005F7ED1 /* lead-track Widget */,
+				5A4E5A000000000000000003 /* lead-track Share Extension */,
 				4BDEF37C1A4175A7CBCADD3F /* lead trackTests */,
 				89593D962FA017B600A16861 /* lead trackUITests */,
 			);
@@ -579,6 +651,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A1CAF020000000000000013 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A4E5A000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -685,6 +764,10 @@
 				0A1CAF010000000000000024 /* WatchSnapshotBuilderTests.swift in Sources */,
 				0A1CAF0100000000000000F2 /* WatchComplicationPushTests.swift in Sources */,
 				CA1E4DA20260719000000002 /* GoalCalendarTests.swift in Sources */,
+				5A4E5A100000000000000002 /* AppPrivacySettingsTests.swift in Sources */,
+				5A4E5A100000000000000004 /* MomentPhotoImportTests.swift in Sources */,
+				5A4E5A100000000000000006 /* RecentPhotoWindowTests.swift in Sources */,
+				5A4E5A100000000000000008 /* MomentPhotoPersistenceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -696,6 +779,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A1CAF020000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A4E5A000000000000000004 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -730,6 +820,11 @@
 			isa = PBXTargetDependency;
 			target = 0A1CAF020000000000000003 /* lead-track Watch Widget */;
 			targetProxy = 0A1CAF020000000000000007 /* PBXContainerItemProxy */;
+		};
+		5A4E5A00000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5A4E5A000000000000000003 /* lead-track Share Extension */;
+			targetProxy = 5A4E5A00000000000000000A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -933,6 +1028,8 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose photos from the last seven days to keep with moments.";
+				INFOPLIST_KEY_PHPhotoLibraryPreventAutomaticLimitedAccessAlert = YES;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -978,6 +1075,8 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LeadStone reads only the health figures you link (like active calories or workouts) to fill those metrics automatically. Your health data stays on your iPhone, apart from today's totals shown on your paired Apple Watch.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LeadStone writes only the sessions of timer metrics you choose to send to Apple Health, saved as mindful sessions or workouts. Nothing is sent unless you switch it on per metric.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only to label the moments you choose to keep. The coordinates are sent once to Apple's geocoding service to name the place, and your location is never tracked in the background.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose photos from the last seven days to keep with moments.";
+				INFOPLIST_KEY_PHPhotoLibraryPreventAutomaticLimitedAccessAlert = YES;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1210,6 +1309,72 @@
 			};
 			name = Release;
 		};
+		5A4E5A000000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Share Extension/lead_track_share.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Share Extension/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.share";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5A4E5A000000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "lead-track Share Extension/lead_track_share.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9492A97LWY;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "lead-track Share Extension/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "plastickarma.lead-track.share";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1272,6 +1437,15 @@
 			buildConfigurations = (
 				0A1CAF020000000000000004 /* Debug */,
 				0A1CAF020000000000000005 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5A4E5A000000000000000007 /* Build configuration list for PBXNativeTarget "lead-track Share Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A4E5A000000000000000008 /* Debug */,
+				5A4E5A000000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
