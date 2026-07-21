@@ -35,42 +35,40 @@ How the subset stays cross-platform:
 - Files that need Apple-only frameworks outright (SwiftUI, ModelContext-coupled services, AppIntents, WidgetKit) are listed in the `exclude:` arrays in `Package.swift`. **A new Apple-only file in `Shared/` or `lead trackTests/` must be added there**, or `swift build` on Linux (and the `linux` CI job) breaks. Whole-file `#if canImport(...)` guards (e.g. `TimerActivityAttributes.swift`) also work and need no exclude entry.
 - Targets use Swift language mode v5 to match the Xcode project's `SWIFT_VERSION`.
 
-The local toolchain on this dev box lives at `/workspace/tools/swift` (Swift 6.1.2, matching CI's Xcode 16.4), exposed via `~/.local/bin/swift{,c}` wrapper scripts that set `LD_LIBRARY_PATH` to `/workspace/tools/sysdeps/lib` for libs the container lacks (ncurses, libxml2, icu).
+The local toolchain on this dev box lives at `/workspace/tools/swift` (Swift 6.1.2, matching the `swift:6.1` Linux CI toolchain), exposed via `~/.local/bin/swift{,c}` wrapper scripts that set `LD_LIBRARY_PATH` to `/workspace/tools/sysdeps/lib` for libs the container lacks (ncurses, libxml2, icu).
 
 ### Validating the full app from a non-Mac machine
 
-The `xcodebuild` commands above require macOS, and UI/SwiftData/widget code is outside the SwiftPM overlay. Validate those via GitHub Actions (`.github/workflows/ios.yml`): the `build` job on `macos-latest` lints, builds, and tests the Xcode project, and the `linux` job runs `swift test` for the overlay package. A green run confirms the app compiles.
+The `xcodebuild` commands above require macOS. The Linux overlay does not fully
+exercise the UI and widget surfaces or SwiftData-backed behavior. GitHub Actions
+(`.github/workflows/ios.yml`) fills that gap: its macOS job always lints, runs the
+macOS overlay tests, and builds the full Xcode project for testing; it runs the
+Xcode tests when the runner has a bootable simulator. The Linux job runs
+`swift test` for the cross-platform overlay. A green run proves that every app
+target compiles and that every test the workflow could execute passed.
 
-```bash
-# On-demand: trigger CI for the current pushed branch (no PR needed; requires workflow_dispatch)
-git push -u origin HEAD
-gh workflow run ios.yml --ref "$(git branch --show-current)"
-gh run watch --exit-status \
-  "$(gh run list --workflow=ios.yml --branch "$(git branch --show-current)" --limit 1 --json databaseId --jq '.[0].databaseId')"
-
-# Or open a PR, which triggers the same workflow automatically:
-gh pr create --fill && gh pr checks --watch
-```
+For every repository change, use the PR and CI procedure in
+[AGENTS.md](AGENTS.md). The workflow also supports `workflow_dispatch` for
+one-off validation, but that is not a substitute for the delivery pipeline.
 
 ## Feature delivery
 
-When implementing app features or fixes, follow the mandatory pipeline in
-[AGENTS.md](AGENTS.md) **without asking for confirmation**: open a PR (CI runs
-automatically), watch CI and fix failures until it is green, then dispatch
-`release.yml` with `publish_testflight=true` from the PR branch and watch it
-succeed. Don't ask the user whether to do these steps — do them and report.
+For every repository change, follow the mandatory pipeline and scope rules in
+[AGENTS.md](AGENTS.md) **without asking for confirmation**. It defines the local
+gates, PR and CI requirements, and which app-affecting changes must go through
+TestFlight. Run every applicable step and report it.
 
 ## Architecture
 
 - **Data layer**: SwiftData with `@Model` classes (see `Shared/Models/`)
 - **UI layer**: SwiftUI views with `@Query` for data fetching
 - **App entry**: `lead_trackApp.swift` configures the `ModelContainer` and injects it into the SwiftUI environment
-- **Targets**: iOS app (`lead track/`), watchOS companion (`lead-track Watch App/`), and widget extension (`lead-track Widget/`) — note the different naming conventions (space vs hyphen). All three compile the `Shared/` folder, so anything there must build on iOS and watchOS — and, unless excluded in `Package.swift`, on Linux too (see "Building & testing on Linux").
+- **Targets**: iOS app (`lead track/`), watchOS companion (`lead-track Watch App/`), iOS widget (`lead-track Widget/`), and watchOS widget/complications extension (`lead-track Watch Widget/`) — note the different naming conventions (space vs hyphen). All four compile the `Shared/` folder, so anything there must build on iOS and watchOS — and, unless excluded in `Package.swift`, on Linux too (see "Building & testing on Linux").
 - **Watch sync**: the phone is the source of truth. `PhoneWatchSyncService` (iOS) pushes a codable `WatchSnapshot` over WatchConnectivity; the watch (`WatchSyncController`) caches it, renders it, and sends `WatchAction`s back (optimistically applied via `WatchSnapshotReducer`, queued with `transferUserInfo` when the phone is unreachable). The phone applies actions through `WatchActionHandler`, backdating sessions to the action timestamp.
 
 ## Linting
 
-Both linters run automatically as Xcode build phases on both targets. To run manually:
+Both linters run directly in CI and as Xcode build phases on the iOS app target. To run manually:
 
 ```bash
 # SwiftLint — style and complexity checks
