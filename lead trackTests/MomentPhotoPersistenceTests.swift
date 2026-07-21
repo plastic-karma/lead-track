@@ -54,7 +54,7 @@ struct MomentPhotoPersistenceTests {
     }
 
     @Test
-    func deletingMomentCascadesItsPhotos() throws {
+    func deletingMomentThroughStorePathDeletesItsPhotos() throws {
         let moment = makeMoment()
         MomentPhotoReconciler.sync(
             [Data([1]), Data([2]), Data([3])],
@@ -63,7 +63,7 @@ struct MomentPhotoPersistenceTests {
         )
         try context.save()
 
-        context.delete(moment)
+        try context.deleteMomentAndPhotos(moment)
         try context.save()
 
         #expect(try context.fetch(FetchDescriptor<MomentPhoto>()).isEmpty)

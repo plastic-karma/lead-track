@@ -31,13 +31,9 @@ extension ModelContext {
     }
 
     private func deleteMoments(of aspiration: Aspiration) throws {
-        let photos = try fetch(FetchDescriptor<MomentPhoto>())
         let moments = try fetch(FetchDescriptor<Moment>())
         for moment in moments where moment.aspiration === aspiration {
-            for photo in photos where photo.moment === moment {
-                delete(photo)
-            }
-            delete(moment)
+            try deleteMomentAndPhotos(moment)
         }
     }
 }

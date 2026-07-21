@@ -141,7 +141,11 @@ extension AspirationDetailView {
 
     func deleteMoment(_ moment: Moment) {
         withAnimation {
-            modelContext.delete(moment)
+            do {
+                try modelContext.deleteMomentAndPhotos(moment)
+            } catch {
+                StoreLog.error("Moment delete failed: \(error)")
+            }
         }
     }
 }

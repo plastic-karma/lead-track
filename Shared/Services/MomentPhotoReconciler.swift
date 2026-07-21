@@ -27,4 +27,18 @@ enum MomentPhotoReconciler {
         moment.photos = replacements
     }
 }
+
+extension ModelContext {
+    /// Enforces the declared Moment-photo cascade explicitly. SwiftData can
+    /// leave the inverse array empty after loading an existing store, so
+    /// deleting through the forward photo.moment link keeps blobs from
+    /// becoming orphaned on every supported platform.
+    func deleteMomentAndPhotos(_ moment: Moment) throws {
+        let photos = try fetch(FetchDescriptor<MomentPhoto>())
+        for photo in photos where photo.moment === moment {
+            delete(photo)
+        }
+        delete(moment)
+    }
+}
 #endif
