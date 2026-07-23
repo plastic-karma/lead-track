@@ -23,6 +23,7 @@ struct AspirationDetailView: View {
     /// awaiting its delete confirmation.
     @State var showingKeepMoment = false
     @State var editingMoment: Moment?
+    @State var photoViewerRoute: MomentPhotoViewerRoute?
     @State var momentPendingDelete: Moment?
     /// Internal for the principles card in `AspirationPrinciplesSection`:
     /// the hold-a-principle alert and its draft.
@@ -68,6 +69,9 @@ struct AspirationDetailView: View {
             }
             .sheet(item: $editingMoment) { moment in
                 MomentFormView(aspiration: aspiration, moment: moment)
+            }
+            .fullScreenCover(item: $photoViewerRoute) { route in
+                MomentPhotoViewer(route: route)
             }
             .confirmationDialog(
                 "Delete this moment?",

@@ -190,9 +190,10 @@ chip; nothing is captured without that tap, on every single moment.
 - Unlike the one-off aspiration cover, moment photos accrue for a lifetime, so
   the composer downscales on import: longest edge ≤ 2048 px, re-encoded JPEG
   (~0.8 quality) before the bytes reach `MomentPhoto.data`.
-- Photos render as thumbnails on the aspiration surfaces and full-size in the
-  composer; the weekly review card shows at most a small photo glyph on the
-  row (see below), never the images — the card stays light.
+- Photos render as thumbnails on the aspiration surfaces and in the in-app
+  composer; tapping one opens an uncropped, full-screen viewer, with swiping
+  between the moment's photos. The weekly review card shows at most a small
+  photo glyph on the row (see below), never the images — the card stays light.
 - A Photos share opens a dedicated new-Moment composer inside LeadStone's
   Share Extension. The extension accepts at most four images, lets the user
   remove any of them, requires an aspiration and text, and saves directly to

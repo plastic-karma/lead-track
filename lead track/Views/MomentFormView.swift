@@ -42,6 +42,7 @@ struct MomentFormView: View {
     @State var locationStatus: LocationStatus = .idle
     @State var reader = MomentLocationReader()
     @State var saveTrigger = false
+    @State private var photoViewerRoute: MomentPhotoViewerRoute?
 
     /// Soft cap, enforced here in the composer, never in the schema.
     static let photoCap = 4
@@ -95,6 +96,9 @@ struct MomentFormView: View {
             .onChange(of: photoItems) { _, items in
                 Task { await loadPhotos(items) }
             }
+        }
+        .fullScreenCover(item: $photoViewerRoute) { route in
+            MomentPhotoViewer(route: route)
         }
     }
 }
@@ -260,8 +264,8 @@ extension MomentFormView {
     private var photoStrip: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 10) {
-                ForEach(photoData) { photo in
-                    photoThumb(photo)
+                ForEach(Array(photoData.enumerated()), id: \.element.id) { indexedPhoto in
+                    photoThumb(indexedPhoto.element, at: indexedPhoto.offset)
                 }
             }
         }
@@ -269,25 +273,46 @@ extension MomentFormView {
     }
 
     @ViewBuilder
-    private func photoThumb(_ photo: PickedPhoto) -> some View {
+    private func photoThumb(_ photo: PickedPhoto, at index: Int) -> some View {
         if let image = UIImage(data: photo.data) {
+            ZStack(alignment: .topTrailing) {
+                viewPhotoButton(image, at: index)
+                removePhotoButton(photo, at: index)
+            }
+        }
+    }
+
+    private func viewPhotoButton(_ image: UIImage, at index: Int) -> some View {
+        Button {
+            photoViewerRoute = MomentPhotoViewerRoute(
+                photos: photoData.map(\.data),
+                selectedIndex: index
+            )
+        } label: {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(alignment: .topTrailing) {
-                    Button {
-                        removePhoto(photo)
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white, .black.opacity(0.5))
-                    }
-                    .padding(4)
-                    .accessibilityLabel("Remove photo")
-                    .accessibilityHint("Removes this photo from the moment")
-                }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("View photo \(index + 1) of \(photoData.count)")
+        .accessibilityHint("Opens the photo full screen")
+    }
+
+    private func removePhotoButton(_ photo: PickedPhoto, at index: Int) -> some View {
+        Button {
+            removePhoto(photo)
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .foregroundStyle(.white, .black.opacity(0.5))
+                .padding(4)
+                .frame(width: 44, height: 44, alignment: .topTrailing)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove photo \(index + 1) of \(photoData.count)")
+        .accessibilityHint("Removes this photo from the moment")
     }
 
     private var photoPicker: some View {
