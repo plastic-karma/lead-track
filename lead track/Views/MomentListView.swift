@@ -3,13 +3,15 @@ import SwiftUI
 
 /// The full moments timeline for one aspiration — every kept moment, newest
 /// first, places and photos inline. Reached from the detail's "All moments"
-/// link once more than a few exist. Tapping a row edits it, swiping deletes it
-/// (with a confirmation when photos would be lost), exactly as on the detail.
-/// No count is ever shown, here or in the link that leads here.
+/// link once more than a few exist. Tapping a moment's narrative edits it,
+/// while tapping a photo opens it full-screen. Swiping deletes (with a
+/// confirmation when photos would be lost), exactly as on the detail. No count
+/// is ever shown, here or in the link that leads here.
 struct MomentListView: View {
     @Environment(\.modelContext) private var modelContext
     let aspiration: Aspiration
     @State private var editingMoment: Moment?
+    @State private var photoViewerRoute: MomentPhotoViewerRoute?
     @State private var momentPendingDelete: Moment?
 
     var body: some View {
@@ -23,6 +25,9 @@ struct MomentListView: View {
         .overlay { emptyState }
         .sheet(item: $editingMoment) { moment in
             MomentFormView(aspiration: aspiration, moment: moment)
+        }
+        .fullScreenCover(item: $photoViewerRoute) { route in
+            MomentPhotoViewer(route: route)
         }
         .confirmationDialog(
             "Delete this moment?",
@@ -51,12 +56,11 @@ extension MomentListView {
     }
 
     private func row(_ moment: Moment) -> some View {
-        Button {
-            editingMoment = moment
-        } label: {
-            MomentRowContent(moment: moment)
-        }
-        .buttonStyle(.plain)
+        MomentRowContent(
+            moment: moment,
+            onEdit: { editingMoment = moment },
+            onPhotoTap: { photoViewerRoute = $0 }
+        )
         .swipeActions(edge: .trailing) {
             Button("Delete", role: .destructive) {
                 requestDelete(moment)

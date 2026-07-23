@@ -78,17 +78,17 @@ extension AspirationDetailView {
         )
     }
 
-    /// Tap edits; the swipe of the old list rows becomes a context menu here
-    /// (card rows don't swipe), with the same photo-loss confirmation.
+    /// The narrative tap edits while a thumbnail tap opens its photo. The
+    /// swipe of the old list rows becomes a context menu here (card rows don't
+    /// swipe), with the same photo-loss confirmation.
     private func momentRow(_ moment: Moment) -> some View {
-        Button {
-            editingMoment = moment
-        } label: {
-            MomentRowContent(moment: moment)
-                .padding(.vertical, 11)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        MomentRowContent(
+            moment: moment,
+            onEdit: { editingMoment = moment },
+            onPhotoTap: { photoViewerRoute = $0 }
+        )
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
         .contextMenu {
             Button("Edit", systemImage: "pencil") { editingMoment = moment }
             Button("Delete", systemImage: "trash", role: .destructive) {
@@ -166,18 +166,31 @@ extension AspirationDetailView {
 /// timeline render moments identically.
 struct MomentRowContent: View {
     let moment: Moment
+    let onEdit: () -> Void
+    let onPhotoTap: (MomentPhotoViewerRoute) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(moment.text)
-                .font(.subheadline)
-                .lineLimit(4)
-            meta
+            editButton
             if !moment.photos.isEmpty {
                 thumbs
             }
         }
         .padding(.vertical, 2)
+    }
+
+    private var editButton: some View {
+        Button(action: onEdit) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(moment.text)
+                    .font(.subheadline)
+                    .lineLimit(4)
+                meta
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var meta: some View {
@@ -199,10 +212,12 @@ struct MomentRowContent: View {
         moment.principle.map { "lives “\($0.text)”" }
     }
 
+    @ViewBuilder
     private var thumbs: some View {
+        let photos = sortedPhotos
         HStack(spacing: 7) {
-            ForEach(sortedPhotos) { photo in
-                thumb(photo.data)
+            ForEach(photos.indices, id: \.self) { index in
+                thumb(photos, at: index)
             }
         }
         .padding(.top, 3)
@@ -213,13 +228,25 @@ struct MomentRowContent: View {
     }
 
     @ViewBuilder
-    private func thumb(_ data: Data) -> some View {
-        if let image = UIImage(data: data) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 48, height: 48)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    private func thumb(_ photos: [MomentPhoto], at index: Int) -> some View {
+        if let image = UIImage(data: photos[index].data) {
+            Button {
+                onPhotoTap(
+                    MomentPhotoViewerRoute(
+                        photos: photos.map(\.data),
+                        selectedIndex: index
+                    )
+                )
+            } label: {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("View photo \(index + 1) of \(photos.count)")
+            .accessibilityHint("Opens the photo full screen")
         }
     }
 }
