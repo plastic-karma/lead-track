@@ -13,6 +13,7 @@ struct ProjectDetailView: View {
     @State private var showingDurationEntry = false
     @State private var showingAllSessions = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingClosingMoment = false
     @State private var sessionToMove: Session?
 
     init(project: Project) {
@@ -111,6 +112,15 @@ struct ProjectDetailView: View {
         }
         .sheet(isPresented: $showingCalendar) {
             GoalCalendarView(filter: .project(project))
+        }
+        .sheet(isPresented: $showingClosingMoment) {
+            MomentFormView(
+                aspiration: connectedAspirations.count == 1
+                    ? connectedAspirations.first
+                    : nil,
+                project: project,
+                prompt: ProjectService.closingMomentPrompt
+            )
         }
         .navigationTitle(project.name)
         .toolbar {
@@ -261,6 +271,7 @@ extension ProjectDetailView {
 
     private func finishProject() {
         ProjectService.finish(project)
+        showingClosingMoment = true
     }
 
     private func reopenProject() {

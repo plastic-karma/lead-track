@@ -103,7 +103,7 @@ A kept piece of testimony under exactly one aspiration: evidence, in the
 user's words (with optional photos and a place), that the becoming is
 happening. It occurs at a user-set time distinct from when it was kept, may
 point at the metric or project where it happened, and is witnessed, never
-measured — no counts, totals, streaks, or prompts on any in-app surface;
-only the explicit, user-triggered markdown export includes moments (text,
-place label, provenance) and a range count. "Keep" is the capture verb.
+measured — no counts, totals, or streaks; an explicit project finish may offer
+one optional reflection prompt, and only the explicit, user-triggered markdown
+export includes moments (text, place label, provenance) and a range count.
 _Avoid_: milestone, achievement, win, highlight, memory, journal entry.

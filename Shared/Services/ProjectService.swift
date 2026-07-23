@@ -1,6 +1,12 @@
 import Foundation
 
 enum ProjectService {
+    /// The one contextual reflection offered when a user finishes a project.
+    /// It remains a prompt for the existing Moment composer, not an automatic
+    /// Moment or a required part of closing the project.
+    static let closingMomentPrompt =
+        "How have your aspirations changed through this project"
+
     /// Sets whether `project` is its metric's default. Because at most one
     /// active project per metric may be the default, turning this on clears
     /// the flag on every sibling project.
