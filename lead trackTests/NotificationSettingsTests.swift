@@ -114,17 +114,20 @@ struct NotificationPrivacyTests {
     @Test
     func discreetModeFollowsTheAppLockKey() throws {
         try withTemporaryDefaults { defaults in
+            // Shared privacy consumers fail closed until the containing app
+            // has materialized its migrated lock setting.
+            #expect(NotificationPrivacy.isDiscreet(in: defaults))
+            defaults.set(false, forKey: AppPrivacySettings.appLockEnabledKey)
             #expect(!NotificationPrivacy.isDiscreet(in: defaults))
-            defaults.set(true, forKey: NotificationPrivacy.appLockEnabledKey)
+            defaults.set(true, forKey: AppPrivacySettings.appLockEnabledKey)
             #expect(NotificationPrivacy.isDiscreet(in: defaults))
         }
     }
 
     @Test
-    func appLockKeyMatchesTheAppTargetsToggle() {
-        // Pins the raw string `AppLockService.enabledKey` writes; Shared/
-        // can't import the app target to reference it directly.
-        #expect(NotificationPrivacy.appLockEnabledKey == "appLockEnabled")
+    func appLockKeysMatchTheSharedContract() {
+        #expect(AppPrivacySettings.appLockEnabledKey == "appLockEnabled")
+        #expect(AppPrivacySettings.appLockGracePeriodKey == "appLockGracePeriod")
     }
 }
 

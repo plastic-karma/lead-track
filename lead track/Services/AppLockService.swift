@@ -26,9 +26,6 @@ enum AppLockGracePeriod: Int, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class AppLockService {
-    static let enabledKey = "appLockEnabled"
-    static let gracePeriodKey = "appLockGracePeriod"
-
     private(set) var isLocked: Bool
     private var backgroundedAt: Date?
     private let disabledForTest: Bool
@@ -36,17 +33,18 @@ final class AppLockService {
     init() {
         let isUITest = LaunchArguments.isUITest
         disabledForTest = isUITest
-        let enabled = UserDefaults.standard.bool(forKey: Self.enabledKey)
+        AppPrivacySettings.migrateLegacyValues()
+        let enabled = AppPrivacySettings.isAppLockEnabled()
         isLocked = !isUITest && enabled
     }
 
     var isEnabled: Bool {
         guard !disabledForTest else { return false }
-        return UserDefaults.standard.bool(forKey: Self.enabledKey)
+        return AppPrivacySettings.isAppLockEnabled()
     }
 
     private var gracePeriod: AppLockGracePeriod {
-        let raw = UserDefaults.standard.integer(forKey: Self.gracePeriodKey)
+        let raw = AppPrivacySettings.appLockGracePeriod()
         return AppLockGracePeriod(rawValue: raw) ?? .immediately
     }
 

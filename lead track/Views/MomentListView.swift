@@ -85,7 +85,11 @@ extension MomentListView {
 
     private func delete(_ moment: Moment) {
         withAnimation {
-            modelContext.delete(moment)
+            do {
+                try modelContext.deleteMomentAndPhotos(moment)
+            } catch {
+                StoreLog.error("Moment delete failed: \(error)")
+            }
         }
     }
 }

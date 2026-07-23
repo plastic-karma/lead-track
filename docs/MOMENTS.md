@@ -57,9 +57,9 @@ is silence, never debt). A moment generalizes both.
    the one outbound path: it includes each moment's text, place label, and
    provenance, plus a range count, and never photos or coordinates. No
    other surface exports moments.
-5. **Purely additive.** New models, defaulted parameters, and one new section
-   per surface. A store with zero moments renders every screen byte-identical
-   to today.
+5. **Additive data, quiet capture.** New models and relationships remain
+   additive, and every capture path is user-initiated. A store with zero
+   moments needs no backfill and never invents testimony.
 
 ## Data model
 
@@ -193,6 +193,15 @@ chip; nothing is captured without that tap, on every single moment.
 - Photos render as thumbnails on the aspiration surfaces and full-size in the
   composer; the weekly review card shows at most a small photo glyph on the
   row (see below), never the images — the card stays light.
+- A Photos share opens a dedicated new-Moment composer inside LeadStone's
+  Share Extension. The extension accepts at most four images, lets the user
+  remove any of them, requires an aspiration and text, and saves directly to
+  the app-group SwiftData store. It does not use unsupported attempts to
+  foreground the containing app from another app's share sheet.
+- The live Week screen offers an exact trailing-seven-day PhotoKit grid. It
+  asks for library access only after a tap, supports limited-library access,
+  and turns the selected images into an editable Moment draft. Selection alone
+  never writes a Moment.
 
 ## UI surfaces
 
@@ -200,13 +209,19 @@ chip; nothing is captured without that tap, on every single moment.
 
 A sheet with: the text field (multi-line, the only required field), the
 `occurredAt` picker, the *Add location* chip, the photo picker, and an
-optional provenance picker (None / a metric / a project — the owning
-aspiration's attachments listed first, every metric and project reachable).
-The composer is **always born with its aspiration** — capture only ever
-starts from an aspiration surface, so there is no aspiration picker. The verb
-everywhere is **Keep** ("Keep a moment", primary button "Keep") — the
-counterpart of an intention's *let go*. Editing an existing moment opens the
-same sheet.
+optional provenance picker (None / a metric / a project). Capture from an
+aspiration surface is born bound to that aspiration and lists its attachments
+first. A draft started from Week has no owner yet, so the same composer shows
+an aspiration picker and requires exactly one before Keep becomes available.
+The owner is fixed after creation. The verb everywhere is **Keep** ("Keep a
+moment", primary button "Keep") — the counterpart of an intention's *let
+go*. Editing an existing moment opens the same sheet without changing its
+owner.
+
+The Share Extension mirrors the essential new-Moment fields — aspiration,
+text, date, and removable photos — in its own process. Because supported Share
+Extension APIs cannot force-open their containing app, completing this small
+composer is the automatic Photos-to-Moment path.
 
 ### Aspiration detail — the evidence above the question
 
@@ -260,6 +275,17 @@ Linux-testable:
   pre-bound to that aspiration); it never appears on browsed weeks, never
   stages a card by itself, and skipping it is invisible.
 
+### Weekly review — recent-photo capture
+
+The live review also carries a quiet **Photos from the last 7 days** section.
+It is capture, not an insight: tapping it requests Photos access and shows only
+image assets whose creation date falls in the review's half-open
+`start ..< end` window. Up to four selected images seed one new Moment draft,
+ordered chronologically and dated from the earliest successful selection. The
+user still chooses the aspiration, writes the testimony, can remove photos,
+and explicitly taps Keep. Browsed historical weeks never offer this capture
+surface.
+
 ## Chosen defaults
 
 Resolved here so v1 is unambiguous; each is easily changed later:
@@ -300,11 +326,18 @@ Deferred to later follow-ups:
       (`swift build` / `swift test`); registered in `SharedModelContainer`
       and the `#Preview` container; a pre-feature store opens clean with an
       additive migration.
-- [ ] A store with zero moments renders every screen byte-identical to
-      today; all existing `WeeklyReview` call sites and tests are untouched.
+- [ ] A store with zero moments opens without migration or backfill; all
+      existing `WeeklyReview` histories remain valid.
 - [ ] Keeping works from `AspirationDetailView` and from the live review
-      card; the composer requires only text, caps `occurredAt` at now,
-      backdates freely, and never shows an aspiration picker.
+      card; capture requires text plus an aspiration when not already bound,
+      caps `occurredAt` at now, backdates freely, keeps bound owners fixed, and
+      shows the aspiration picker only for an unbound Week draft.
+- [ ] Photos shared from another app immediately open the Share Extension's
+      new-Moment composer; up to four photos can be added or removed, and save
+      requires text plus exactly one aspiration.
+- [ ] The live Week screen can select accessible image assets from its exact
+      trailing-seven-day window and seed an editable Moment; denied, limited,
+      empty, partial-failure, and iCloud-backed states are visible to the user.
 - [ ] Deleting an aspiration cascades its moments and photos; deleting a
       linked metric or project nullifies provenance and the moment survives;
       deleting a moment touches nothing else.

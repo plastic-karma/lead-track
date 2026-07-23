@@ -5,11 +5,9 @@ import Foundation
 /// — metric names, streak counts, the user's own intention questions — so
 /// every banner falls back to generic copy.
 enum NotificationPrivacy {
-    /// Mirrors `AppLockService.enabledKey`; the toggle lives in the app
-    /// target, which Shared/ can't import.
-    static let appLockEnabledKey = "appLockEnabled"
-
-    static func isDiscreet(in defaults: UserDefaults = .standard) -> Bool {
-        defaults.bool(forKey: appLockEnabledKey)
+    static func isDiscreet(
+        in defaults: UserDefaults = AppPrivacySettings.store
+    ) -> Bool {
+        AppPrivacySettings.shouldProtectSharedContent(in: defaults)
     }
 }
