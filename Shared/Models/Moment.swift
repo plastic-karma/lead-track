@@ -7,7 +7,8 @@ import SwiftData
 // the app's lead measures. Every number elsewhere records what was *poured in*;
 // a moment records something that *grew out*, in the user's own words. It is
 // witnessed, never measured: written only by the user, never aggregated, scored,
-// counted, or prompted (see `docs/MOMENTS.md`).
+// or counted. A user-triggered project close may offer an optional contextual
+// reflection in the existing composer (see `docs/MOMENTS.md`).
 //
 // Attached to exactly one owning aspiration, fixed at creation — the
 // `Intention`/`AspirationCheckIn` shape — and optionally pointing at the metric

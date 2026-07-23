@@ -9,7 +9,7 @@ much have I invested?"* but *"what has it given back?"*
 
 A moment is the lag side of the app's lead measures, kept safe from Goodhart
 by being **witnessed rather than measured**: written only by the user, never
-aggregated, never scored, never prompted.
+aggregated, never scored, never counted. It is never prompted ambiently; an explicit project close may offer one optional reflection composer.
 
 ## Grounding in today's app
 
@@ -47,9 +47,12 @@ is silence, never debt). A moment generalizes both.
    the moments themselves, or nothing. The one deliberate exception is the
    user-triggered markdown export, whose range inventory prints a moment
    count for the LLM reader (see Principle 4).
-3. **Never prompted.** No notification, badge, streak, or "you haven't kept a
+3. **No ambient prompting.** No notification, badge, streak, or "you haven't kept a
    moment lately." Capture affordances sit quietly where the user already is;
-   skipping is structurally invisible.
+   the only contextual exception is the user's explicit project-finish action:
+   after a project is marked finished, LeadStone may open a Moment composer
+   asking "How have your aspirations changed through this project". Dismissing
+   it leaves the project finished and creates no Moment.
 4. **Private by construction.** Photos live in on-device external storage;
    location is captured only on an explicit per-moment tap; nothing enters
    `WatchSnapshot`, widgets, or Health. The explicit, user-triggered
@@ -219,6 +222,10 @@ moment", primary button "Keep") — the counterpart of an intention's *let
 go*. Editing an existing moment opens the same sheet without changing its
 owner.
 
+A project-finish reflection uses this same composer: it is pre-bound to the
+project as provenance, preselects its only attached aspiration when there is one,
+and shows the aspiration picker when the project has multiple or no attachments.
+
 The Share Extension mirrors the essential new-Moment fields — aspiration,
 text, date, and removable photos — in its own process. Because supported Share
 Extension APIs cannot force-open their containing app, completing this small
@@ -303,8 +310,9 @@ Resolved here so v1 is unambiguous; each is easily changed later:
    design invariant, not a default (with #8 the doctrine mirror of
    check-ins); the markdown export's range inventory line is the sole,
    deliberate exception (see Principles 2 and 4).
-8. **No notifications, badges, streaks, or completion accounting on
-   moments — ever.**
+8. **No notifications, badges, streaks, or completion accounting on moments — ever.**
+   The one optional project-finish reflection is contextual and user-triggered;
+   it creates nothing unless the user writes and keeps the Moment.
 
 ## Out of scope
 
@@ -349,7 +357,8 @@ Deferred to later follow-ups:
       live *and* browsed weeks; a moment alone stages its aspiration; the
       Keep affordance appears on the live week only (unit-tested on Linux,
       including the staging and boundary cases).
-- [ ] No surface renders a count of moments; no notification, badge, or
-      prompt machinery references them (doctrine tests where practical).
+- [ ] No surface renders a count of moments; no ambient notification, badge,
+      streak, or unsolicited prompt machinery references them; the only prompt
+      is the optional reflection offered after an explicit project finish.
 - [ ] New unit-test files are wired into `project.pbxproj` (test files are
       not auto-included); `swiftlint` and `swiftformat --lint .` pass.

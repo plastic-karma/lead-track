@@ -77,6 +77,14 @@ struct DefaultProjectTests {
     }
 
     @Test
+    func finishingOffersTheProjectReflectionPrompt() {
+        #expect(
+            ProjectService.closingMomentPrompt
+                == "How have your aspirations changed through this project"
+        )
+    }
+
+    @Test
     func defaultProjectIgnoresFinishedProjects() throws {
         let context = try makeContext()
         let metric = makeMetric(.count, in: context)

@@ -23,6 +23,7 @@ struct MomentFormView: View {
 
     let editing: Moment?
     let choosesAspiration: Bool
+    let prompt: String?
 
     @Query(sort: \Aspiration.createdAt) var allAspirations: [Aspiration]
     @Query(sort: \Metric.createdAt) private var allMetrics: [Metric]
@@ -49,16 +50,22 @@ struct MomentFormView: View {
 
     init(
         aspiration: Aspiration? = nil,
+        project: Project? = nil,
         moment: Moment? = nil,
+        prompt: String? = nil,
         seed: MomentFormSeed = MomentFormSeed()
     ) {
         editing = moment
         choosesAspiration = moment == nil && aspiration == nil
+        self.prompt = prompt
         _aspiration = State(initialValue: moment?.aspiration ?? aspiration)
         _text = State(initialValue: moment?.text ?? "")
         _occurredAt = State(initialValue: moment?.occurredAt ?? min(seed.occurredAt, Date.now))
         _provenance = State(
-            initialValue: MomentProvenance(metric: moment?.metric, project: moment?.project)
+            initialValue: MomentProvenance(
+                metric: moment?.metric,
+                project: moment?.project ?? project
+            )
         )
         _principle = State(initialValue: moment?.principle)
         _latitude = State(initialValue: moment?.latitude)
@@ -146,8 +153,17 @@ extension MomentFormView {
 extension MomentFormView {
     private var textSection: some View {
         Section {
-            TextField("What grew out of this?", text: $text, axis: .vertical)
-                .lineLimit(3 ... 8)
+            if let prompt {
+                Text(prompt)
+                    .font(.subheadline.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            TextField(
+                prompt == nil ? "What grew out of this?" : "Your reflection",
+                text: $text,
+                axis: .vertical
+            )
+            .lineLimit(3 ... 8)
         } header: {
             Text("Moment")
         } footer: {
