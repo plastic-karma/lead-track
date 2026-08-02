@@ -3,9 +3,9 @@ import Foundation
 /// Remembers that a Week-tab check-in card was sent away, so it stays gone for
 /// the rest of that calendar week and returns on its own the next — the
 /// "dismiss until next week" contract behind each card's close button and
-/// swipe. Two cards use it, one `UserDefaults` key each: the per-aspiration
-/// alignment pulse and the oversubscription "Check-In". Separate keys so
-/// hiding one leaves the other.
+/// swipe. Three cards use it, one `UserDefaults` key each: the per-aspiration
+/// alignment pulse, the oversubscription "Check-In", and the "Intentions to
+/// set" asks. Separate keys so hiding one leaves the others.
 ///
 /// Only the dismissed week's start is stored, as its
 /// `timeIntervalSinceReferenceDate`. Membership is tested by calendar week
@@ -19,6 +19,8 @@ enum WeeklyCheckInDismissal {
     static let alignmentWeekKey = "weeklyCheckInDismissedWeek"
     /// Key for the oversubscription "Check-In" card's dismissal.
     static let oversubscriptionWeekKey = "weeklyOversubscriptionDismissedWeek"
+    /// Key for the "Intentions to set" asks' dismissal.
+    static let intentionAskWeekKey = "weeklyIntentionAskDismissedWeek"
 
     /// The value to store to dismiss the check-in for the calendar week
     /// containing `date`.

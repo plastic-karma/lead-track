@@ -31,6 +31,10 @@ struct WeeklyReview {
     /// the last three weeks — live review only, `nil` when there is nothing to
     /// raise (see `OversubscriptionInsight`).
     let oversubscription: OversubscriptionInsight.CheckIn?
+    /// The set-an-intention asks for daily goals that went unmet more than
+    /// three times across the last week — live review only, and empty while
+    /// goals or aspirations are unused (see `GoalShortfall`).
+    let intentionAsks: [GoalShortfall.Ask]
     /// Completed sessions per day across all metrics, oldest first.
     let sessionSeries: [Double]
 }
@@ -114,6 +118,12 @@ extension WeeklyReview {
             oversubscription: bounds.isCurrentWeek
                 ? OversubscriptionInsight.checkIn(for: metrics, now: now, calendar: calendar)
                 : nil,
+            intentionAsks: bounds.isCurrentWeek
+                ? GoalShortfall.asks(
+                    for: metrics, aspirations: aspirations,
+                    intentions: intentions, now: now, calendar: calendar
+                )
+                : [],
             sessionSeries: combinedSessionSeries(metrics: metrics, bounds: bounds, calendar: calendar)
         )
     }

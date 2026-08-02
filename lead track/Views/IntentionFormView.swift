@@ -22,6 +22,16 @@ struct IntentionFormView: View {
     @State private var asksDaily = false
     @State private var question: IntentionQuestion = .makeDefault()
 
+    /// Plain creation opens reflective and empty; the weekly review's
+    /// intention asks seed the derived kind with the flagged metric
+    /// preselected — same form, one prefilled doorway.
+    init(aspiration: Aspiration, seedMetric: Metric? = nil) {
+        self.aspiration = aspiration
+        guard let seedMetric else { return }
+        _kind = State(initialValue: .derived)
+        _metric = State(initialValue: seedMetric)
+    }
+
     var body: some View {
         NavigationStack {
             Form {

@@ -106,7 +106,7 @@ private extension OversubscriptionInsight {
         calendar: Calendar
     ) -> (active: Int, missed: Int) {
         let today = calendar.startOfDay(for: now)
-        let live = metrics.map { (metric: $0, from: firstLiveDay(of: $0, calendar: calendar)) }
+        let live = metrics.map { (metric: $0, from: GoalDayOutcome.firstLiveDay(of: $0, calendar: calendar)) }
         let days = (1 ... windowDays)
             .compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
             .map { day in
@@ -116,20 +116,10 @@ private extension OversubscriptionInsight {
         return (days.count, days.count { $0.fellShort })
     }
 
-    /// The first day a metric's goal can be judged: its creation day, pulled
-    /// back to its earliest logged session when history predates the row
-    /// (imports). Days before a goal existed must never read as misses — a
-    /// goal added today cannot rewrite the past three weeks into failures.
-    static func firstLiveDay(of metric: Metric, calendar: Calendar) -> Date {
-        let firstSession = metric.sessions
-            .filter { !$0.isRunning }
-            .map(\.startedAt)
-            .min()
-        return calendar.startOfDay(for: min(metric.createdAt, firstSession ?? metric.createdAt))
-    }
-
     /// Whether any applicable goal was worked on that day, and whether any went
-    /// unmet — weighed only over metrics whose goal applies (rest days drop out).
+    /// unmet — weighed only over metrics whose goal applies (rest days drop
+    /// out). The per-day judgment itself lives in `GoalDayOutcome`, shared
+    /// with the review's other goal read.
     static func outcome(
         of metrics: [Metric],
         on day: Date,
@@ -137,24 +127,9 @@ private extension OversubscriptionInsight {
     ) -> (engaged: Bool, fellShort: Bool) {
         let totals = metrics
             .filter { $0.isGoalDay(on: day, calendar: calendar) }
-            .map { (metric: $0, total: dayTotal(of: $0, on: day, calendar: calendar)) }
+            .map { (metric: $0, total: GoalDayOutcome.dayTotal(of: $0, on: day, calendar: calendar)) }
         let engaged = totals.contains { $0.total > 0 }
-        let fellShort = totals.contains { !isMet($0.metric, dayTotal: $0.total) }
+        let fellShort = totals.contains { !GoalDayOutcome.isMet($0.metric, dayTotal: $0.total) }
         return (engaged, fellShort)
-    }
-
-    static func isMet(_ metric: Metric, dayTotal: Double) -> Bool {
-        if metric.measurementType == .binary { return dayTotal > 0 }
-        return dayTotal >= (metric.dailyGoal ?? 0)
-    }
-
-    static func dayTotal(
-        of metric: Metric,
-        on day: Date,
-        calendar: Calendar
-    ) -> Double {
-        metric.sessions
-            .filter { !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: day) }
-            .reduce(0) { $0 + $1.trackingValue }
     }
 }
