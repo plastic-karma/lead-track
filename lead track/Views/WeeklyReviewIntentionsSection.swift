@@ -36,28 +36,25 @@ extension WeeklyReviewView {
     /// The weekly alignment pulse, one row per aspiration still open for it.
     /// An answered aspiration stays on stage for the rest of the visit so
     /// its note field doesn't vanish mid-typing; skipping remains
-    /// structurally invisible — scrolling past is the dismissal.
+    /// structurally invisible — swiping past is the dismissal.
     ///
-    /// The header's close button — or a sideways swipe — sends the whole
-    /// section away until next week; `WeeklyCheckInDismissal` remembers the
-    /// week, so it returns on its own once the week rolls over.
+    /// The header's close button sends the whole slide away until next week
+    /// (a sideways swipe pages the deck now); `WeeklyCheckInDismissal`
+    /// remembers the week, so it returns on its own once the week rolls
+    /// over. The open set mirrors the deck's presence rule exactly — see
+    /// `WeeklyReview.openCheckIns`.
     @ViewBuilder
     func checkInSection(_ review: WeeklyReview) -> some View {
-        let open = review.aspirationWeeks.filter {
-            $0.offersCheckIn || pulsedAspirations.contains($0.id)
-        }
+        let open = review.openCheckIns(pulsed: pulsedAspirations)
         if review.weeksBack == 0, !open.isEmpty,
            !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedCheckInWeek)
         {
-            SwipeToDismiss(onDismiss: dismissCheckIn) {
-                checkInBody(open)
-            }
+            checkInBody(open)
         }
     }
 
-    /// The check-in section's content, split out so `SwipeToDismiss` can carry
-    /// it: a header that closes the section, the prompt, then one
-    /// alignment-pulse row per still-open aspiration.
+    /// The check-in slide's content: a header that closes the slide, the
+    /// prompt, then one alignment-pulse row per still-open aspiration.
     private func checkInBody(_ open: [WeeklyReview.AspirationWeek]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             dismissibleSectionHeader("Check-in", dismiss: dismissCheckIn)
@@ -73,7 +70,7 @@ extension WeeklyReviewView {
 
     /// Hides the check-in for the rest of the current calendar week; it comes
     /// back on its own once the week rolls over (see `WeeklyCheckInDismissal`).
-    /// Animated so the section slides away and the rows below close the gap.
+    /// Animated so the deck can slide the vanished slide's neighbor in.
     private func dismissCheckIn() {
         withAnimation(.easeOut(duration: 0.2)) {
             dismissedCheckInWeek = WeeklyCheckInDismissal.marker(for: .now)

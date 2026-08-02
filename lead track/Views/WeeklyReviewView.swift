@@ -1,14 +1,16 @@
 import SwiftData
 import SwiftUI
 
-/// The Week tab, laid out like Today one timescale up: a header strip whose
-/// weekly-goal dial and day-by-day flame graph sit beside the headline number,
-/// then the metrics grouped into one compact card per aspiration — each folded
-/// to its header by default for a calmer, more focused screen, tap to expand
-/// its weeks with the quiet ones dimmed at the foot — then the goal seasons
-/// due, and the resting aspirations closing the screen as one centered line.
-/// Chevrons on the header strip browse earlier weeks; the metric rows drill
-/// into their screens.
+/// The Week tab, laid out like Today one timescale up — but as a slide deck
+/// rather than one crowded scroll: a pinned header strip whose weekly-goal
+/// dial and day-by-day flame graph sit beside the headline number, then one
+/// swipeable slide per section — the aspiration-grouped metric cards, the
+/// moments doorway, the intention decisions and check-ins, the goal seasons
+/// due — each a focus of its own, closed by the done slide. Chevrons on the
+/// header strip browse earlier weeks from any slide; the metric rows drill
+/// into their screens. Which slides exist is decided in
+/// `WeeklyReviewSlides` (pure, Linux-tested); `WeeklyReviewSlideDeck`
+/// renders and pages them.
 ///
 /// Formerly a notification-triggered sheet; it now anchors the middle
 /// timescale of the app's three tabs (day / week / lifetime), and the review
@@ -16,7 +18,7 @@ import SwiftUI
 /// navigation stack, so the shared drill-in destinations apply.
 struct WeeklyReviewView: View {
     /// The metrics themselves — grouped by aspiration into the compact cards
-    /// that fill the tab (see `WeeklyReview.metricGroups`).
+    /// of the effort slide (see `WeeklyReview.metricGroups`).
     @Query(sort: \Metric.createdAt) var metrics: [Metric]
     /// The aspirations the metric groups sort under, in the app's canonical
     /// creation order.
@@ -37,7 +39,12 @@ struct WeeklyReviewView: View {
     /// a `weekStart`/`occurredAt` range into these predicates if lifetime
     /// histories ever grow past that.
     @Query(sort: \Moment.occurredAt) var moments: [Moment]
-    @State private var weeksBack = 0
+    /// How many weeks back the header chevrons have browsed. Internal so
+    /// the deck extension in its own file can bind the header strip to it.
+    @State var weeksBack = 0
+    /// The deck's seat — which slide fills the screen. Internal so the deck
+    /// extension in its own file can page and repair it.
+    @State var slide: WeekSlide = .effort
     /// The goal-settings route shared by measure-health insights, season
     /// adjustments, and accepted intention promotions — hoisted here so it
     /// works with or without goal seasons due.
@@ -53,14 +60,15 @@ struct WeeklyReviewView: View {
     /// stage so the note field doesn't vanish the moment a rating lands.
     @State var pulsedAspirations: Set<String> = []
     /// The group card lifted by a long-press drag, dimmed until the drop.
-    /// Held here so the whole scroll surface can close out a drag session.
+    /// Held here so the effort slide's scroll surface can close out a drag
+    /// session.
     @State var draggingGroupID: String?
     /// The calendar week the user dismissed the alignment pulse in, stored as
-    /// the week start's reference-date offset; the section stays hidden until a
+    /// the week start's reference-date offset; the slide stays away until a
     /// later week reads past it. 0 — the unset default — dismisses nothing.
     /// See `WeeklyCheckInDismissal`.
     @AppStorage(WeeklyCheckInDismissal.alignmentWeekKey) var dismissedCheckInWeek = 0.0
-    /// The same, for the oversubscription "Check-In" card — its own week so
+    /// The same, for the oversubscription "Check-In" slide — its own week so
     /// dismissing one check-in leaves the other.
     @AppStorage(WeeklyCheckInDismissal.oversubscriptionWeekKey) var dismissedOversubscriptionWeek = 0.0
     /// The same again, for the "Intentions to set" asks.
@@ -71,7 +79,7 @@ struct WeeklyReviewView: View {
     var body: some View {
         // Built once per body pass. The pass re-runs whenever any query
         // result or `weeksBack` changes — which the intention-closure and
-        // check-in sections rely on — while purely cosmetic state (the card
+        // check-in slides rely on — while purely cosmetic state (the card
         // folds, the settings sheet) lives in leaf views below, so it can no
         // longer trigger this aggregation.
         let review = WeeklyReview.build(
@@ -95,7 +103,7 @@ struct WeeklyReviewView: View {
         if metrics.unarchived.isEmpty, aspirations.isEmpty {
             emptyState
         } else {
-            reviewScroll(review)
+            reviewDeck(review)
         }
     }
 
@@ -115,100 +123,37 @@ struct WeeklyReviewView: View {
     }
 }
 
-// MARK: - Layout
+// MARK: - Slide furniture
 
 extension WeeklyReviewView {
-    private func reviewScroll(_ review: WeeklyReview) -> some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                WeekHeaderStrip(
-                    review: review,
-                    weeksBack: $weeksBack,
-                    goalSegments: WeeklyReview.weeklyGoalSegments(metrics: metrics, weeksBack: weeksBack)
-                )
-                .padding(.horizontal)
-                metricGroupsSection(review)
-                recentPhotosSection(review)
-                intentionsSection(review)
-                intentionAsksSection(review)
-                checkInSection(review)
-                oversubscriptionSection(review)
-                goalSeasonSection(review)
-                restingLine(review.quietAspirations)
-            }
-            .padding(.vertical, 8)
-            .padding(.bottom, 16)
-        }
-        .aspirationReorderDropSurface(draggingID: $draggingGroupID)
-    }
-
-    /// The metrics grouped by the aspiration they serve, each aspiration one
-    /// compact card of its metrics' weeks — the Week tab's answer to Today's
-    /// clusters. Hidden when nothing logged effort this week (the resting line
-    /// and header still speak).
-    @ViewBuilder
-    private func metricGroupsSection(_ review: WeeklyReview) -> some View {
-        let groups = WeeklyReview.metricGroups(
-            metrics: metrics, aspirations: aspirations,
-            weeks: review.metricWeeks, quiet: review.quietMetrics
-        )
-        if !groups.isEmpty {
-            MetricGroupsSection(
-                groups: groups, aspirations: aspirations,
-                metric: metric(for:), draggingID: $draggingGroupID
-            )
-        }
-    }
-
-    /// The labeled seam between the review's zones — a hairline rule with the
-    /// zone's name, so the metric groups and the goal seasons read as distinct
-    /// bands of one screen. Internal (not private) because the goal-seasons
-    /// block in its own file opens with the same seam.
+    /// The quiet title opening most slides — the zone's name in the same
+    /// voice the scroll's section breaks used, minus the hairline rule:
+    /// each zone now opens its own slide, so there is nothing to divide.
     func sectionBreak(_ title: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// `sectionBreak` plus a quiet close button on the title row, so a
+    /// dismissible slide can be sent away for the week by a plain tap —
+    /// the deck's sideways swipe pages, so a visible control is the one
+    /// reliable dismissal. Shared by the Week tab's dismissible check-ins.
+    func dismissibleSectionHeader(_ title: String, dismiss: @escaping () -> Void) -> some View {
+        HStack {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// `sectionBreak` plus a quiet close button on the title row, so a section
-    /// can be sent away for the week by a plain tap — the reliable partner to
-    /// `SwipeToDismiss`. Shared by the Week tab's two dismissible check-ins.
-    func dismissibleSectionHeader(_ title: String, dismiss: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-            HStack {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button(action: dismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss until next week")
+            Spacer()
+            Button(action: dismiss) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.tertiary)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss until next week")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Resting aspirations close the review as one centered breath — names
-    /// only; their numbers live on their own screens, the Aspirations tab
-    /// the way in.
-    @ViewBuilder
-    private func restingLine(_ quiet: [WeeklyReview.QuietAspiration]) -> some View {
-        if !quiet.isEmpty {
-            Text("Resting: \(quiet.map(\.title).joined(separator: ", "))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal)
-        }
     }
 
     /// Shown only when no metrics exist at all; a week without sessions
@@ -229,85 +174,6 @@ extension WeeklyReviewView {
 }
 
 // MARK: - Leaf state
-
-/// The aspiration group cards with their fold state, split into a leaf view
-/// so expanding a card re-renders only this section — not the parent body,
-/// whose `WeeklyReview.build` pass over five query result sets is the tab's
-/// expensive part. The groups still flow down from the parent's queries, so
-/// any model change rebuilds them exactly as before.
-private struct MetricGroupsSection: View {
-    let groups: [WeeklyReview.MetricGroup]
-    /// The full aspiration set a drag rewrites ranks over.
-    let aspirations: [Aspiration]
-    /// Maps a ledger row back to its model for the drill-in link.
-    let metric: (String) -> Metric?
-    /// The lifted card, owned by the parent so its scroll surface can close
-    /// out drag sessions released outside this section.
-    @Binding var draggingID: String?
-    /// The group cards the user has expanded from their default folded
-    /// state — per-card, transient, never persisted, like the Today tab's
-    /// cluster stubs. Empty (the default) means every card is folded to its
-    /// header line for a calmer, more focused screen.
-    @State private var expandedGroups: Set<String> = []
-    /// Writes the drag-reorder rank rewrites.
-    @Environment(\.modelContext) private var modelContext
-
-    var body: some View {
-        VStack(spacing: 16) {
-            ForEach(groups) { group in
-                groupCard(group)
-                    .aspirationReorderable(
-                        id: group.id == AspirationGrouping.unalignedID ? nil : group.id,
-                        draggingID: $draggingID,
-                        move: move
-                    )
-            }
-        }
-        .padding(.horizontal)
-    }
-
-    /// One hover step of a drag: rewrite the ranks and save. The unaligned
-    /// group never takes part — it always trails.
-    private func move(_ draggedID: String, over targetID: String) {
-        withAnimation(.snappy) {
-            AspirationReorder.applyMove(
-                all: aspirations,
-                visibleIDs: groups.map(\.id).filter { $0 != AspirationGrouping.unalignedID },
-                draggedID: draggedID,
-                targetID: targetID
-            )
-            try? modelContext.save()
-        }
-    }
-
-    private func groupCard(_ group: WeeklyReview.MetricGroup) -> some View {
-        MetricLedgerCard(
-            header: MetricLedgerCard.Header(
-                title: group.title, icon: group.icon, colorName: group.colorName
-            ),
-            weeks: group.weeks,
-            quiet: group.quiet,
-            metric: metric,
-            collapse: collapseBinding(group.id)
-        )
-    }
-
-    /// The transient fold flag for one group card, backed by the set above so
-    /// sibling cards fold independently. Cards start collapsed, so a card reads
-    /// as folded unless the user has expanded it.
-    private func collapseBinding(_ id: String) -> Binding<Bool> {
-        Binding(
-            get: { !expandedGroups.contains(id) },
-            set: { collapsed in
-                if collapsed {
-                    expandedGroups.remove(id)
-                } else {
-                    expandedGroups.insert(id)
-                }
-            }
-        )
-    }
-}
 
 /// The notification-settings bell and its sheet in one leaf view, so opening
 /// or dismissing the sheet re-renders only this button — not the parent body

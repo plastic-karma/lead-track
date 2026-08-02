@@ -10,29 +10,27 @@ struct IntentionAskRoute: Identifiable {
     let metric: Metric
 }
 
-/// The set-an-intention block of the weekly review: one row per metric whose
+/// The set-an-intention slide of the weekly review: one row per metric whose
 /// daily goal went unmet more than three times across the last week, each
 /// stating the week as fact and offering the intention form seeded with that
 /// metric. Setting an intention quiets its row on the spot (the ask defers
 /// to an open intention on the metric — see `GoalShortfall`); the header's
-/// close button or a sideways swipe sends the whole section away until next
-/// week via `WeeklyCheckInDismissal`. Live review only, and absent while
-/// there is nothing to ask.
+/// close button sends the whole slide away until next week via
+/// `WeeklyCheckInDismissal` (a sideways swipe pages the deck now). Live
+/// review only, and absent while there is nothing to ask.
 extension WeeklyReviewView {
     @ViewBuilder
     func intentionAsksSection(_ review: WeeklyReview) -> some View {
         if !review.intentionAsks.isEmpty,
            !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedIntentionAskWeek)
         {
-            SwipeToDismiss(onDismiss: dismissIntentionAsks) {
-                asksBody(review.intentionAsks)
-            }
+            asksBody(review.intentionAsks)
         }
     }
 
-    /// The section's content, split out so `SwipeToDismiss` can carry it: a
-    /// header that closes the section, the prompt, then one ask row per
-    /// metric — and the aspiration-choice dialog for metrics serving several.
+    /// The slide's content: a header that closes the slide, the prompt,
+    /// then one ask row per metric — and the aspiration-choice dialog for
+    /// metrics serving several.
     private func asksBody(_ asks: [GoalShortfall.Ask]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             dismissibleSectionHeader("Intentions to set", dismiss: dismissIntentionAsks)
