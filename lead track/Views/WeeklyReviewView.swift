@@ -44,6 +44,11 @@ struct WeeklyReviewView: View {
     @State var goalSettingsRoute: GoalSettingsRoute?
     /// The metric whose goal season a Retire tap is confirming, if any.
     @State var retiringSeasonMetric: Metric?
+    /// The seeded intention-form route opened from an "Intentions to set"
+    /// row (see `IntentionAskRoute`).
+    @State var intentionAskRoute: IntentionAskRoute?
+    /// The ask metric still choosing among several owning aspirations.
+    @State var intentionAskMetric: Metric?
     /// Aspirations whose alignment pulse was answered this visit, kept on
     /// stage so the note field doesn't vanish the moment a rating lands.
     @State var pulsedAspirations: Set<String> = []
@@ -58,6 +63,8 @@ struct WeeklyReviewView: View {
     /// The same, for the oversubscription "Check-In" card — its own week so
     /// dismissing one check-in leaves the other.
     @AppStorage(WeeklyCheckInDismissal.oversubscriptionWeekKey) var dismissedOversubscriptionWeek = 0.0
+    /// The same again, for the "Intentions to set" asks.
+    @AppStorage(WeeklyCheckInDismissal.intentionAskWeekKey) var dismissedIntentionAskWeek = 0.0
     /// Writes intention closures, renewals, promotions, and check-ins.
     @Environment(\.modelContext) var modelContext
 
@@ -77,6 +84,9 @@ struct WeeklyReviewView: View {
             .toolbar { toolbarItems(review) }
             .sheet(item: $goalSettingsRoute) { route in
                 GoalSettingsView(metric: route.metric, prefillWeeklyGoal: route.prefillWeekly)
+            }
+            .sheet(item: $intentionAskRoute) { route in
+                IntentionFormView(aspiration: route.aspiration, seedMetric: route.metric)
             }
     }
 
@@ -120,6 +130,7 @@ extension WeeklyReviewView {
                 metricGroupsSection(review)
                 recentPhotosSection(review)
                 intentionsSection(review)
+                intentionAsksSection(review)
                 checkInSection(review)
                 oversubscriptionSection(review)
                 goalSeasonSection(review)
