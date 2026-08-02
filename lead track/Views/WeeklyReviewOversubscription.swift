@@ -7,17 +7,16 @@ import SwiftUI
 /// per-goal season decisions. Live review only; when there is nothing to raise
 /// the block is simply absent (see `OversubscriptionInsight`).
 extension WeeklyReviewView {
-    /// The header's close button — or a sideways swipe — sends this card away
-    /// until next week; `WeeklyCheckInDismissal` remembers the week, so it
-    /// returns on its own once the week rolls over.
+    /// The header's close button sends this slide away until next week (a
+    /// sideways swipe pages the deck now); `WeeklyCheckInDismissal`
+    /// remembers the week, so it returns on its own once the week rolls
+    /// over.
     @ViewBuilder
     func oversubscriptionSection(_ review: WeeklyReview) -> some View {
         if let checkIn = review.oversubscription,
            !WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedOversubscriptionWeek)
         {
-            SwipeToDismiss(onDismiss: dismissOversubscription) {
-                oversubscriptionCard(checkIn)
-            }
+            oversubscriptionCard(checkIn)
         }
     }
 
