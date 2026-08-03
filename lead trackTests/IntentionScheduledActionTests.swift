@@ -18,6 +18,7 @@ private enum ShippedDisplayOrderSchema: VersionedSchema {
 }
 #endif
 
+@Suite(.serialized)
 struct IntentionScheduledActionTests {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
