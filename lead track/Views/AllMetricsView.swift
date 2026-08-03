@@ -30,7 +30,7 @@ struct AllMetricsView: View {
 extension AllMetricsView {
     private var visibleMetrics: [Metric] {
         let ordered = metrics.inDisplayOrder
-        switch filter {
+        return switch filter {
         case .all:
             ordered
         case .active:
