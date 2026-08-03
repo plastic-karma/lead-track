@@ -130,6 +130,9 @@ private extension View {
         .navigationDestination(for: AspirationWeekRoute.self) { route in
             AspirationWeekDetailView(aspiration: route.aspiration, weeksBack: route.weeksBack)
         }
+        .navigationDestination(for: AllMetricsRoute.self) { _ in
+            AllMetricsView()
+        }
     }
 }
 
