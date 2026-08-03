@@ -25,6 +25,9 @@ struct AspirationListView: View {
         .background(Theme.washedScreen)
         .navigationTitle("Aspirations")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                appMenu
+            }
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
                     Label("Add Aspiration", systemImage: "plus")
@@ -41,6 +44,16 @@ struct AspirationListView: View {
 // MARK: - Pieces
 
 extension AspirationListView {
+    private var appMenu: some View {
+        Menu {
+            NavigationLink(value: AllMetricsRoute()) {
+                Label("All Metrics", systemImage: "list.bullet")
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
+        }
+    }
+
     /// One aspiration card: tap navigates, long-press lifts it for reorder —
     /// deliberately nothing else on long-press. Deleting lives on the detail
     /// screen alone, so the cascade is never one hold-and-tap away from the
