@@ -65,18 +65,22 @@ extension NotificationService {
     /// planner's own ceiling, so scheduled IDs can never outrun the cancel.
     static func cancelQuestion(for intention: Intention) {
         guard let stableID = intention.stableID else { return }
+        cancelQuestion(stableID: stableID)
+    }
+
+    /// UUID-only cancellation is safe after the persisted model has been
+    /// deleted and invalidated by SwiftData.
+    static func cancelQuestion(stableID: UUID) {
         let ids = (0 ..< IntentionQuestionPlanner.maxSlotsPerWeek)
             .map { questionID(stableID, $0) }
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
     }
 
-    /// Explicit cancel for an aspiration about to be deleted — the cascade
-    /// takes its intentions with no per-row hook.
-    static func cancelQuestions(for aspiration: Aspiration) {
-        for intention in aspiration.intentions {
-            cancelQuestion(for: intention)
-        }
+    /// Cancels a pre-fetched set after an aspiration deletion commits without
+    /// traversing invalidated or incompletely populated inverse arrays.
+    static func cancelQuestions(stableIDs: [UUID]) {
+        stableIDs.forEach(cancelQuestion(stableID:))
     }
 
     private static func questionID(_ stableID: UUID, _ index: Int) -> String {

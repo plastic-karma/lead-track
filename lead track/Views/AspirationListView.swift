@@ -102,13 +102,18 @@ extension ModelContext {
     /// The single aspiration delete path, called from the detail screen —
     /// deliberately the only place an aspiration can be deleted: the
     /// dependents go with no per-row hook, so their pending daily-question
-    /// notifications are cancelled explicitly before the delete (see
+    /// notifications are cancelled explicitly after the delete commits (see
     /// `deleteAspirationAndDependents` for why the dependents are deleted
     /// explicitly too).
     func deleteAspiration(_ aspiration: Aspiration) {
-        NotificationService.cancelQuestions(for: aspiration)
         do {
-            try deleteAspirationAndDependents(aspiration)
+            let questionIDs = try fetch(FetchDescriptor<Intention>())
+                .filter { $0.aspiration === aspiration }
+                .compactMap(\.stableID)
+            try transaction {
+                try deleteAspirationAndDependents(aspiration)
+            }
+            NotificationService.cancelQuestions(stableIDs: questionIDs)
         } catch {
             StoreLog.error("Aspiration delete failed: \(error)")
         }

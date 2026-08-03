@@ -108,6 +108,15 @@ extension MarkdownExportLines {
         guard !intention.isOpen else { return "open" }
         return intention.outcome?.label ?? "renewed"
     }
+
+    /// An indented child of its intention, preserving the concrete calendar
+    /// commitment without implying completion or overdue state.
+    static func scheduledAction(_ action: IntentionAction) -> String {
+        let title = MarkdownExportText.inline(action.title)
+        let start = MarkdownExportDates.dateTime(action.startsAt)
+        let end = MarkdownExportDates.dateTime(action.endsAt)
+        return "  - Scheduled: \"\(title)\" — \(start) to \(end)"
+    }
 }
 
 // MARK: - Check-in Lines

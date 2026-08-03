@@ -205,6 +205,10 @@ struct MarkdownExporterTests {
         let metric = makeMetric()
         addDuration(600, to: metric, at: day(1))
         let markdown = build(metrics: [metric])
-        #expect(markdown.contains("Moments: 0 · Intentions: 0 · Check-ins: 0"))
+        #expect(
+            markdown.contains(
+                "Moments: 0 · Intentions: 0 · Scheduled actions: 0 · Check-ins: 0"
+            )
+        )
     }
 }

@@ -39,7 +39,14 @@ extension MarkdownExportWeeks {
 
     private static func intentionLines(of week: MarkdownExportWeek, calendar: Calendar) -> [String] {
         guard !week.intentions.isEmpty else { return [] }
-        let lines = week.intentions.map { MarkdownExportLines.intention($0, calendar: calendar) }
+        let lines = week.intentions.flatMap { intention in
+            var lines = [MarkdownExportLines.intention(intention, calendar: calendar)]
+            guard let intentionID = intention.stableID else { return lines }
+            lines += week.actions
+                .filter { $0.intentionID == intentionID }
+                .map(MarkdownExportLines.scheduledAction)
+            return lines
+        }
         return ["**Intentions**", ""] + lines + [""]
     }
 
@@ -76,6 +83,13 @@ enum MarkdownExportDates {
     /// "July 9, 2026"
     static func fullDate(_ date: Date) -> String {
         date.formatted(.dateTime.month(.wide).day().year().locale(posix))
+    }
+
+    /// "Aug 4, 2026 at 9:00 AM" in the user's current time zone.
+    static func dateTime(_ date: Date) -> String {
+        date.formatted(
+            .dateTime.month(.abbreviated).day().year().hour().minute().locale(posix)
+        )
     }
 
     /// "Monday, June 30, 2026"

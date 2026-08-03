@@ -21,6 +21,8 @@ struct IntentionFormView: View {
     @State private var showingAttach = false
     @State private var asksDaily = false
     @State private var question: IntentionQuestion = .makeDefault()
+    @State private var actions: [IntentionActionDraft] = []
+    @State private var saveFailed = false
 
     /// Plain creation opens reflective and empty; the weekly review's
     /// intention asks seed the derived kind with the flagged metric
@@ -42,6 +44,7 @@ struct IntentionFormView: View {
                 }
                 shapeSection
                 questionSection
+                actionsSection
                 if !heldPrinciples.isEmpty {
                     servesSection
                 }
@@ -59,6 +62,11 @@ struct IntentionFormView: View {
             }
             .sheet(isPresented: $showingAttach) {
                 AspirationAttachSheet(aspiration: aspiration)
+            }
+            .alert("Couldn't Set Intention", isPresented: $saveFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Your intention wasn't saved. Try again.")
             }
             .onChange(of: kind) { resetShape() }
             .onChange(of: metric) { clampModeToMetric() }
@@ -150,6 +158,16 @@ extension IntentionFormView {
         }
     }
 
+    private var actionsSection: some View {
+        Section {
+            IntentionActionsEditor(actions: $actions, week: intentionWeek)
+        } header: {
+            Text("Scheduled Actions")
+        } footer: {
+            Text("Optional calendar blocks for this intention. They are not tracked or checked off.")
+        }
+    }
+
     /// Present only once the aspiration holds any principles — the why
     /// threaded through the commitment, never a required field.
     private var servesSection: some View {
@@ -216,6 +234,7 @@ extension IntentionFormView {
     private var isValid: Bool {
         !trimmedTitle.isEmpty
             && (!asksDaily || !question.trimmedText.isEmpty)
+            && normalizedActions != nil
             && Intention.isValidShape(
                 kind: kind,
                 derivedMode: kind == .derived ? mode : nil,
@@ -237,21 +256,46 @@ extension IntentionFormView {
         return Double(targetCount)
     }
 
+    private var intentionWeek: DateInterval {
+        Calendar.current.dateInterval(of: .weekOfYear, for: .now)
+            ?? DateInterval.approximateWeek(startingAt: .now)
+    }
+
+    private var normalizedActions: [IntentionActionDraft]? {
+        IntentionActionDraft.validated(actions, in: intentionWeek)
+    }
+
     private func save() {
-        guard let intention = try? Intention.make(
-            title: trimmedTitle,
-            kind: kind,
-            aspiration: aspiration,
-            derivedMode: kind == .derived ? mode : nil,
-            metric: kind == .derived ? metric : nil,
-            perDay: perDay,
-            target: storedTarget
-        ) else { return }
-        intention.principle = principle
-        intention.applyQuestion(asksDaily ? question : nil)
-        modelContext.insert(intention)
-        NotificationService.scheduleQuestion(for: intention)
-        dismiss()
+        guard let normalizedActions,
+              let intention = try? Intention.make(
+                  title: trimmedTitle,
+                  kind: kind,
+                  aspiration: aspiration,
+                  derivedMode: kind == .derived ? mode : nil,
+                  metric: kind == .derived ? metric : nil,
+                  perDay: perDay,
+                  target: storedTarget
+              ) else { return }
+        do {
+            try modelContext.transaction {
+                intention.principle = principle
+                intention.applyQuestion(asksDaily ? question : nil)
+                modelContext.insert(intention)
+                if let intentionID = intention.stableID {
+                    for action in normalizedActions {
+                        modelContext.insert(IntentionAction(
+                            intentionID: intentionID,
+                            draft: action
+                        ))
+                    }
+                }
+            }
+            NotificationService.scheduleQuestion(for: intention)
+            dismiss()
+        } catch {
+            StoreLog.error("Intention creation failed: \(error)")
+            saveFailed = true
+        }
     }
 
     private func resetShape() {

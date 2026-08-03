@@ -3,13 +3,14 @@ import SwiftUI
 
 /// The export sheet: pick a format and a window, share one file. Markdown is
 /// the headline format — a single self-describing artifact of metrics,
-/// moments, intentions, and check-ins, made for handing to an LLM chat
-/// (deliberately instead of wiring a model into the app). CSV stays for
-/// spreadsheets and re-import.
+/// moments, intentions with scheduled actions, and check-ins, made for handing
+/// to an LLM chat (deliberately instead of wiring a model into the app). CSV
+/// stays for spreadsheets and re-import.
 struct DataExportView: View {
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @Query(sort: \Intention.createdAt) private var intentions: [Intention]
+    @Query(sort: \IntentionAction.startsAt) private var actions: [IntentionAction]
     @Query(sort: \AspirationCheckIn.createdAt) private var checkIns: [AspirationCheckIn]
     @Query(sort: \Moment.occurredAt) private var moments: [Moment]
     @Environment(\.dismiss) private var dismiss
@@ -62,7 +63,7 @@ extension DataExportView {
     private var formatFooter: String {
         switch format {
         case .markdown:
-            "One self-describing file with every metric, moment, intention, and check-in, "
+            "One self-describing file with every metric, moment, intention, scheduled action, and check-in, "
                 + "week by week and day by day — made for handing to an AI chat."
         case .csv:
             "Raw session rows for spreadsheets, or for importing back into LeadStone."
@@ -174,6 +175,7 @@ extension DataExportView {
             metrics: metrics,
             aspirations: aspirations,
             intentions: intentions,
+            actions: actions,
             checkIns: checkIns,
             moments: moments
         )

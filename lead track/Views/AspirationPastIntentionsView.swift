@@ -9,6 +9,7 @@ import SwiftUI
 struct AspirationPastIntentionsView: View {
     @Environment(\.modelContext) private var modelContext
     let aspiration: Aspiration
+    @State private var actionsIntention: Intention?
 
     var body: some View {
         List {
@@ -20,6 +21,9 @@ struct AspirationPastIntentionsView: View {
         .navigationTitle("Past Intentions")
         .navigationBarTitleDisplayMode(.inline)
         .overlay { emptyState }
+        .sheet(item: $actionsIntention) { intention in
+            IntentionActionsSheet(intention: intention, allowsEditing: false)
+        }
     }
 
     /// The intentions no longer live in the current week, newest week first.
@@ -65,6 +69,11 @@ extension AspirationPastIntentionsView {
             }
         }
         .padding(.vertical, 2)
+        .contextMenu {
+            Button("Scheduled Actions", systemImage: "calendar.badge.plus") {
+                actionsIntention = intention
+            }
+        }
     }
 
     /// The narrative ending: the outcome word, or the final accumulation
@@ -83,8 +92,7 @@ extension AspirationPastIntentionsView {
         let targets = offsets.map { pastIntentions[$0] }
         withAnimation {
             for intention in targets {
-                NotificationService.cancelQuestion(for: intention)
-                modelContext.delete(intention)
+                modelContext.deleteIntention(intention)
             }
         }
     }

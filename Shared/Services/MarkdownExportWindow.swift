@@ -10,6 +10,7 @@ struct MarkdownExportWindow {
     let sessions: [Session]
     let moments: [Moment]
     let intentions: [Intention]
+    let actions: [IntentionAction]
     let checkIns: [AspirationCheckIn]
     let weeks: [MarkdownExportWeek]
     let calendar: Calendar
@@ -33,6 +34,10 @@ struct MarkdownExportWindow {
         intentions = data.intentions
             .filter { intention in weekFloor.map { intention.weekStart >= $0 } ?? true }
             .sorted { $0.createdAt < $1.createdAt }
+        let intentionIDs = Set(intentions.compactMap(\.stableID))
+        actions = data.actions
+            .filter { intentionIDs.contains($0.intentionID) }
+            .sorted(by: IntentionAction.calendarOrder)
         checkIns = data.checkIns
             .filter { checkIn in weekFloor.map { checkIn.weekStart >= $0 } ?? true }
             .sorted { $0.createdAt < $1.createdAt }
@@ -40,6 +45,7 @@ struct MarkdownExportWindow {
             sessions: sessions,
             moments: moments,
             intentions: intentions,
+            actions: actions,
             checkIns: checkIns,
             calendar: calendar
         ).build()
@@ -71,6 +77,7 @@ struct MarkdownExportWeek {
     let interval: DateInterval
     let sessions: [Session]
     let intentions: [Intention]
+    let actions: [IntentionAction]
     let checkIns: [AspirationCheckIn]
     let days: [MarkdownExportDay]
 }
@@ -88,6 +95,7 @@ struct MarkdownExportWeekBuilder {
     let sessions: [Session]
     let moments: [Moment]
     let intentions: [Intention]
+    let actions: [IntentionAction]
     let checkIns: [AspirationCheckIn]
     let calendar: Calendar
 
@@ -109,10 +117,13 @@ struct MarkdownExportWeekBuilder {
             ?? DateInterval.approximateWeek(startingAt: weekStart)
         let weekSessions = sessions.filter { interval.holds($0.startedAt) }
         let weekMoments = moments.filter { interval.holds($0.occurredAt) }
+        let weekIntentions = intentions.filter { start(containing: $0.weekStart) == weekStart }
+        let intentionIDs = Set(weekIntentions.compactMap(\.stableID))
         return MarkdownExportWeek(
             interval: interval,
             sessions: weekSessions,
-            intentions: intentions.filter { start(containing: $0.weekStart) == weekStart },
+            intentions: weekIntentions,
+            actions: actions.filter { intentionIDs.contains($0.intentionID) },
             checkIns: checkIns.filter { start(containing: $0.weekStart) == weekStart },
             days: days(sessions: weekSessions, moments: weekMoments)
         )

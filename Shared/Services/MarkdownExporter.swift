@@ -6,6 +6,7 @@ struct MarkdownExportData {
     var metrics: [Metric] = []
     var aspirations: [Aspiration] = []
     var intentions: [Intention] = []
+    var actions: [IntentionAction] = []
     var checkIns: [AspirationCheckIn] = []
     var moments: [Moment] = []
 }
@@ -108,7 +109,8 @@ extension MarkdownExporter {
         "- **Intention** — a small commitment scoped to one calendar week under one aspiration.",
         "  Endings: done, partly, let go (released deliberately — a valid ending, not a failure),",
         "  or renewed (set again for the following week, with no verdict). Open means not yet",
-        "  closed.",
+        "  closed. Its optional scheduled actions are calendar blocks, never completion-tracked",
+        "  tasks or overdue work.",
         "- **Moment** — kept testimony, in the user's own words, that an aspiration is being",
         "  lived. Witnessed, never measured or counted.",
         "- **Check-in** — a weekly subjective pulse on one aspiration answering \"is this effort",
@@ -138,6 +140,7 @@ extension MarkdownExporter {
 
     private static func inventory(of window: MarkdownExportWindow) -> String {
         "Moments: \(window.moments.count) · Intentions: \(window.intentions.count)"
+            + " · Scheduled actions: \(window.actions.count)"
             + " · Check-ins: \(window.checkIns.count)"
     }
 }

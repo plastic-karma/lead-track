@@ -142,7 +142,8 @@ private extension View {
             for: [
                 Metric.self, Project.self, Session.self,
                 Aspiration.self, Principle.self, Intention.self,
-                AspirationCheckIn.self, Moment.self, MomentPhoto.self
+                IntentionAction.self, AspirationCheckIn.self,
+                Moment.self, MomentPhoto.self
             ],
             inMemory: true
         )

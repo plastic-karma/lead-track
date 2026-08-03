@@ -88,8 +88,11 @@ rate, streak, or cross-week aggregate is ever computed over outcomes. While
 open, an intention may carry an optional **daily question** in the user's own
 words, landing once per day at a random time inside a chosen window (e.g.
 8am–8pm) — the app's only per-intention notification; tapping it opens the
-owning aspiration.
-_Avoid_: task, todo, weekly goal.
+owning aspiration. It may also hold concrete **scheduled actions** inside its
+week and export them together as an `.ics` calendar file. These are calendar
+blocks only: they have no completion state, overdue state, reminders, or
+cross-week carryover.
+_Avoid_: turning actions into tasks or todos; weekly goal.
 
 **Alignment check-in**:
 The weekly, always-skippable pulse on one aspiration — the app's only

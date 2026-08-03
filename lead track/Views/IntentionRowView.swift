@@ -147,6 +147,7 @@ private struct IntentionRowActions: ViewModifier {
     @State private var showingRename = false
     @State private var renameText = ""
     @State private var showingQuestion = false
+    @State private var showingActions = false
 
     func body(content: Content) -> some View {
         content
@@ -158,6 +159,9 @@ private struct IntentionRowActions: ViewModifier {
             }
             .sheet(isPresented: $showingQuestion) {
                 IntentionQuestionSheet(intention: intention)
+            }
+            .sheet(isPresented: $showingActions) {
+                IntentionActionsSheet(intention: intention)
             }
     }
 
@@ -172,6 +176,11 @@ private struct IntentionRowActions: ViewModifier {
             renameText = intention.title
             showingRename = true
         }
+        if intention.isInCurrentWeek() {
+            Button("Scheduled Actions", systemImage: "calendar.badge.plus") {
+                showingActions = true
+            }
+        }
         if intention.isOpen, intention.isInCurrentWeek() {
             Button("Daily Question", systemImage: "questionmark.bubble") {
                 showingQuestion = true
@@ -183,8 +192,7 @@ private struct IntentionRowActions: ViewModifier {
             withAnimation { intention.letGo() }
         }
         Button("Delete", systemImage: "trash", role: .destructive) {
-            NotificationService.cancelQuestion(for: intention)
-            withAnimation { modelContext.delete(intention) }
+            withAnimation { modelContext.deleteIntention(intention) }
         }
     }
 

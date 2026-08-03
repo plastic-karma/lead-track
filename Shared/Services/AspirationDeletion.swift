@@ -4,37 +4,35 @@ import SwiftData
 
 extension ModelContext {
     /// Deletes an aspiration and the records that are meaningless without
-    /// it — intentions, principles, check-ins, and moments (with their
-    /// photos), exactly the model's declared cascades. The dependents are
-    /// resolved by reading the forward side (`intention.aspiration` etc.):
+    /// it — intentions (with scheduled actions), principles, check-ins, and
+    /// moments (with their photos), exactly the model's declared cascades.
+    /// The dependents are resolved by reading the forward side
+    /// (`intention.aspiration` etc.):
     /// this store's inverse back-arrays are not reliably populated, and the
     /// first real-SwiftData run of the overlay suite showed the declared
     /// cascade deleting nothing through an empty inverse. Explicit deletion
     /// keeps the rule true regardless.
     func deleteAspirationAndDependents(_ aspiration: Aspiration) throws {
-        try deleteDependents(of: aspiration, as: Intention.self, by: \.aspiration)
-        try deleteDependents(of: aspiration, as: Principle.self, by: \.aspiration)
-        try deleteDependents(of: aspiration, as: AspirationCheckIn.self, by: \.aspiration)
-        try deleteMoments(of: aspiration)
-        delete(aspiration)
-    }
-
-    private func deleteDependents<Dependent: PersistentModel>(
-        of aspiration: Aspiration,
-        as type: Dependent.Type,
-        by owner: KeyPath<Dependent, Aspiration?>
-    ) throws {
-        let all = try fetch(FetchDescriptor<Dependent>())
-        for dependent in all where dependent[keyPath: owner] === aspiration {
-            delete(dependent)
-        }
-    }
-
-    private func deleteMoments(of aspiration: Aspiration) throws {
+        let intentions = try fetch(FetchDescriptor<Intention>())
         let moments = try fetch(FetchDescriptor<Moment>())
-        for moment in moments where moment.aspiration === aspiration {
-            try deleteMomentAndPhotos(moment)
-        }
+        let principles = try fetch(FetchDescriptor<Principle>())
+        let checkIns = try fetch(FetchDescriptor<AspirationCheckIn>())
+        let actions = try fetch(FetchDescriptor<IntentionAction>())
+        let photos = try fetch(FetchDescriptor<MomentPhoto>())
+
+        let ownedIntentions = intentions.filter { $0.aspiration === aspiration }
+        let intentionIDs = Set(ownedIntentions.compactMap(\.stableID))
+        let ownedMoments = moments.filter { $0.aspiration === aspiration }
+
+        actions.filter { intentionIDs.contains($0.intentionID) }.forEach(delete)
+        photos.filter { photo in
+            ownedMoments.contains { $0 === photo.moment }
+        }.forEach(delete)
+        ownedIntentions.forEach(delete)
+        principles.filter { $0.aspiration === aspiration }.forEach(delete)
+        checkIns.filter { $0.aspiration === aspiration }.forEach(delete)
+        ownedMoments.forEach(delete)
+        delete(aspiration)
     }
 }
 #endif

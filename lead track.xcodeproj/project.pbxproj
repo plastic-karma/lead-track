@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A17C71000000000000000002 /* IntentionScheduledActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17C71000000000000000001 /* IntentionScheduledActionTests.swift */; };
+		A17C71000000000000000004 /* IntentionCalendarExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17C71000000000000000003 /* IntentionCalendarExporterTests.swift */; };
 		44DC0F785C341119F65F3C13 /* DurationFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F77EFB378C1915227981BF /* DurationFormatterTests.swift */; };
 		62F24EBA9D2BF7273AD21179 /* CSVExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */; };
 		7A1C3E5F4B0D6A2E81F10B22 /* CSVImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C3E5E4B0D6A2E81F10B22 /* CSVImporterTests.swift */; };
@@ -132,6 +134,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A17C71000000000000000001 /* IntentionScheduledActionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionScheduledActionTests.swift; sourceTree = "<group>"; };
+		A17C71000000000000000003 /* IntentionCalendarExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionCalendarExporterTests.swift; sourceTree = "<group>"; };
 		034A5860D1A07B340E37FE9D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ValueFormatterTests.swift; sourceTree = "<group>"; };
 		507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CSVExporterTests.swift; sourceTree = "<group>"; };
@@ -315,6 +319,8 @@
 		272F28F9F5B85BC1EA789E71 /* lead trackTests */ = {
 			isa = PBXGroup;
 			children = (
+				A17C71000000000000000001 /* IntentionScheduledActionTests.swift */,
+				A17C71000000000000000003 /* IntentionCalendarExporterTests.swift */,
 				54F77EFB378C1915227981BF /* DurationFormatterTests.swift */,
 				6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */,
 				2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */,
@@ -733,6 +739,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A17C71000000000000000002 /* IntentionScheduledActionTests.swift in Sources */,
+				A17C71000000000000000004 /* IntentionCalendarExporterTests.swift in Sources */,
 				44DC0F785C341119F65F3C13 /* DurationFormatterTests.swift in Sources */,
 				D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */,
 				DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */,
