@@ -31,7 +31,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class Metric {
+        #if canImport(SwiftData)
         #Unique<Metric>([\.stableID])
+        #endif
         var stableID: UUID?
         var name: String
         var metricDescription: String?
@@ -61,10 +63,14 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
         var countLogStyleRaw: String = CountLogStyle.askAmount.rawValue
         var archivedAt: Date?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Project.metric)
+        #endif
         var projects: [Project] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Session.metric)
+        #endif
         var sessions: [Session] = []
 
         var aspirations: [Aspiration] = []
@@ -102,7 +108,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
         var finishedAt: Date?
         var isDefault: Bool = false
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Session.project)
+        #endif
         var sessions: [Session] = []
 
         var aspirations: [Aspiration] = []
@@ -152,34 +160,50 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class Aspiration {
+        #if canImport(SwiftData)
         #Unique<Aspiration>([\.stableID])
+        #endif
         var stableID: UUID?
         var title: String
         var detail: String = ""
         var icon: String?
         var colorName: String?
 
+        #if canImport(SwiftData)
         @Attribute(.externalStorage)
+        #endif
         var imageData: Data?
 
         var createdAt: Date
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Metric.aspirations)
+        #endif
         var metrics: [Metric] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Project.aspirations)
+        #endif
         var projects: [Project] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Principle.aspiration)
+        #endif
         var principles: [Principle] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Intention.aspiration)
+        #endif
         var intentions: [Intention] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \AspirationCheckIn.aspiration)
+        #endif
         var checkIns: [AspirationCheckIn] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \Moment.aspiration)
+        #endif
         var moments: [Moment] = []
 
         init(
@@ -202,7 +226,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class Principle {
+        #if canImport(SwiftData)
         #Unique<Principle>([\.stableID])
+        #endif
         var stableID: UUID?
         var text: String
         var createdAt: Date
@@ -220,7 +246,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class Intention {
+        #if canImport(SwiftData)
         #Unique<Intention>([\.stableID])
+        #endif
         var stableID: UUID?
         var title: String
         var kindRaw: String
@@ -230,12 +258,16 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
         var weekStart: Date
         var tickDates: [Date] = []
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Metric.intentions)
+        #endif
         var metric: Metric?
 
         var aspiration: Aspiration?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Principle.intentions)
+        #endif
         var principle: Principle?
 
         var outcomeRaw: String?
@@ -273,7 +305,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class AspirationCheckIn {
+        #if canImport(SwiftData)
         #Unique<AspirationCheckIn>([\.stableID])
+        #endif
         var stableID: UUID?
         var weekStart: Date
         var ratingRaw: Int
@@ -299,7 +333,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class Moment {
+        #if canImport(SwiftData)
         #Unique<Moment>([\.stableID])
+        #endif
         var stableID: UUID?
         var text: String
         var occurredAt: Date
@@ -309,16 +345,24 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
         var placeName: String = ""
         var aspiration: Aspiration?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Metric.moments)
+        #endif
         var metric: Metric?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Project.moments)
+        #endif
         var project: Project?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .nullify, inverse: \Principle.moments)
+        #endif
         var principle: Principle?
 
+        #if canImport(SwiftData)
         @Relationship(deleteRule: .cascade, inverse: \MomentPhoto.moment)
+        #endif
         var photos: [MomentPhoto] = []
 
         init(
@@ -347,7 +391,9 @@ enum LeadTrackHistoricalSchemaV1: VersionedSchema {
 
     @Model
     final class MomentPhoto {
+        #if canImport(SwiftData)
         @Attribute(.externalStorage)
+        #endif
         var data: Data
         var sortIndex: Int
         var moment: Moment?
