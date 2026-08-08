@@ -15,7 +15,7 @@ run_fixture() (
 
   LEADTRACK_MIGRATION_FIXTURE_VERSION="$version" \
     swift test --filter "$test_name" 2>&1 | tee "$fixture_log"
-  grep -Fq "Test run with 1 test passed" "$fixture_log"
+  grep -Eq "Test run with 1 test( in 1 suite)? passed after" "$fixture_log"
 )
 
 run_fixture v1 "syntheticV1SchemaMigratesThroughV3WithItsGraphIntact"
