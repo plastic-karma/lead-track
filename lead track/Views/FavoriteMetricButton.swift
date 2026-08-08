@@ -19,6 +19,7 @@ struct FavoriteMetricButton: View {
     }
 
     private func toggleFavorite() {
+        let previousValue = metric.isFavorite
         metric.isFavorite.toggle()
         do {
             try modelContext.save()
@@ -26,6 +27,7 @@ struct FavoriteMetricButton: View {
                 ofKind: WidgetKinds.favoriteMetricControl
             )
         } catch {
+            metric.isFavorite = previousValue
             StoreLog.error("Favorite save failed: \(error)")
         }
     }

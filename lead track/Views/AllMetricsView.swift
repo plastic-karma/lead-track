@@ -102,8 +102,7 @@ extension AllMetricsView {
 
     private func favoriteButton(_ metric: Metric) -> some View {
         Button {
-            metric.isFavorite.toggle()
-            saveFavorite()
+            toggleFavorite(metric)
         } label: {
             Label(
                 metric.isFavorite ? "Remove Favorite" : "Favorite",
@@ -113,13 +112,16 @@ extension AllMetricsView {
         .tint(metric.displayColor)
     }
 
-    private func saveFavorite() {
+    private func toggleFavorite(_ metric: Metric) {
+        let previousValue = metric.isFavorite
+        metric.isFavorite.toggle()
         do {
             try modelContext.save()
             ControlCenter.shared.reloadControls(
                 ofKind: WidgetKinds.favoriteMetricControl
             )
         } catch {
+            metric.isFavorite = previousValue
             StoreLog.error("Favorite save failed: \(error)")
         }
     }
