@@ -156,6 +156,9 @@ final class PhoneWatchSyncService: NSObject {
                 return // superseded by a newer save
             }
             WidgetCenter.shared.reloadAllTimelines()
+            ControlCenter.shared.reloadControls(
+                ofKind: WidgetKinds.favoriteMetricControl
+            )
             self?.pushSnapshot()
         }
     }

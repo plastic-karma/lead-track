@@ -91,6 +91,45 @@ struct MetricArchiveTests {
         #expect([first, resting, last].unarchived.map(\.name) == ["First", "Last"])
     }
 
+    @Test
+    func favoriteSurvivesArchiveAndReturnsToControlEligibility() {
+        let metric = makeMetric()
+        #expect(!metric.isFavorite)
+        #expect(metric.isControlEligible)
+
+        metric.isFavorite = true
+        metric.archive()
+        #expect(metric.isFavorite)
+        #expect(!metric.isControlEligible)
+
+        metric.unarchive()
+        #expect(metric.isFavorite)
+        #expect(metric.isControlEligible)
+    }
+
+    @Test
+    func healthLinkedMetricIsNeverControlEligible() {
+        let metric = Metric(name: "Exercise", healthSource: .exerciseMinutes)
+        metric.isFavorite = true
+
+        #expect(metric.isFavorite)
+        #expect(!metric.isControlEligible)
+    }
+
+    #if canImport(SwiftData)
+    @Test
+    func favoritePersistsAcrossContexts() throws {
+        let metric = makeMetric()
+        metric.isFavorite = true
+        try context.save()
+
+        let reloaded = ModelContext(context.container)
+        let fetched = try reloaded.fetch(FetchDescriptor<Metric>())
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.isFavorite == true)
+    }
+    #endif
+
     // MARK: - Today
 
     @Test

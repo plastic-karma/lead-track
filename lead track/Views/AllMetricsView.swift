@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// The path value the Aspirations menu appends before this screen. Keeping
 /// the screen in `ContentView`'s path lets deep-link resets replace the whole
@@ -11,6 +12,7 @@ struct AllMetricsRoute: Hashable {}
 /// the status control can show the whole collection or either shelf alone.
 /// Rows only navigate; archive side effects stay on the metric detail screen.
 struct AllMetricsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @State private var filter = MetricStatusFilter.all
 
@@ -61,6 +63,11 @@ extension AllMetricsView {
                 NavigationLink(value: metric) {
                     row(metric)
                 }
+                .swipeActions(edge: .leading) {
+                    if !metric.isHealthLinked {
+                        favoriteButton(metric)
+                    }
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -78,6 +85,12 @@ extension AllMetricsView {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Spacer(minLength: 8)
+            if metric.isFavorite {
+                Image(systemName: "star.fill")
+                    .foregroundStyle(metric.displayColor)
+                    .accessibilityLabel("Favorite")
+            }
         }
         .padding(.vertical, 2)
     }
@@ -85,6 +98,30 @@ extension AllMetricsView {
     private func status(of metric: Metric) -> String {
         guard let date = metric.archivedAt else { return "Active" }
         return "Archived \(date.formatted(.dateTime.month(.abbreviated).day().year()))"
+    }
+
+    private func favoriteButton(_ metric: Metric) -> some View {
+        Button {
+            metric.isFavorite.toggle()
+            saveFavorite()
+        } label: {
+            Label(
+                metric.isFavorite ? "Remove Favorite" : "Favorite",
+                systemImage: metric.isFavorite ? "star.slash" : "star"
+            )
+        }
+        .tint(metric.displayColor)
+    }
+
+    private func saveFavorite() {
+        do {
+            try modelContext.save()
+            ControlCenter.shared.reloadControls(
+                ofKind: WidgetKinds.favoriteMetricControl
+            )
+        } catch {
+            StoreLog.error("Favorite save failed: \(error)")
+        }
     }
 }
 

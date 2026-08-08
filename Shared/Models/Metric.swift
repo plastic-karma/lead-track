@@ -90,6 +90,10 @@ final class Metric {
     /// Week, watch, widgets, reminders) until unarchived. nil — the default,
     /// so existing stores migrate untouched — means the metric is live.
     var archivedAt: Date?
+    /// Whether this metric is offered as a quick action when configuring a
+    /// LeadStone control. Defaults false so existing stores migrate without
+    /// silently filling the favorites collection.
+    var isFavorite: Bool = false
 
     #if canImport(SwiftData)
     @Relationship(deleteRule: .cascade, inverse: \Project.metric)
@@ -269,6 +273,14 @@ extension Metric {
     /// returns.
     var isArchived: Bool {
         archivedAt != nil
+    }
+
+    /// Whether a favorite can currently perform an action outside the app.
+    /// Health-linked metrics are read-only, and archived metrics rest off all
+    /// recording surfaces. The favorite itself survives either state so an
+    /// unarchived metric returns to the Control Center picker automatically.
+    var isControlEligible: Bool {
+        !isHealthLinked && !isArchived
     }
 
     /// Sets the metric aside, stamping when. Side effects — stopping a

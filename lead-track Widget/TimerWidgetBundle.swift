@@ -7,5 +7,6 @@ struct TimerWidgetBundle: WidgetBundle {
         TimerActivityLiveActivity()
         ScoreboardWidget()
         TimerControlWidget()
+        FavoriteMetricControl()
     }
 }
