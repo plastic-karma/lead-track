@@ -68,12 +68,19 @@ jobs:
           [ -n "$newest" ] && sudo xcode-select -s "$newest/Contents/Developer"
           xcodebuild -version
 
+      - name: SwiftData migration tests (isolated processes)
+        # Historical and current @Model types intentionally share persisted
+        # entity names. SwiftData caches their metadata process-wide, so each
+        # synthetic store writer must start in a fresh process before the full
+        # suite creates current-schema containers.
+        run: scripts/test_swiftdata_migrations.sh
+
       - name: SwiftPM tests (macOS overlay)
         # The overlay package on macOS compiles the SwiftData-backed services
         # too (see Package.swift), so SessionService, the watch-action
-        # pipeline, and their five suites execute here — closing the gap left
-        # while the simulator test step below is skipped on images without a
-        # bootable simulator.
+        # pipeline, and their suites execute here. The two process-sensitive
+        # migration fixtures are disabled in this ordinary run because the
+        # preceding step already exercised them independently.
         run: swift test
 
       - name: Select simulator

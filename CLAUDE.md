@@ -29,6 +29,11 @@ swift build   # compile the shared subset
 swift test    # run the platform-neutral tests (swift-testing)
 ```
 
+On macOS, run `scripts/test_swiftdata_migrations.sh` as well. It gives each
+historical-store fixture its own process so SwiftData's process-wide model
+metadata cache cannot mix released schema versions. CI runs this before the
+ordinary overlay suite.
+
 How the subset stays cross-platform:
 
 - `Session`/`Metric`/`Project` wrap `@Model`, `@Relationship`, and `#Unique` in `#if canImport(SwiftData)` (SE-0367), so on Linux they compile as plain classes. Follow this pattern for new model attributes.

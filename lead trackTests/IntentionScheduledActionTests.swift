@@ -16,9 +16,16 @@ private enum ShippedDisplayOrderSchema: VersionedSchema {
         LeadTrackHistoricalSchemaV2.models
     }
 }
+
+/// SwiftData caches model metadata process-wide. Creating a current-schema
+/// container in another test can therefore make a synthetic historical writer
+/// resolve the wrong version of an entity with the same persisted name.
+/// `scripts/test_swiftdata_migrations.sh` opts each fixture into its own fresh
+/// test process before the ordinary suite creates any current-schema stores.
+private let migrationFixtureVersion =
+    ProcessInfo.processInfo.environment["LEADTRACK_MIGRATION_FIXTURE_VERSION"]
 #endif
 
-@Suite(.serialized)
 struct IntentionScheduledActionTests {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
@@ -254,7 +261,7 @@ extension IntentionScheduledActionTests {
         #expect(try context.fetch(FetchDescriptor<IntentionAction>()).isEmpty)
     }
 
-    @Test
+    @Test(.enabled(if: migrationFixtureVersion == "v1"))
     func syntheticV1SchemaMigratesThroughV3WithItsGraphIntact() throws {
         let fixture = try migrationFixtureURL()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
@@ -279,7 +286,7 @@ extension IntentionScheduledActionTests {
         ])
     }
 
-    @Test
+    @Test(.enabled(if: migrationFixtureVersion == "v2"))
     func syntheticShippedV2SchemaMigratesToV3AndKeepsItsRank() throws {
         let fixture = try migrationFixtureURL()
         defer { try? FileManager.default.removeItem(at: fixture.directory) }
