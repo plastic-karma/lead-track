@@ -108,21 +108,6 @@ extension NotificationService {
     private static func countdownID(_ stableID: UUID) -> String {
         "\(countdownPrefix)\(stableID.uuidString)"
     }
-
-    private static func countdownContent(for metric: Metric) -> UNMutableNotificationContent {
-        guard let stableID = metric.stableID else {
-            return makeContent(
-                countdownCopy(name: metric.name, discreet: NotificationPrivacy.isDiscreet())
-            )
-        }
-        let content = metricContent(
-            countdownCopy(name: metric.name, discreet: NotificationPrivacy.isDiscreet()),
-            metricID: stableID
-        )
-        // Honors the user's sound toggle; the banner still shows when muted.
-        content.sound = CompletionAlertSettings.soundEnabled ? .default : nil
-        return content
-    }
 }
 
 // MARK: - Scheduling
@@ -150,6 +135,7 @@ extension NotificationService {
         guard let stableID = metric.stableID else { return }
         let dates = reminderFireDates(for: metric)
         guard !dates.isEmpty else { return }
+        let copy = reminderCopy(name: metric.name, streak: streak, discreet: discreet)
         let content = metricContent(copy, metricID: stableID)
         for (index, date) in dates.enumerated() {
             schedule(

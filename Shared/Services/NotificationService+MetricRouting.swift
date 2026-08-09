@@ -29,5 +29,20 @@ extension NotificationService {
         content.userInfo = MetricNotificationRoute.userInfo(for: metricID)
         return content
     }
+
+    static func countdownContent(for metric: Metric) -> UNMutableNotificationContent {
+        guard let stableID = metric.stableID else {
+            return makeContent(
+                countdownCopy(name: metric.name, discreet: NotificationPrivacy.isDiscreet())
+            )
+        }
+        let content = metricContent(
+            countdownCopy(name: metric.name, discreet: NotificationPrivacy.isDiscreet()),
+            metricID: stableID
+        )
+        // Honors the user's sound toggle; the banner still shows when muted.
+        content.sound = CompletionAlertSettings.soundEnabled ? .default : nil
+        return content
+    }
 }
 #endif
