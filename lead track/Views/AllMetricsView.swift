@@ -8,9 +8,9 @@ import WidgetKit
 struct AllMetricsRoute: Hashable {}
 
 /// Every metric in one place, reached from the Aspirations tab. Unlike the
-/// day and week surfaces this includes metrics that have been set aside, so
-/// the status control can show the whole collection or either shelf alone.
-/// Rows only navigate; archive side effects stay on the metric detail screen.
+/// day and week surfaces this includes metrics that have been set aside, with
+/// filters for favorites and each archive state. Rows only navigate; archive
+/// side effects stay on the metric detail screen.
 struct AllMetricsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
@@ -33,10 +33,12 @@ extension AllMetricsView {
     private var visibleMetrics: [Metric] {
         let ordered = metrics.inDisplayOrder
         return switch filter {
-        case .all:
-            ordered
+        case .favourite:
+            ordered.filter(\.isFavorite)
         case .active:
             ordered.filter { !$0.isArchived }
+        case .all:
+            ordered
         case .archived:
             ordered.filter(\.isArchived)
         }
@@ -141,28 +143,35 @@ extension AllMetricsView {
 
     private var emptyTitle: String {
         switch filter {
-        case .all: "No Metrics"
+        case .favourite: "No Favourite Metrics"
         case .active: "No Active Metrics"
+        case .all: "No Metrics"
         case .archived: "Nothing Archived"
         }
     }
 
     private var emptySystemImage: String {
-        filter == .archived ? "archivebox" : "list.bullet"
+        switch filter {
+        case .favourite: "star"
+        case .active, .all: "list.bullet"
+        case .archived: "archivebox"
+        }
     }
 
     private var emptyDescription: String {
         switch filter {
-        case .all: "Metrics you create will appear here."
+        case .favourite: "Metrics you mark as favourites will appear here."
         case .active: "Create or unarchive a metric to see it here."
+        case .all: "Metrics you create will appear here."
         case .archived: "Metrics you archive will appear here."
         }
     }
 }
 
 private enum MetricStatusFilter: String, CaseIterable, Identifiable {
-    case all = "All"
+    case favourite = "Favourite"
     case active = "Active"
+    case all = "All"
     case archived = "Archived"
 
     var id: Self {
