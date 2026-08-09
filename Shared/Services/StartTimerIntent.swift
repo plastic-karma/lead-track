@@ -32,6 +32,7 @@ struct StartTimerIntent: LiveActivityIntent {
             try context.save()
         }
         WidgetCenter.shared.reloadAllTimelines()
+        ControlCenter.shared.reloadControls(ofKind: WidgetKinds.favoriteMetricControl)
         return .result()
     }
 

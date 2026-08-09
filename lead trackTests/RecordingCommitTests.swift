@@ -87,4 +87,33 @@ struct RecordingCommitTests {
         #expect(!context.hasChanges)
         #expect(try storedSessionCount() == 0)
     }
+
+    @Test
+    func storedTimerStateSeesSiblingContextSave() throws {
+        let metric = try makeMetric()
+        let sibling = ModelContext(container)
+        let siblingMetric = try #require(
+            sibling.fetch(FetchDescriptor<Metric>()).first
+        )
+
+        SessionService.startSession(for: siblingMetric, in: sibling)
+
+        #expect(
+            SessionService.storedRunningSession(for: metric, in: context) != nil
+        )
+    }
+
+    @Test
+    func binaryToggleSeesSiblingContextSave() throws {
+        let metric = try makeMetric(type: .binary)
+        let sibling = ModelContext(container)
+        let siblingMetric = try #require(
+            sibling.fetch(FetchDescriptor<Metric>()).first
+        )
+        #expect(SessionService.toggleBinaryDay(for: siblingMetric, in: sibling))
+
+        #expect(try SessionService.isBinaryDayDone(for: metric, in: context))
+        #expect(!SessionService.toggleBinaryDay(for: metric, in: context))
+        #expect(try storedSessionCount() == 0)
+    }
 }

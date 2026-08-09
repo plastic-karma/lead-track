@@ -33,6 +33,7 @@ struct StopTimerIntent: LiveActivityIntent {
         try context.save()
         await endActivities(for: stopped)
         WidgetCenter.shared.reloadAllTimelines()
+        ControlCenter.shared.reloadControls(ofKind: WidgetKinds.favoriteMetricControl)
         return .result()
     }
 }

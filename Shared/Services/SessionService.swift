@@ -70,7 +70,7 @@ enum SessionService {
     /// entry there would make `startSession` hand it back and never start
     /// the timer, so this reads through `Session.isRunningPredicate` the way
     /// `reconcileCountdowns` and `nextCountdownEnd` already do.
-    private static func storedRunningSession(
+    static func storedRunningSession(
         for metric: Metric,
         in context: ModelContext
     ) -> Session? {
@@ -192,9 +192,12 @@ enum SessionService {
         at timestamp: Date = .now
     ) -> Bool {
         let logged = min(timestamp, .now)
-        let calendar = Calendar.current
-        let today = metric.sessions.filter {
-            !$0.isRunning && calendar.isDate($0.startedAt, inSameDayAs: logged)
+        let today: [Session]
+        do {
+            today = try completedSessions(for: metric, on: logged, in: context)
+        } catch {
+            StoreLog.error("Binary day fetch failed: \(error)")
+            return false
         }
         guard today.isEmpty else {
             for session in today {
@@ -215,6 +218,44 @@ enum SessionService {
         commit(context)
         rescheduleNotifications(for: metric)
         return true
+    }
+
+    /// Whether the store contains a completed recording for this metric on
+    /// the requested day. Fetching through the supplied context avoids stale
+    /// `metric.sessions` relationships when an app intent and the app save in
+    /// separate contexts.
+    static func isBinaryDayDone(
+        for metric: Metric,
+        in context: ModelContext,
+        at timestamp: Date = .now
+    ) throws -> Bool {
+        let sessions = try completedSessions(
+            for: metric,
+            on: timestamp,
+            in: context
+        )
+        return !sessions.isEmpty
+    }
+
+    private static func completedSessions(
+        for metric: Metric,
+        on timestamp: Date,
+        in context: ModelContext
+    ) throws -> [Session] {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: timestamp)
+        guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)
+        else { return [] }
+        let metricID = metric.persistentModelID
+        let descriptor = FetchDescriptor<Session>(
+            predicate: #Predicate {
+                $0.metric?.persistentModelID == metricID
+                    && $0.endedAt != nil
+                    && $0.startedAt >= dayStart
+                    && $0.startedAt < dayEnd
+            }
+        )
+        return try context.fetch(descriptor)
     }
 
     @discardableResult

@@ -5,8 +5,7 @@ import SwiftUI
 /// the title row wearing the icon and aspiration links, the ring instrument
 /// (today nested in the week, pace as a notch), a quiet all-time line, and
 /// the fold rows — Activity, History, Projects — that expand in place. The
-/// record dock floats at the bottom; everything occasional lives behind the
-/// toolbar's ellipsis menu.
+/// record dock floats at the bottom; occasional actions live in the toolbar.
 struct MetricDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let metric: Metric
@@ -217,6 +216,9 @@ extension MetricDetailView {
 extension MetricDetailView {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        if !metric.isHealthLinked {
+            ToolbarItem { FavoriteMetricButton(metric: metric) }
+        }
         ToolbarItem {
             Menu {
                 Button("Edit Metric", systemImage: "pencil") { showingEdit = true }

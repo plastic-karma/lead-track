@@ -17,6 +17,7 @@ import PackageDescription
 
 /// AppIntents/WidgetKit surfaces are never part of the overlay.
 let appleOnlySources = [
+    "Services/MetricControlIntent.swift",
     "Services/StartTimerIntent.swift",
     "Services/StopTimerIntent.swift"
 ]
