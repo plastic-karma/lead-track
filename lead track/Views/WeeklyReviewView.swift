@@ -175,8 +175,8 @@ extension WeeklyReviewView {
 
 // MARK: - Leaf state
 
-/// The notification-settings bell and its sheet in one leaf view, so opening
-/// or dismissing the sheet re-renders only this button — not the parent body
+/// The review-schedule bell and its sheet in one leaf view, so opening or
+/// dismissing the sheet re-renders only this button — not the parent body
 /// and its review aggregation.
 private struct SettingsBellButton: View {
     @State private var showingSettings = false
@@ -187,7 +187,7 @@ private struct SettingsBellButton: View {
         } label: {
             Image(systemName: "bell")
         }
-        .accessibilityLabel("Weekly Review Notification")
+        .accessibilityLabel("Review Notification Schedule")
         .sheet(isPresented: $showingSettings) {
             WeeklyReviewSettingsView()
         }

@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import UserNotifications
 
-/// Routes notification taps into the app. Tapping the weekly review
+/// Routes notification taps into the app. Tapping any scheduled review
 /// notification raises the flag the root tab shell answers by sliding to
 /// the Week tab; tapping an intention's daily question raises the owning
 /// aspiration's ID and the shell drills into its detail. Because the flags
@@ -26,7 +26,7 @@ final class NotificationResponder: NSObject {
     /// Raises the flag matching the tapped notification; the root tab shell
     /// consumes it.
     private func route(_ request: UNNotificationRequest) {
-        if request.identifier == NotificationService.weeklyReviewNotificationID {
+        if NotificationService.isReviewNotification(id: request.identifier) {
             showWeeklyReview = true
         } else if NotificationService.isIntentionQuestion(id: request.identifier) {
             routeToAspiration(from: request.content.userInfo)
