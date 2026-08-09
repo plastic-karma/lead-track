@@ -46,13 +46,19 @@ final class LeadTrackUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["All Metrics"].waitForExistence(timeout: 5))
         let status = app.segmentedControls["Metric Status Filter"]
         XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertEqual(status.buttons.count, 4)
+        XCTAssertEqual(status.buttons.element(boundBy: 0).label, "Favourite")
+        XCTAssertEqual(status.buttons.element(boundBy: 1).label, "Active")
+        XCTAssertEqual(status.buttons.element(boundBy: 2).label, "All")
+        XCTAssertEqual(status.buttons.element(boundBy: 3).label, "Archived")
+
         let metric = app.staticTexts["Reading"]
         XCTAssertTrue(metric.waitForExistence(timeout: 5))
-
+        status.buttons["Favourite"].tap()
+        XCTAssertTrue(app.staticTexts["No Favourite Metrics"].waitForExistence(timeout: 5))
         status.buttons["Archived"].tap()
         XCTAssertTrue(app.staticTexts["Nothing Archived"].waitForExistence(timeout: 5))
         status.buttons["Active"].tap()
-
         XCTAssertTrue(metric.waitForExistence(timeout: 5))
         metric.tap()
         XCTAssertTrue(app.navigationBars.buttons["All Metrics"].waitForExistence(timeout: 5))
