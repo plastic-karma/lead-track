@@ -72,7 +72,7 @@ private func withTemporaryDefaults(_ body: (UserDefaults) -> Void) throws {
     body(defaults)
 }
 
-/// One source of truth for the review defaults contract shared by the
+/// One source of truth for the weekly-review defaults contract shared by the
 /// settings sheet and the scheduler.
 struct WeeklyReviewSettingsTests {
     @Test
@@ -82,134 +82,30 @@ struct WeeklyReviewSettingsTests {
         #expect(WeeklyReviewSettings.dayKey == "weeklyReviewDay")
         #expect(WeeklyReviewSettings.hourKey == "weeklyReviewHour")
         #expect(WeeklyReviewSettings.minuteKey == "weeklyReviewMinute")
-        #expect(WeeklyReviewSettings.cycleKey == "weeklyReviewCycle")
-        #expect(WeeklyReviewSettings.customUnitKey == "weeklyReviewCustomUnit")
-        #expect(WeeklyReviewSettings.customIntervalKey == "weeklyReviewCustomInterval")
-        #expect(WeeklyReviewSettings.customAnchorKey == "weeklyReviewCustomAnchor")
     }
 
     @Test
-    func untouchedKeysPreserveTheExistingWeeklySchedule() throws {
+    func untouchedKeysFallBackToTheDefaults() throws {
         try withTemporaryDefaults { defaults in
             #expect(!WeeklyReviewSettings.isEnabled(in: defaults))
-            #expect(WeeklyReviewSettings.cycle(in: defaults) == .weekly(weekday: 2))
+            #expect(WeeklyReviewSettings.day(in: defaults) == WeeklyReviewSettings.defaultDay)
             #expect(WeeklyReviewSettings.hour(in: defaults) == WeeklyReviewSettings.defaultHour)
             #expect(WeeklyReviewSettings.minute(in: defaults) == WeeklyReviewSettings.defaultMinute)
         }
     }
 
     @Test
-    func existingWeekdaySurvivesTheCycleMigration() throws {
+    func storedValuesWinOverDefaults() throws {
         try withTemporaryDefaults { defaults in
             defaults.set(true, forKey: WeeklyReviewSettings.enabledKey)
             defaults.set(6, forKey: WeeklyReviewSettings.dayKey)
             defaults.set(18, forKey: WeeklyReviewSettings.hourKey)
             defaults.set(30, forKey: WeeklyReviewSettings.minuteKey)
             #expect(WeeklyReviewSettings.isEnabled(in: defaults))
-            #expect(WeeklyReviewSettings.cycle(in: defaults) == .weekly(weekday: 6))
+            #expect(WeeklyReviewSettings.day(in: defaults) == 6)
             #expect(WeeklyReviewSettings.hour(in: defaults) == 18)
             #expect(WeeklyReviewSettings.minute(in: defaults) == 30)
         }
-    }
-
-    @Test
-    func customMonthCycleReadsItsIntervalAndAnchor() throws {
-        try withTemporaryDefaults { defaults in
-            let anchor = Date(timeIntervalSinceReferenceDate: 123_456)
-            defaults.set(ReviewCycleKind.custom.rawValue, forKey: WeeklyReviewSettings.cycleKey)
-            defaults.set(ReviewCycleUnit.months.rawValue, forKey: WeeklyReviewSettings.customUnitKey)
-            defaults.set(2, forKey: WeeklyReviewSettings.customIntervalKey)
-            defaults.set(anchor.timeIntervalSinceReferenceDate, forKey: WeeklyReviewSettings.customAnchorKey)
-            #expect(WeeklyReviewSettings.cycle(in: defaults) == .everyMonths(2, anchor: anchor))
-        }
-    }
-}
-
-struct ReviewScheduleTests {
-    private var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
-        return calendar
-    }
-
-    @Test
-    func everyTenDaysStartsAtTheNextPeriodBoundary() throws {
-        let anchor = try date(year: 2026, month: 8, day: 9)
-        let now = try date(year: 2026, month: 8, day: 9, hour: 12)
-        let expected = try [
-            date(year: 2026, month: 8, day: 19, hour: 9),
-            date(year: 2026, month: 8, day: 29, hour: 9),
-            date(year: 2026, month: 9, day: 8, hour: 9)
-        ]
-        let dates = ReviewSchedule.fireDates(
-            for: .everyDays(10, anchor: anchor),
-            after: now, hour: 9, minute: 0, count: 3, calendar: calendar
-        )
-        #expect(dates == expected)
-    }
-
-    @Test
-    func everyTwoWeeksCanBeExpressedAsFourteenDays() throws {
-        let anchor = try date(year: 2026, month: 8, day: 9)
-        let now = try date(year: 2026, month: 8, day: 10)
-        let dates = ReviewSchedule.fireDates(
-            for: .everyDays(14, anchor: anchor),
-            after: now, hour: 8, minute: 30, count: 1, calendar: calendar
-        )
-        #expect(try dates == [date(year: 2026, month: 8, day: 23, hour: 8, minute: 30)])
-    }
-
-    @Test
-    func customMonthCycleStartsAtTheFirstOfItsNextPeriod() throws {
-        let anchor = try date(year: 2026, month: 8, day: 9)
-        let now = try date(year: 2026, month: 8, day: 20)
-        let dates = ReviewSchedule.fireDates(
-            for: .everyMonths(2, anchor: anchor),
-            after: now, hour: 9, minute: 0, count: 2, calendar: calendar
-        )
-        #expect(try dates == [
-            date(year: 2026, month: 10, day: 1, hour: 9),
-            date(year: 2026, month: 12, day: 1, hour: 9)
-        ])
-    }
-
-    @Test
-    func calendarPresetsUseMonthQuarterAndYearBoundaries() throws {
-        let now = try date(year: 2026, month: 8, day: 9, hour: 12)
-        let monthly = firstDate(for: .monthly, after: now)
-        let quarterly = firstDate(for: .quarterly, after: now)
-        let yearly = firstDate(for: .yearly, after: now)
-        let expectedMonthly = try date(year: 2026, month: 9, day: 1, hour: 9)
-        let expectedQuarterly = try date(year: 2026, month: 10, day: 1, hour: 9)
-        let expectedYearly = try date(year: 2027, month: 1, day: 1, hour: 9)
-        #expect(monthly == expectedMonthly)
-        #expect(quarterly == expectedQuarterly)
-        #expect(yearly == expectedYearly)
-    }
-
-    @Test
-    func boundaryDayStillFiresTodayBeforeTheChosenTime() throws {
-        let now = try date(year: 2026, month: 9, day: 1, hour: 8)
-        let expected = try date(year: 2026, month: 9, day: 1, hour: 9)
-        #expect(firstDate(for: .monthly, after: now) == expected)
-    }
-
-    private func firstDate(for cycle: ReviewCycle, after now: Date) -> Date? {
-        ReviewSchedule.fireDates(
-            for: cycle, after: now, hour: 9, minute: 0, count: 1, calendar: calendar
-        ).first
-    }
-
-    private func date(
-        year: Int,
-        month: Int,
-        day: Int,
-        hour: Int = 0,
-        minute: Int = 0
-    ) throws -> Date {
-        try #require(calendar.date(from: DateComponents(
-            year: year, month: month, day: day, hour: hour, minute: minute
-        )))
     }
 }
 

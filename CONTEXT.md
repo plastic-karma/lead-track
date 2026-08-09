@@ -107,3 +107,21 @@ measured — no counts, totals, or streaks; an explicit project finish may offer
 one optional reflection prompt, and only the explicit, user-triggered markdown
 export includes moments (text, place label, provenance) and a range count.
 _Avoid_: milestone, achievement, win, highlight, memory, journal entry.
+
+**Weekly Review**:
+The fixed seven-day review that anchors the Week tab and closes weekly
+intentions. Its cadence, period, and weekly-only decisions never change when
+other reviews are configured.
+
+**Additional review**:
+One of any number of user-named, recurring reviews alongside the Weekly
+Review. It reads completed sessions inside its own day- or month-based review
+period, not a trailing weekly window, and announces each new period
+independently. Removing an additional review cancels its future announcements
+without deleting any tracked data.
+_Avoid_: custom Weekly Review (the Weekly Review remains fixed).
+
+**Review period**:
+The half-open interval whose completed sessions supply an additional review's
+figures. It ends when the next period begins, so the review lands on that new
+period's first day and looks back at exactly one completed period.

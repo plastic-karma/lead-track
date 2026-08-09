@@ -7,11 +7,10 @@ import UserNotifications
 #endif
 
 /// Schedules the app's local notifications: daily reminders, streak-at-risk
-/// alerts, countdown completions, periodic reviews, and intention questions.
-/// The pure half — which moments to arm, what the banners say — lives in
-/// `NotificationService+Planning.swift` and the review schedule settings,
-/// both of which compile everywhere for Linux test coverage. The
-/// trigger-wrapping shell below needs UserNotifications.
+/// alerts, countdown completions, the weekly review, additional reviews, and
+/// intention questions. The pure half — which moments to arm and what the
+/// banners say — lives in Foundation-only services that compile on Linux;
+/// the trigger-wrapping shell below needs UserNotifications.
 enum NotificationService {}
 
 #if canImport(UserNotifications)
@@ -57,7 +56,8 @@ extension NotificationService {
             scheduleRunningCountdown(for: metric)
             await Task.yield()
         }
-        scheduleReviewNotifications()
+        scheduleWeeklyReview()
+        scheduleAllAdditionalReviews()
         scheduleAllIntentionQuestions(in: context)
     }
 
@@ -186,54 +186,51 @@ extension NotificationService {
     }
 }
 
-// MARK: - Review Schedule
+// MARK: - Weekly Review
 
 extension NotificationService {
-    /// The old ID remains recognizable so a notification delivered by the
-    /// previous build still deep-links correctly after an update.
-    private static let legacyWeeklyReviewNotificationID = "weekly-review"
+    /// Request identifier of the weekly review notification; taps on it
+    /// deep-link into the review sheet.
+    static let weeklyReviewNotificationID = "weekly-review"
 
-    static func isReviewNotification(id: String) -> Bool {
-        id == legacyWeeklyReviewNotificationID || id.hasPrefix("review-")
-    }
-
-    /// Re-arms (or clears) every planned review boundary after a settings edit.
-    static func rescheduleReviewNotifications() {
+    /// Re-arms (or clears) the weekly review to match the current settings.
+    /// The settings sheet calls this on every edit, so a change takes effect
+    /// immediately instead of on the next foreground pass.
+    static func rescheduleWeeklyReview() {
         UNUserNotificationCenter.current()
-            .removePendingNotificationRequests(withIdentifiers: reviewNotificationIDs)
-        scheduleReviewNotifications()
+            .removePendingNotificationRequests(withIdentifiers: [weeklyReviewNotificationID])
+        scheduleWeeklyReview()
     }
 
-    /// Calendar triggers are one-shot because arbitrary day/month intervals
-    /// cannot repeat without drifting through DST. Several future boundaries
-    /// keep the cycle alive when a notification is ignored; every foreground
-    /// sweep replenishes the queue.
-    private static func scheduleReviewNotifications() {
+    /// The review repeats weekly with generic copy. A one-shot with figures
+    /// frozen at schedule time went stale (and stopped firing entirely once
+    /// the app wasn't reopened); the app computes the real numbers when the
+    /// notification is opened.
+    private static func scheduleWeeklyReview() {
         guard WeeklyReviewSettings.isEnabled() else { return }
-        let dates = ReviewSchedule.fireDates(
-            for: WeeklyReviewSettings.cycle(),
+        let trigger = weeklyTrigger(
+            weekday: WeeklyReviewSettings.day(),
             hour: WeeklyReviewSettings.hour(),
             minute: WeeklyReviewSettings.minute()
         )
-        for (index, date) in dates.enumerated() {
-            schedule(
-                id: reviewNotificationID(index),
-                content: makeContent((
-                    title: "Review Ready",
-                    body: "A new review period has started — take a moment to look back."
-                )),
-                trigger: calendarTrigger(for: date)
-            )
-        }
+        schedule(
+            id: weeklyReviewNotificationID,
+            content: makeContent((
+                title: "Weekly Review",
+                body: "Your weekly review is ready — open it to see how your week went."
+            )),
+            trigger: trigger
+        )
     }
 
-    private static var reviewNotificationIDs: [String] {
-        [legacyWeeklyReviewNotificationID]
-            + (0 ..< ReviewSchedule.notificationCount).map { reviewNotificationID($0) }
-    }
-
-    private static func reviewNotificationID(_ index: Int) -> String {
-        "review-\(index)"
+    private static func weeklyTrigger(weekday: Int, hour: Int, minute: Int) -> UNCalendarNotificationTrigger {
+        var components = DateComponents()
+        components.weekday = weekday
+        components.hour = hour
+        components.minute = minute
+        return UNCalendarNotificationTrigger(
+            dateMatching: components, repeats: true
+        )
     }
 }
 

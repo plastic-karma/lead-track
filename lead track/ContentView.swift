@@ -10,6 +10,10 @@ enum AppTab: Hashable {
     case aspirations
 }
 
+private struct AdditionalReviewRoute: Identifiable {
+    let id: UUID
+}
+
 /// The app root: a three-tab shell — Today (the day), Week (the weekly
 /// review and intentions), Aspirations (the lifetime). Each tab owns its own
 /// `NavigationStack`, and all three drill-in destinations are registered on
@@ -31,10 +35,10 @@ struct ContentView: View {
     @State private var todayPath = NavigationPath()
     @State private var weekPath = NavigationPath()
     @State private var aspirationsPath = NavigationPath()
-    /// Tapping the weekly review notification raises this responder's flag —
-    /// the shell answers by sliding to the Week tab — and tapping an
-    /// intention's daily question raises an aspiration ID the shell answers
-    /// by drilling into its detail; both land even on a cold launch.
+    @State private var additionalReviewRoute: AdditionalReviewRoute?
+    /// Notification taps are staged by the responder before the first scene
+    /// renders: weekly opens the Week tab, an additional review presents its
+    /// period report, and an intention question opens its aspiration.
     private let notificationResponder = NotificationResponder.shared
 
     var body: some View {
@@ -62,16 +66,25 @@ struct ContentView: View {
 
             AppTabBar(selectedTab: animatedSelection)
         }
+        .sheet(item: $additionalReviewRoute) { route in
+            NavigationStack {
+                AdditionalReviewDetailView(reviewID: route.id)
+            }
+        }
         .background(Theme.washedScreen)
         .onAppear {
             routeToWeekIfRequested()
             routeToAspirationIfRequested()
+            routeToAdditionalReviewIfRequested()
         }
         .onChange(of: notificationResponder.showWeeklyReview) {
             routeToWeekIfRequested()
         }
         .onChange(of: notificationResponder.pendingAspirationID) {
             routeToAspirationIfRequested()
+        }
+        .onChange(of: notificationResponder.pendingAdditionalReviewID) {
+            routeToAdditionalReviewIfRequested()
         }
     }
 
@@ -82,6 +95,15 @@ struct ContentView: View {
             selectedTab = .week
         }
         notificationResponder.showWeeklyReview = false
+    }
+
+    /// Consumes an additional-review notification by presenting that review's
+    /// latest completed period. A definition removed since delivery renders
+    /// the detail's explicit removed state instead of opening the Weekly Review.
+    private func routeToAdditionalReviewIfRequested() {
+        guard let id = notificationResponder.pendingAdditionalReviewID else { return }
+        notificationResponder.pendingAdditionalReviewID = nil
+        additionalReviewRoute = AdditionalReviewRoute(id: id)
     }
 
     /// Consumes a daily-question tap by landing on the owning aspiration's

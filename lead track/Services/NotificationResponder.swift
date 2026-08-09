@@ -2,12 +2,11 @@ import Foundation
 import UIKit
 import UserNotifications
 
-/// Routes notification taps into the app. Tapping any scheduled review
-/// notification raises the flag the root tab shell answers by sliding to
-/// the Week tab; tapping an intention's daily question raises the owning
-/// aspiration's ID and the shell drills into its detail. Because the flags
-/// live on a singleton set up before the first scene renders, a tap that
-/// cold-launches the app still lands.
+/// Routes notification taps into the app. The fixed weekly review still
+/// slides to the Week tab; an additional review opens that definition's
+/// completed-period report; an intention question opens its aspiration.
+/// Because the flags live on a singleton installed before the first scene
+/// renders, a tap that cold-launches the app still lands.
 @MainActor
 @Observable
 final class NotificationResponder: NSObject {
@@ -17,6 +16,9 @@ final class NotificationResponder: NSObject {
     /// The aspiration a tapped daily question deep-links into; the shell
     /// consumes and clears it.
     var pendingAspirationID: UUID?
+    /// The additional review selected by a notification; the shell consumes
+    /// and clears it before presenting the report.
+    var pendingAdditionalReviewID: UUID?
 
     /// Must run during app init so taps delivered at launch reach us.
     func install() {
@@ -26,8 +28,12 @@ final class NotificationResponder: NSObject {
     /// Raises the flag matching the tapped notification; the root tab shell
     /// consumes it.
     private func route(_ request: UNNotificationRequest) {
-        if NotificationService.isReviewNotification(id: request.identifier) {
+        if request.identifier == NotificationService.weeklyReviewNotificationID {
             showWeeklyReview = true
+        } else if NotificationService.isAdditionalReviewNotification(id: request.identifier) {
+            pendingAdditionalReviewID = NotificationService.additionalReviewID(
+                from: request.content.userInfo
+            )
         } else if NotificationService.isIntentionQuestion(id: request.identifier) {
             routeToAspiration(from: request.content.userInfo)
         }
