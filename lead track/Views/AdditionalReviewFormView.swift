@@ -54,12 +54,14 @@ struct AdditionalReviewFormView: View {
     }
 
     private var notificationSection: some View {
-        Section("Notification") {
+        Section {
             DatePicker(
                 "Time",
                 selection: timeBinding,
                 displayedComponents: .hourAndMinute
             )
+        } header: {
+            Text("Notification")
         } footer: {
             Text(nextReviewDescription)
         }
@@ -86,7 +88,7 @@ struct AdditionalReviewFormView: View {
     }
 
     private var customCycleSection: some View {
-        Section("Custom Cycle") {
+        Section {
             Picker("Unit", selection: $customUnit) {
                 Text("Days").tag(AdditionalReviewCycleUnit.days)
                 Text("Months").tag(AdditionalReviewCycleUnit.months)
@@ -97,6 +99,8 @@ struct AdditionalReviewFormView: View {
                 value: $customInterval,
                 in: 1 ... customUnit.maximumInterval
             )
+        } header: {
+            Text("Custom Cycle")
         } footer: {
             Text("The first review arrives when this complete period ends.")
         }
