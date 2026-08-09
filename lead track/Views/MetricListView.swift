@@ -39,6 +39,7 @@ struct MetricListView: View {
     @State private var showingSettings = false
     @State private var showingArchived = false
     @State private var showingCalendar = false
+    @State private var showingAdditionalReviews = false
 
     var body: some View {
         ScrollView {
@@ -90,6 +91,9 @@ struct MetricListView: View {
         .sheet(isPresented: $showingCalendar) {
             GoalCalendarView()
         }
+        .sheet(isPresented: $showingAdditionalReviews) {
+            AdditionalReviewsView()
+        }
         .overlay {
             if showsEmptyState {
                 ContentUnavailableView(
@@ -119,9 +123,7 @@ extension MetricListView {
             Button { showingSettings = true } label: {
                 Label("Settings", systemImage: "gear")
             }
-            Button { notificationResponder.showWeeklyReview = true } label: {
-                Label("Weekly Review", systemImage: "calendar.badge.clock")
-            }
+            reviewMenuButtons
             Button { showingCalendar = true } label: {
                 Label("Calendar", systemImage: "calendar")
             }
@@ -138,6 +140,16 @@ extension MetricListView {
             }
         } label: {
             Image(systemName: "ellipsis.circle")
+        }
+    }
+
+    @ViewBuilder
+    private var reviewMenuButtons: some View {
+        Button { notificationResponder.showWeeklyReview = true } label: {
+            Label("Weekly Review", systemImage: "calendar.badge.clock")
+        }
+        Button { showingAdditionalReviews = true } label: {
+            Label("More Reviews", systemImage: "calendar.badge.plus")
         }
     }
 }

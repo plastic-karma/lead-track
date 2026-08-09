@@ -7,11 +7,10 @@ import UserNotifications
 #endif
 
 /// Schedules the app's local notifications: daily reminders, streak-at-risk
-/// alerts, countdown completions, the weekly review, and intention questions.
-/// The pure half — which moments to arm, what the banners say — lives in
-/// `NotificationService+Planning.swift` and compiles everywhere, the Linux
-/// overlay included, so it stays unit-testable; the trigger-wrapping shell
-/// below needs UserNotifications.
+/// alerts, countdown completions, the weekly review, additional reviews, and
+/// intention questions. The pure half — which moments to arm and what the
+/// banners say — lives in Foundation-only services that compile on Linux;
+/// the trigger-wrapping shell below needs UserNotifications.
 enum NotificationService {}
 
 #if canImport(UserNotifications)
@@ -58,6 +57,7 @@ extension NotificationService {
             await Task.yield()
         }
         scheduleWeeklyReview()
+        scheduleAllAdditionalReviews()
         scheduleAllIntentionQuestions(in: context)
     }
 
