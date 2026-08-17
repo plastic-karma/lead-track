@@ -21,6 +21,13 @@ struct GoalCalendarTests {
         )!
     }
 
+    private func time(on day: Date, hour: Int, minute: Int = 0) -> Date {
+        guard let result = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) else {
+            preconditionFailure("Unable to construct fixture time")
+        }
+        return result
+    }
+
     private func dayStart(_ year: Int, _ month: Int, _ day: Int) -> Date {
         calendar.startOfDay(for: date(year, month, day))
     }
@@ -373,5 +380,71 @@ struct GoalCalendarTests {
         )
         #expect(month.summaryText == "No daily goals this month.")
         #expect(month.weeks.flatMap { $0 }.compactMap { $0 }.count == 30)
+    }
+}
+
+// MARK: - Moments
+
+extension GoalCalendarTests {
+    @Test
+    func momentsBucketByOccurredAtAndReadChronologically() {
+        let growth = m.makeAspiration("Grow")
+        let wonder = m.makeAspiration("Wonder")
+        let morning = Moment(
+            text: "Morning",
+            aspiration: growth,
+            occurredAt: time(on: date(2026, 6, 2), hour: 8),
+            createdAt: date(2026, 7, 4)
+        )
+        let evening = Moment(
+            text: "Evening",
+            aspiration: wonder,
+            occurredAt: time(on: date(2026, 6, 2), hour: 19),
+            createdAt: date(2026, 5, 1)
+        )
+
+        let grouped = GoalCalendar.momentsByDay(
+            [evening, morning], monthOf: date(2026, 6, 15), calendar: calendar
+        )
+
+        #expect(grouped[dayStart(2026, 6, 2)]?.map(\.text) == ["Morning", "Evening"])
+        #expect(
+            grouped.values.flatMap { $0 }.compactMap(\.aspiration?.title).sorted()
+                == ["Grow", "Wonder"]
+        )
+    }
+
+    @Test
+    func momentMonthWindowIsHalfOpen() {
+        let aspiration = m.makeAspiration()
+        let moments = [
+            Moment(
+                text: "May",
+                aspiration: aspiration,
+                occurredAt: time(on: date(2026, 5, 31), hour: 23, minute: 59)
+            ),
+            Moment(
+                text: "First",
+                aspiration: aspiration,
+                occurredAt: dayStart(2026, 6, 1)
+            ),
+            Moment(
+                text: "Last",
+                aspiration: aspiration,
+                occurredAt: time(on: date(2026, 6, 30), hour: 23, minute: 59)
+            ),
+            Moment(
+                text: "July",
+                aspiration: aspiration,
+                occurredAt: dayStart(2026, 7, 1)
+            )
+        ]
+
+        let grouped = GoalCalendar.momentsByDay(
+            moments, monthOf: date(2026, 6, 15), calendar: calendar
+        )
+
+        #expect(grouped.keys.sorted() == [dayStart(2026, 6, 1), dayStart(2026, 6, 30)])
+        #expect(grouped.values.flatMap { $0 }.map(\.text).sorted() == ["First", "Last"])
     }
 }

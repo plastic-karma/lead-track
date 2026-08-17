@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// What the goal calendar is judging: one metric, one project's slice of its
-/// metric, or one aspiration's attached metrics. nil (no filter) means every
-/// unarchived metric's daily goals, tallied per day.
+/// What the calendar is showing: moments, one metric, one project's slice of
+/// its metric, or one aspiration's attached metrics. nil (no filter) means
+/// every unarchived metric's daily goals, tallied per day.
 enum GoalCalendarFilter {
+    case moments
     case metric(Metric)
     case project(Project)
     case aspiration(Aspiration)
@@ -13,6 +14,7 @@ extension GoalCalendarFilter {
     /// The name the filter chip wears.
     var title: String {
         switch self {
+        case .moments: "Moments"
         case let .metric(metric): metric.name
         case let .project(project): project.name
         case let .aspiration(aspiration): aspiration.title
@@ -22,6 +24,7 @@ extension GoalCalendarFilter {
     /// The identity color the calendar wears under this filter.
     var tint: Color {
         switch self {
+        case .moments: .accentColor
         case let .metric(metric): metric.displayColor
         case let .project(project): MetricColor.color(named: project.metric?.colorName)
         case let .aspiration(aspiration): aspiration.displayColor
@@ -32,6 +35,7 @@ extension GoalCalendarFilter {
     /// (see `MetricColor.prominentColor`).
     var prominentTint: Color {
         switch self {
+        case .moments: .accentColor
         case let .metric(metric): metric.prominentColor
         case let .project(project): MetricColor.prominentColor(named: project.metric?.colorName)
         case let .aspiration(aspiration): aspiration.prominentColor
@@ -41,16 +45,19 @@ extension GoalCalendarFilter {
     /// The glyph shown beside the filter's name.
     var icon: String {
         switch self {
+        case .moments: "sparkles"
         case let .metric(metric): metric.displayIcon
         case let .project(project): project.metric?.displayIcon ?? "folder"
         case let .aspiration(aspiration): aspiration.displayIcon
         }
     }
 
-    /// The single series this filter judges, or nil for an aspiration,
-    /// which tallies its attached metrics like the unfiltered calendar.
+    /// The single series this filter judges. An aspiration tallies its
+    /// attached metrics; Moments uses its own presence-only rendering.
     var series: GoalCalendarSeries? {
         switch self {
+        case .moments:
+            nil
         case let .metric(metric):
             GoalCalendarSeries(
                 metric: metric,
@@ -69,6 +76,11 @@ extension GoalCalendarFilter {
             nil
         }
     }
+
+    var isMoments: Bool {
+        if case .moments = self { return true }
+        return false
+    }
 }
 
 extension GoalCalendarFilter: Equatable {
@@ -76,6 +88,7 @@ extension GoalCalendarFilter: Equatable {
     /// same model object.
     static func == (lhs: GoalCalendarFilter, rhs: GoalCalendarFilter) -> Bool {
         switch (lhs, rhs) {
+        case (.moments, .moments): true
         case let (.metric(left), .metric(right)): left === right
         case let (.project(left), .project(right)): left === right
         case let (.aspiration(left), .aspiration(right)): left === right

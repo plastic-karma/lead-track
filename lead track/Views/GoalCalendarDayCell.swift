@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// One day of the goal calendar grid, a pure visual of facts the screen
-/// resolves: the day number wearing its verdict — a solid disc when every
-/// applicable goal was reached, a translucent disc for a partly-reached
-/// tally, a thin ring for a goal day that ended unmet — and the day's small
-/// figure underneath (the logged value, or "met/total" when tallying).
+/// One calendar day as a pure visual of resolved facts: goal modes use discs,
+/// rings, and values for their verdicts; Moments mode uses only a sparkle and
+/// tinted numeral, never goal or counting chrome.
 struct GoalCalendarDayCell: View {
     struct Model {
         let day: Date
@@ -13,6 +11,9 @@ struct GoalCalendarDayCell: View {
         let fraction: Double?
         /// The small figure under the number, when the day has one.
         let detail: String?
+        /// A testimony happened this day. This is presence, never a count or
+        /// a goal verdict.
+        let hasMoment: Bool
         let isToday: Bool
         let isSelected: Bool
         /// Days ahead of today recede.
@@ -58,6 +59,7 @@ extension GoalCalendarDayCell {
     private var numberColor: Color {
         if isFullyMet { return .white }
         if model.isMuted { return .secondary }
+        if model.hasMoment { return tint }
         if model.isToday { return tint }
         return .primary
     }
@@ -77,14 +79,22 @@ extension GoalCalendarDayCell {
 
     /// Always present (a space when the day has no figure), so every row of
     /// cells keeps one height.
+    @ViewBuilder
     private var detailLine: some View {
-        Text(model.detail ?? " ")
-            .font(.caption2.weight(.medium))
-            .monospacedDigit()
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(maxWidth: .infinity)
+        if model.hasMoment {
+            Image(systemName: "sparkles")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(maxWidth: .infinity)
+        } else {
+            Text(model.detail ?? " ")
+                .font(.caption2.weight(.medium))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity)
+        }
     }
 
     @ViewBuilder
@@ -97,7 +107,9 @@ extension GoalCalendarDayCell {
 
     private var accessibilityText: String {
         var parts = [model.day.formatted(date: .abbreviated, time: .omitted)]
-        if let fraction = model.fraction {
+        if model.hasMoment {
+            parts.append("moment kept")
+        } else if let fraction = model.fraction {
             parts.append(fraction >= 1 ? "goal reached" : "goal not reached")
         }
         if let detail = model.detail {

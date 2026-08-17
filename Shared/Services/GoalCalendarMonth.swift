@@ -49,6 +49,36 @@ struct GoalCalendarMonth {
     }
 }
 
+// MARK: - Moments
+
+extension GoalCalendar {
+    /// Moments in the requested month, keyed by their local day and ordered
+    /// as a forward chronicle. Presence is the only calendar signal: moments
+    /// are witnessed, never counted or judged.
+    static func momentsByDay(
+        _ moments: [Moment],
+        monthOf date: Date,
+        calendar: Calendar = .current
+    ) -> [Date: [Moment]] {
+        guard let month = calendar.dateInterval(of: .month, for: date) else { return [:] }
+        let inMonth = moments.filter {
+            $0.occurredAt >= month.start && $0.occurredAt < month.end
+        }
+        return Dictionary(grouping: inMonth) {
+            calendar.startOfDay(for: $0.occurredAt)
+        }
+        .mapValues { day in
+            day.sorted(by: momentOrder)
+        }
+    }
+
+    private static func momentOrder(_ lhs: Moment, _ rhs: Moment) -> Bool {
+        if lhs.occurredAt != rhs.occurredAt { return lhs.occurredAt < rhs.occurredAt }
+        if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
+        return (lhs.stableID?.uuidString ?? "") < (rhs.stableID?.uuidString ?? "")
+    }
+}
+
 // MARK: - Cell readings
 
 extension GoalCalendarMonth {
