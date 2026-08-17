@@ -1,13 +1,10 @@
 import SwiftData
 import SwiftUI
 
-/// The month calendar of daily goals: a paged month grid where every day
-/// wears its verdict, and a tappable day panel showing each goal's actual
-/// value. Unfiltered, a day tallies how many daily goals were reached
-/// ("2/3"); the toolbar filter — or the metric / project / aspiration
-/// screens, which open it pre-filtered to themselves — narrows judgment to
-/// one series. Chevrons and horizontal swipes page the months; tapping the
-/// title returns to the current month.
+/// A paged month grid of daily goals or kept moments. Goal days wear their
+/// verdict and actual value; Moments mode quietly marks presence and reveals
+/// the testimony in the day panel without counting it. Chevrons and horizontal
+/// swipes page the months; tapping the title returns to the current month.
 struct GoalCalendarView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
@@ -40,13 +37,20 @@ struct GoalCalendarView: View {
             monthOf: monthAnchor,
             calendar: calendar
         )
+        let momentsByDay = isShowingMoments
+            ? GoalCalendar.momentsByDay(
+                aspirations.flatMap(\.moments),
+                monthOf: monthAnchor,
+                calendar: calendar
+            )
+            : [:]
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 monthHeader
                 filterChip
-                calendarCard(month)
-                summaryLine(month)
-                dayPanel
+                calendarCard(month, momentsByDay: momentsByDay)
+                summaryLine(month, momentsByDay: momentsByDay)
+                dayPanel(momentsByDay: momentsByDay)
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -71,6 +75,10 @@ struct GoalCalendarView: View {
 
     private var fillTint: Color {
         filter?.prominentTint ?? MetricColor.prominentColor(named: nil)
+    }
+
+    private var isShowingMoments: Bool {
+        filter?.isMoments == true
     }
 }
 
@@ -148,12 +156,15 @@ extension GoalCalendarView {
 // MARK: - Grid
 
 extension GoalCalendarView {
-    private func calendarCard(_ month: GoalCalendarMonth) -> some View {
+    private func calendarCard(
+        _ month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> some View {
         VStack(spacing: 8) {
             weekdayHeader
             VStack(spacing: 4) {
                 ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
-                    weekRow(week, month: month)
+                    weekRow(week, month: month, momentsByDay: momentsByDay)
                 }
             }
         }
@@ -173,16 +184,24 @@ extension GoalCalendarView {
         }
     }
 
-    private func weekRow(_ week: [Date?], month: GoalCalendarMonth) -> some View {
+    private func weekRow(
+        _ week: [Date?],
+        month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> some View {
         HStack(spacing: 4) {
             ForEach(0 ..< 7, id: \.self) { column in
-                daySlot(week[column], month: month)
+                daySlot(week[column], month: month, momentsByDay: momentsByDay)
             }
         }
     }
 
     @ViewBuilder
-    private func daySlot(_ day: Date?, month: GoalCalendarMonth) -> some View {
+    private func daySlot(
+        _ day: Date?,
+        month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> some View {
         if let day {
             Button {
                 withAnimation(.snappy(duration: 0.2)) {
@@ -190,7 +209,7 @@ extension GoalCalendarView {
                 }
             } label: {
                 GoalCalendarDayCell(
-                    model: cellModel(for: day, in: month),
+                    model: cellModel(for: day, in: month, momentsByDay: momentsByDay),
                     tint: tint,
                     fillTint: fillTint
                 )
@@ -202,11 +221,16 @@ extension GoalCalendarView {
         }
     }
 
-    private func cellModel(for day: Date, in month: GoalCalendarMonth) -> GoalCalendarDayCell.Model {
+    private func cellModel(
+        for day: Date,
+        in month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> GoalCalendarDayCell.Model {
         GoalCalendarDayCell.Model(
             day: day,
-            fraction: month.fraction(on: day),
-            detail: month.cellDetail(on: day),
+            fraction: isShowingMoments ? nil : month.fraction(on: day),
+            detail: isShowingMoments ? nil : month.cellDetail(on: day),
+            hasMoment: momentsByDay[day] != nil,
             isToday: calendar.isDateInToday(day),
             isSelected: selectedDay == day,
             isMuted: day > calendar.startOfDay(for: .now)
@@ -225,20 +249,34 @@ extension GoalCalendarView {
 // MARK: - Summary, panel & toolbar
 
 extension GoalCalendarView {
-    private func summaryLine(_ month: GoalCalendarMonth) -> some View {
-        Text(month.summaryText)
+    private func summaryLine(
+        _ month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> some View {
+        Text(summaryText(month, momentsByDay: momentsByDay))
             .font(.footnote)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 4)
     }
 
+    private func summaryText(
+        _ month: GoalCalendarMonth,
+        momentsByDay: [Date: [Moment]]
+    ) -> String {
+        guard isShowingMoments else { return month.summaryText }
+        return momentsByDay.isEmpty
+            ? "Nothing kept this month."
+            : "A sparkle marks each day with a kept moment."
+    }
+
     @ViewBuilder
-    private var dayPanel: some View {
+    private func dayPanel(momentsByDay: [Date: [Moment]]) -> some View {
         if let day = selectedDay {
             GoalCalendarDayPanel(
                 day: day,
                 filter: filter,
-                talliedMetrics: talliedMetrics
+                talliedMetrics: talliedMetrics,
+                moments: momentsByDay[day] ?? []
             )
             .transition(.opacity)
         }
