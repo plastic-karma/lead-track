@@ -72,6 +72,7 @@ extension WeeklyReview {
         /// The narrowing observation (see `MeasureHealth`), live review only;
         /// nil is the norm.
         let narrowing: MeasureHealth.Narrowing?
+        var isArchived: Bool = false
     }
 
     /// One open intention rendered inside its aspiration's card: the

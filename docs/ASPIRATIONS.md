@@ -12,6 +12,9 @@
 > deep-link into aspiration detail, and the layers specified in later docs
 > (intentions, check-ins, moments, principles). Where this document and the
 > code disagree, the code wins.
+>
+> **Current addition: reversible shelving.** [Set aside and bring back](#set-aside-and-bring-back)
+> changes active focus without deleting history or pausing shared metrics.
 
 A new top-level concept for **lead track / LeadStone**: an *aspiration* — an
 ongoing, never-"done" theme you pour effort into over a lifetime. Unlike the
@@ -90,6 +93,7 @@ following the `#if canImport(SwiftData)` pattern used by `Metric`/`Project`/
 | `colorName` | `String?` | reuses the existing `MetricColor` palette |
 | `imageData` | `Data?` | optional cover photo; `@Attribute(.externalStorage)` under the SwiftData guard so the blob lives outside the row |
 | `createdAt` | `Date` | default `.now`; default sort key |
+| `archivedAt` | `Date?` | nil for active aspirations and existing stores; set by **Set aside**, cleared by **Bring back** |
 | `metrics` | `[Metric]` | **many-to-many** (default `[]`) |
 | `projects` | `[Project]` | **many-to-many** (default `[]`) |
 
@@ -301,6 +305,32 @@ the same aspiration can appear in both tabs' histories; harmless for v1.
   [Mutable membership](#mutable-membership)) and an "Add" entry point.
 - Edit in the toolbar; delete behind the toolbar's ellipsis menu, guarded by
   a confirmation dialog.
+
+### Set aside and bring back
+
+**Set aside** on aspiration detail is a confirmed, reversible action, separate
+from deleting an aspiration or archiving a metric. It retains the cover,
+principles, attachments, intentions, check-ins, Moments, and photos. The optional
+`archivedAt` field leaves existing stores active without a data backfill.
+
+- The active aspiration list and metric grouping omit set-aside aspirations.
+  Shared metrics belong to the next active owner in canonical order, otherwise
+  **Unaligned Effort**. Their timers, goals, metric reminders, Watch, and controls
+  continue unchanged.
+- Current-week open intentions stay actionable in Today, Week, and the owner's
+  detail. Last week's ordinary closure window remains available, with the owner
+  labeled **Set aside** and a link back. Shelving never silently closes work.
+- New intentions, renewal/promotion offers, check-ins, new Moment capture, and
+  aspiration-owned daily questions are paused. Question requests and delivered
+  question notifications are cancelled; metric reminders are independent.
+- **Aspirations → More → Set-aside aspirations** is always available, including
+  when all aspirations are set aside. It opens the same detail and live history.
+  **Explore a period** also includes this history; automatic rediscovery does not.
+- **Bring back** restores active eligibility without rebuilding attachments or
+  creating a catch-up queue. Only still-open, current-week questions resume, at
+  future times; old intentions remain history outside the normal closure window.
+- The archive change is saved before notification scheduling changes. A failed
+  save restores only `archivedAt`, preserving unrelated pending edits.
 
 ### Create / edit sheet
 

@@ -37,6 +37,11 @@ struct ClusterStubView: View {
             .accessibilityHint("Expand")
             if !cluster.intentions.isEmpty {
                 Divider()
+                if let owner = cluster.aspiration, owner.isArchived {
+                    NavigationLink("View aspiration · Bring back", value: owner)
+                        .font(.caption)
+                        .padding(.vertical, 8)
+                }
                 intentionRows
             }
         }

@@ -163,6 +163,28 @@ struct WeeklyReviewSlidesTests {
         #expect(rows.map(\.id) == ["open", "answered"])
     }
 
+    @Test
+    func shelvedCurrentCommitmentsKeepAnActionableSlide() {
+        var draft = ReviewDraft()
+        let context = WeeklyReview.SlideContext(hasShelvedIntentions: true)
+
+        #expect(draft.build().slides(context: context) == [.intentionsToClose, .done])
+        draft.weeksBack = 1
+        #expect(draft.build().slides(context: context) == [.done])
+    }
+
+    @Test
+    func shelvingAnAnsweredAspirationRemovesItsPulse() {
+        var draft = ReviewDraft()
+        var shelved = aspirationWeek(id: "shelved", offersCheckIn: true)
+        shelved.isArchived = true
+        draft.aspirationWeeks = [shelved, aspirationWeek(id: "active", offersCheckIn: true)]
+
+        let rows = draft.build().openCheckIns(pulsed: ["shelved"])
+
+        #expect(rows.map(\.id) == ["active"])
+    }
+
     // MARK: - Selection repair
 
     @Test

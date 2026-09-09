@@ -35,6 +35,9 @@ final class Aspiration {
 
     var createdAt: Date
 
+    /// Optional for existing stores. Shelving changes no attachments or history.
+    var archivedAt: Date?
+
     /// The card's manual rank across the three tabs — Today's clusters, the
     /// Week tab's groups, the Aspirations list — written by drag-to-reorder
     /// (see `AspirationReorder`) and rewritten on every drop. nil until the
@@ -116,6 +119,28 @@ extension Aspiration {
     /// aspirations saved without one.
     var displayIcon: String {
         icon ?? "mountain.2"
+    }
+}
+
+// MARK: - Shelving
+
+extension Aspiration {
+    var isArchived: Bool {
+        archivedAt != nil
+    }
+
+    func archive(at date: Date = .now) {
+        archivedAt = date
+    }
+
+    func unarchive() {
+        archivedAt = nil
+    }
+}
+
+extension Array where Element == Aspiration {
+    var unarchived: [Aspiration] {
+        filter { !$0.isArchived }
     }
 }
 

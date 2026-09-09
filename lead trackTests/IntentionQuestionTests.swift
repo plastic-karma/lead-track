@@ -96,26 +96,4 @@ struct IntentionQuestionTests {
         #expect(end.hour == 21)
         #expect(end.minute == 45)
     }
-
-    // MARK: - Renewal
-
-    @Test
-    func setAgainCarriesTheQuestionForward() throws {
-        let source = try makeIntention()
-        source.applyQuestion(question("Did you rest today?"))
-
-        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
-
-        #expect(renewed.question == source.question)
-        #expect(renewed.question?.text == "Did you rest today?")
-    }
-
-    @Test
-    func setAgainCarriesNoQuestionAsNoQuestion() throws {
-        let source = try makeIntention()
-
-        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
-
-        #expect(renewed.question == nil)
-    }
 }

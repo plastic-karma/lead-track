@@ -4,12 +4,30 @@ import SwiftUI
 // MARK: - Week section
 
 extension WeeklyReviewView {
+    func momentsReviewSection(_ review: WeeklyReview) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            MomentRediscoverySection(period: retrospectivePeriod(review))
+                .padding(.horizontal)
+            NavigationLink {
+                RetrospectiveView(period: retrospectivePeriod(review))
+            } label: {
+                Label("Explore this period", systemImage: "book.pages")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Theme.cardShape())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            recentPhotosSection(review)
+        }
+    }
+
     /// A quiet capture doorway for the live trailing-seven-day review. The
     /// picker is a leaf so its authorization, thumbnail, and selection changes
     /// never rebuild the review's full aggregation.
     @ViewBuilder
     func recentPhotosSection(_ review: WeeklyReview) -> some View {
-        if review.weeksBack == 0, !aspirations.isEmpty {
+        if review.weeksBack == 0, !aspirations.unarchived.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 sectionBreak("Moments")
                 WeeklyRecentPhotosSection(

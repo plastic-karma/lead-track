@@ -177,13 +177,19 @@ extension AspirationWeekDetailView {
                 ForEach(openIntentions) { intention in
                     IntentionRowView(intention: intention)
                 }
-                Button {
-                    showingSetIntention = true
-                } label: {
-                    Label("Set an intention", systemImage: "plus.circle")
-                        .font(.subheadline)
+                if aspiration.isArchived {
+                    Text("Set aside — existing commitments remain available.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        showingSetIntention = true
+                    } label: {
+                        Label("Set an intention", systemImage: "plus.circle")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
             }
             .cardSurface()
         }
@@ -202,7 +208,7 @@ extension AspirationWeekDetailView {
         NavigationLink(value: aspiration) {
             HStack(spacing: 12) {
                 MetricIcon(systemName: aspiration.displayIcon, tint: tint)
-                Text("View aspiration")
+                Text(aspiration.isArchived ? "View aspiration · Bring back" : "View aspiration")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Image(systemName: "chevron.right")

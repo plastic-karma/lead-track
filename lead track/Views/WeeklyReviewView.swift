@@ -110,6 +110,13 @@ struct WeeklyReviewView: View {
     @ToolbarContentBuilder
     private func toolbarItems(_ review: WeeklyReview) -> some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                RetrospectiveView(period: retrospectivePeriod(review))
+            } label: {
+                Label("Explore this period", systemImage: "book.pages")
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             if !review.metricWeeks.isEmpty {
                 ShareLink(
                     item: WeekImageExport(review: review),
@@ -120,6 +127,15 @@ struct WeeklyReviewView: View {
         ToolbarItem(placement: .topBarLeading) {
             SettingsBellButton()
         }
+    }
+
+    /// Past reviews display their final day's midnight, while narrative
+    /// readers need the exclusive midnight after it. The live end stays now.
+    func retrospectivePeriod(_ review: WeeklyReview) -> DateInterval {
+        let end = review.weeksBack == 0
+            ? review.end
+            : Calendar.current.date(byAdding: .day, value: 1, to: review.end) ?? review.end
+        return DateInterval(start: review.start, end: end)
     }
 }
 

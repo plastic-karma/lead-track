@@ -30,12 +30,17 @@ extension MomentFormView {
         }
         ToolbarItem(placement: .confirmationAction) {
             Button("Keep", action: save)
-                .disabled(trimmedText.isEmpty || aspiration == nil)
+                .disabled(trimmedText.isEmpty || !hasAvailableOwner)
         }
     }
 
     private var trimmedText: String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hasAvailableOwner: Bool {
+        guard let aspiration else { return false }
+        return editing != nil || !aspiration.isArchived
     }
 
     /// Imports the picker selection, counting the items that fail to load or
@@ -101,7 +106,7 @@ extension MomentFormView {
 
 extension MomentFormView {
     func save() {
-        guard let aspiration else { return }
+        guard let aspiration, hasAvailableOwner, !trimmedText.isEmpty else { return }
         let moment = editing ?? Moment(text: trimmedText, aspiration: aspiration)
         moment.text = trimmedText
         moment.occurredAt = occurredAt

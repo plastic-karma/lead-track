@@ -7,6 +7,19 @@ enum ProjectService {
     static let closingMomentPrompt =
         "How have your aspirations changed through this project"
 
+    /// Closing work attached only to a set-aside why must not revive its
+    /// reflection prompts. Unattached projects can still choose an active why.
+    static func closingMomentOwners(
+        for project: Project,
+        among aspirations: [Aspiration]
+    ) -> [Aspiration] {
+        let attached = aspirations.filter { aspiration in
+            aspiration.projects.contains { $0 === project }
+                || aspiration.metrics.contains { $0 === project.metric }
+        }
+        return (attached.isEmpty ? aspirations : attached).unarchived.inDisplayOrder
+    }
+
     /// Sets whether `project` is its metric's default. Because at most one
     /// active project per metric may be the default, turning this on clears
     /// the flag on every sibling project.

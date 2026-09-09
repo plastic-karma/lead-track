@@ -116,10 +116,25 @@ extension AspirationDetailView {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             whyLede
+            if aspiration.isArchived {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Set aside")
+                        .font(.headline)
+                    Text("Your history stays here. Existing commitments can still be kept or let go.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    AspirationShelvingControl(aspiration: aspiration)
+                }
+                .padding(.bottom, 8)
+            }
             principlesCard
             thisWeekCard
             storyCard
             disclosureCard
+            if !aspiration.isArchived {
+                AspirationShelvingControl(aspiration: aspiration)
+                    .padding(.top, 8)
+            }
         }
         .padding(.horizontal)
         .padding(.top, 20)

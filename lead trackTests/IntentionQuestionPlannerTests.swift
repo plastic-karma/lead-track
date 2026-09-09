@@ -181,4 +181,63 @@ struct IntentionQuestionPlannerTests {
         let minutes = Set(dates.map(minuteOfDay))
         #expect(minutes.count > 1)
     }
+
+    @Test
+    func shelvingPausesQuestionsAndReturnKeepsOnlyFutureDraws() throws {
+        let owner = Aspiration(title: "Outside")
+        let now = july(8, hour: 12)
+        let intention = try Intention.make(
+            title: "Walk", kind: .reflective, aspiration: owner,
+            createdAt: now, calendar: calendar
+        )
+        intention.applyQuestion(question(from: time(18), to: time(18)))
+        let original = IntentionQuestionPlanner.fireDates(for: intention, now: now, calendar: calendar)
+        #expect(original.first == july(8, hour: 18))
+        owner.archive(at: now)
+        #expect(IntentionQuestionPlanner.fireDates(for: intention, now: now, calendar: calendar).isEmpty)
+        let returnedAt = july(8, hour: 19)
+        owner.unarchive()
+        let resumed = IntentionQuestionPlanner.fireDates(
+            for: intention, now: returnedAt, calendar: calendar
+        )
+        #expect(resumed == original.filter { $0 > returnedAt })
+        #expect(resumed.first == july(9, hour: 18))
+    }
+
+    @Test
+    func returningNeverRearmsExpiredOrClosedQuestions() throws {
+        let owner = Aspiration(title: "Outside")
+        let intention = try Intention.make(
+            title: "Walk", kind: .reflective, aspiration: owner,
+            createdAt: july(8), calendar: calendar
+        )
+        intention.applyQuestion(question())
+        owner.archive(at: july(8))
+        owner.unarchive()
+        let weekEnd = intention.weekInterval(calendar: calendar).end
+        #expect(IntentionQuestionPlanner.fireDates(
+            for: intention, now: weekEnd, calendar: calendar
+        ).isEmpty)
+        intention.letGo(at: july(8))
+        #expect(IntentionQuestionPlanner.fireDates(
+            for: intention, now: july(8), calendar: calendar
+        ).isEmpty)
+    }
+
+    @Test
+    func renewalSchedulesTheSavedQuestionInTheNewWeekOnly() throws {
+        let owner = Aspiration(title: "Outside")
+        let source = try Intention.make(
+            title: "Walk", kind: .reflective, aspiration: owner,
+            createdAt: july(1), calendar: calendar
+        )
+        source.applyQuestion(question(from: time(18), to: time(18)))
+        let now = july(8, hour: 12)
+        let renewed = try IntentionRenewal.setAgain(source, now: now, calendar: calendar)
+
+        let dates = IntentionQuestionPlanner.fireDates(for: renewed, now: now, calendar: calendar)
+        #expect(dates.first == july(8, hour: 18))
+        #expect(dates.allSatisfy { $0 > now && $0 < renewed.weekInterval(calendar: calendar).end })
+        #expect(IntentionQuestionPlanner.fireDates(for: source, now: now, calendar: calendar).isEmpty)
+    }
 }

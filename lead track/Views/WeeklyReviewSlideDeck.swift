@@ -65,7 +65,10 @@ extension WeeklyReviewView {
     private func slideContext(hasGroups: Bool) -> WeeklyReview.SlideContext {
         WeeklyReview.SlideContext(
             hasMetricGroups: hasGroups,
-            hasAspirations: !aspirations.isEmpty,
+            hasAspirations: !aspirations.unarchived.isEmpty,
+            hasShelvedIntentions: intentions.contains {
+                $0.aspiration?.isArchived == true && $0.isOpen && $0.isInCurrentWeek()
+            },
             pulsedAspirations: pulsedAspirations,
             checkInDismissed: WeeklyCheckInDismissal.isDismissed(storedWeekStart: dismissedCheckInWeek),
             oversubscriptionDismissed: WeeklyCheckInDismissal.isDismissed(
@@ -91,7 +94,7 @@ extension WeeklyReviewView {
     ) -> some View {
         switch slide {
         case .effort: effortSlide(groups)
-        case .moments: slideScroll { recentPhotosSection(review) }
+        case .moments: slideScroll { momentsReviewSection(review) }
         case .intentionsToClose: slideScroll { intentionsSection(review) }
         case .intentionsToSet: slideScroll { intentionAsksSection(review) }
         case .checkIn: slideScroll { checkInSection(review) }

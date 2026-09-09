@@ -39,16 +39,8 @@ extension NotificationService {
     /// — at most `IntentionQuestionPlanner.maxSlotsPerWeek` one-shots, each
     /// at a seeded-random minute inside the daily window.
     static func scheduleQuestion(for intention: Intention, now: Date = .now) {
-        guard let question = intention.question,
-              let stableID = intention.stableID,
-              intention.isOpen, intention.isInCurrentWeek(now: now)
-        else { return }
-        let dates = IntentionQuestionPlanner.fireDates(
-            for: question,
-            week: intention.weekInterval(),
-            seed: stableID.stableSeed,
-            now: now
-        )
+        guard let question = intention.question, let stableID = intention.stableID else { return }
+        let dates = IntentionQuestionPlanner.fireDates(for: intention, now: now)
         let content = questionContent(for: intention, question: question)
         for (index, date) in dates.enumerated() {
             schedule(id: questionID(stableID, index), content: content, trigger: calendarTrigger(for: date))
@@ -69,6 +61,8 @@ extension NotificationService {
             .map { questionID(stableID, $0) }
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ids)
+        UNUserNotificationCenter.current()
+            .removeDeliveredNotifications(withIdentifiers: ids)
     }
 
     /// Explicit cancel for an aspiration about to be deleted — the cascade

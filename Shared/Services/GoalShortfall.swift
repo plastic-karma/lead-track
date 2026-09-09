@@ -84,7 +84,7 @@ private extension GoalShortfall {
     /// relationship (the plain back-array on `Metric` never populates; see
     /// `GoalSeason.reviews`).
     static func servedMetrics(among aspirations: [Aspiration]) -> Set<ObjectIdentifier> {
-        Set(aspirations.flatMap { $0.metrics.map(ObjectIdentifier.init) })
+        Set(aspirations.unarchived.flatMap { $0.metrics.map(ObjectIdentifier.init) })
     }
 
     /// Metrics already carrying an open intention in the calendar week

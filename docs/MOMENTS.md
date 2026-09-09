@@ -222,9 +222,13 @@ moment", primary button "Keep") — the counterpart of an intention's *let
 go*. Editing an existing moment opens the same sheet without changing its
 owner.
 
-A project-finish reflection uses this same composer: it is pre-bound to the
-project as provenance, preselects its only attached aspiration when there is one,
-and shows the aspiration picker when the project has multiple or no attachments.
+A project-finish reflection uses this same composer, pre-bound to the project
+as provenance. An active aspiration attached directly or through the whole metric
+is preselected when it is the only eligible owner. Projects attached only to
+set-aside aspirations finish without opening a new reflection prompt; an
+unattached project may choose among active aspirations. New capture pickers,
+including the Share Extension, omit set-aside aspirations. Editing a saved Moment
+under a set-aside owner remains available.
 
 The Share Extension mirrors the essential new-Moment fields — aspiration,
 text, date, and removable photos — in its own process. Because supported Share
@@ -294,6 +298,49 @@ user still chooses the aspiration, writes the testimony, can remove photos,
 and explicitly taps Keep. Browsed historical weeks never offer this capture
 surface.
 
+### Period retrospectives
+
+**Explore this period** is available from Week and additional reviews;
+**Explore a period** on an aspiration's story opens the same reader with that
+aspiration selected and its recent 30-day window. Manual browsing works even
+when rediscovery is off, and includes set-aside aspirations and archived metrics.
+
+The reader shows saved Moment text and photos, intentions held, check-in notes,
+and expandable recorded-effort sessions. The user can change the date/time
+range and filter by aspiration, principle, or project. It does not create review
+decisions, generated summaries, Moment counts, or outcome rates.
+
+- **From** is inclusive; **Until** is exclusive. Moments use `occurredAt`;
+  completed effort uses session `startedAt`. Intentions qualify by saved
+  week-start or closure date; check-in notes by saved week-start.
+- Principle filtering shows only explicitly tagged Moments and intentions.
+  Sessions and check-ins carry no principle attribution.
+- Project filtering shows that project's Moments and sessions, not unrelated
+  owner-wide intentions or check-ins.
+- Effort follows current attachments, with the whole-metric/project de-duplication
+  rule. Totals remain separate per metric and unit; running sessions are excluded.
+  This is not a reconstruction of past attachment changes.
+
+### Quiet rediscovery
+
+**Settings → Moment Rediscovery → Rediscover older Moments** is off by default.
+When enabled, Week and additional reviews may show one **From earlier** card:
+the user's saved Moment, at least 90 days older than the period's start, under an
+active aspiration with narrative or effort in the reviewed period. Sparse or
+unrelated history stays silent.
+
+The first eligible selection, or silence, is pinned to the represented
+calendar-day window. A changing live-Week end time does not draw another card.
+**Hide for this period** keeps that review quiet without cycling replacements;
+**Don't rediscover this Moment** also excludes it from future suggestions.
+Neither action deletes the Moment or its photos, or removes it from manual
+history.
+
+Opt-in, pinned identifiers, dismissals, and exclusions are stored on this device;
+no narrative or photo bytes are copied into preferences. Unreadable privacy
+state suppresses suggestions rather than forgetting exclusions. Rediscovery
+adds no notifications, Watch/widget content, exports, or new capture cadence.
+
 ## Chosen defaults
 
 Resolved here so v1 is unambiguous; each is easily changed later:
@@ -318,9 +365,8 @@ Resolved here so v1 is unambiguous; each is easily changed later:
 
 Deferred to later follow-ups:
 
-- **Resurfacing** ("From last spring: …" — a remembered moment on the review
-  card or Today). The strongest v2: it closes the motivational loop, and it
-  deserves its own care so it never becomes a slot machine.
+- Rediscovery on Today or other ambient surfaces; automatic rediscovery is
+  confined to the review screens described above.
 - Session → moment promotion after a timer stops; check-in-note → moment
   promotion. (Both capture flows stay frictionless and untouched.)
 - Moments in the aspiration week drill-in (`AspirationWeekDetailView`).

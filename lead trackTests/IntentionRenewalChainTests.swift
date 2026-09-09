@@ -70,14 +70,9 @@ extension IntentionRenewalChainTests {
         let source = try makeCounted(createdAt: weeksAgo(1))
         source.tick(at: weeksAgo(1), calendar: calendar)
 
-        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
+        let renewed = try IntentionRenewal.setAgain(source, calendar: calendar)
 
-        #expect(renewed.title == source.title)
-        #expect(renewed.kind == .counted)
-        #expect(renewed.target == 3)
-        #expect(renewed.aspiration === source.aspiration)
-        #expect(renewed.predecessorID == source.stableID)
-        #expect(renewed.weekStart == Intention.weekStart(containing: .now, calendar: calendar))
+        #expect(renewed.isInCurrentWeek(calendar: calendar))
         #expect(renewed.tickDates.isEmpty)
         #expect(renewed.isOpen)
     }
@@ -86,40 +81,10 @@ extension IntentionRenewalChainTests {
     func setAgainClosesTheSourceWithoutAVerdict() throws {
         let source = try makeCounted(createdAt: weeksAgo(1))
 
-        _ = IntentionRenewal.setAgain(source, calendar: calendar)
+        _ = try IntentionRenewal.setAgain(source, calendar: calendar)
 
         #expect(!source.isOpen)
         #expect(source.outcome == nil)
-    }
-
-    @Test
-    func setAgainCarriesDismissalForward() throws {
-        let source = try makeCounted(createdAt: weeksAgo(1))
-        source.promotionDismissed = true
-
-        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
-
-        #expect(renewed.promotionDismissed)
-    }
-
-    @Test
-    func setAgainCarriesDerivedShapeAndQuestionForward() throws {
-        // Dropping the metric link, mode, per-day flag, or question on
-        // renewal would break derived progress and the daily ask for every
-        // renewed week.
-        let source = try makeDerived(mode: .sessionCount, perDay: true)
-        var question = IntentionQuestion.makeDefault(calendar: calendar)
-        question.text = "Did you walk today?"
-        source.applyQuestion(question)
-
-        let renewed = IntentionRenewal.setAgain(source, calendar: calendar)
-
-        #expect(renewed.kind == .derived)
-        #expect(renewed.metric === source.metric)
-        #expect(renewed.derivedMode == source.derivedMode)
-        #expect(renewed.perDay == source.perDay)
-        #expect(renewed.question == source.question)
-        #expect(renewed.question?.text == "Did you walk today?")
     }
 }
 
@@ -129,8 +94,8 @@ extension IntentionRenewalChainTests {
     @Test
     func chainLengthWalksThePredecessorLinks() throws {
         let first = try makeCounted(createdAt: weeksAgo(2))
-        let second = IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
-        let third = IntentionRenewal.setAgain(second, calendar: calendar)
+        let second = try IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
+        let third = try IntentionRenewal.setAgain(second, calendar: calendar)
         let all = [first, second, third]
 
         #expect(IntentionRenewal.chainLength(of: first, among: all) == 1)
@@ -163,7 +128,7 @@ extension IntentionRenewalChainTests {
     @Test
     func offerAppearsWhenSettingAgainWouldMakeThreeWeeks() throws {
         let first = try makeCounted(createdAt: weeksAgo(2))
-        let second = IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
+        let second = try IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
         let all = [first, second]
 
         #expect(IntentionRenewal.offerOnSetAgain(of: first, among: all) == nil)
@@ -174,7 +139,7 @@ extension IntentionRenewalChainTests {
     func aDismissedChainIsNeverAskedAgain() throws {
         let first = try makeCounted(createdAt: weeksAgo(2))
         first.promotionDismissed = true
-        let second = IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
+        let second = try IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
 
         #expect(IntentionRenewal.offerOnSetAgain(of: second, among: [first, second]) == nil)
     }

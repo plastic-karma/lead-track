@@ -32,7 +32,7 @@ extension WeeklyReview {
         for aspiration in aspirations {
             if let week = aspirationWeek(aspiration, context: context) {
                 weeks.append(week)
-            } else {
+            } else if !context.bounds.isCurrentWeek || !aspiration.isArchived {
                 quiet.append(QuietAspiration(
                     id: stableID(of: aspiration), title: aspiration.title,
                     icon: aspiration.displayIcon
@@ -51,6 +51,9 @@ extension WeeklyReview {
     ) -> AspirationWeek? {
         let week = weekData(of: aspiration, context: context)
         let awaitsClosure = context.closureOwners.contains(week.id)
+        if context.bounds.isCurrentWeek, aspiration.isArchived {
+            return !week.intentions.isEmpty || awaitsClosure ? week : nil
+        }
         // A moment stages a quiet aspiration exactly as an intention does:
         // content the user created takes the stage; pending prompts (an
         // unanswered check-in) never do. A week whose only event is "finished
@@ -88,10 +91,12 @@ private extension WeeklyReview {
             ) { _ in 1 },
             intentions: intentionLines(of: aspiration, context: context),
             moments: momentLines(of: aspiration, context: context),
-            offersCheckIn: context.bounds.isCurrentWeek && !context.checkedInOwners.contains(id),
-            narrowing: context.bounds.isCurrentWeek
+            offersCheckIn: context.bounds.isCurrentWeek && !aspiration.isArchived
+                && !context.checkedInOwners.contains(id),
+            narrowing: context.bounds.isCurrentWeek && !aspiration.isArchived
                 ? MeasureHealth.detectNarrowing(for: aspiration, now: context.now, calendar: context.calendar)
-                : nil
+                : nil,
+            isArchived: aspiration.isArchived
         )
     }
 

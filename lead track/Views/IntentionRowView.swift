@@ -172,7 +172,7 @@ private struct IntentionRowActions: ViewModifier {
             renameText = intention.title
             showingRename = true
         }
-        if intention.isOpen, intention.isInCurrentWeek() {
+        if IntentionQuestionPlanner.isEligible(intention) {
             Button("Daily Question", systemImage: "questionmark.bubble") {
                 showingQuestion = true
             }

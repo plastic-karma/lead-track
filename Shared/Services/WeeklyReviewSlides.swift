@@ -37,6 +37,8 @@ extension WeeklyReview {
     struct SlideContext {
         var hasMetricGroups = false
         var hasAspirations = false
+        /// Shelving changes focus, not the remaining work of the current week.
+        var hasShelvedIntentions = false
         /// Aspirations whose pulse was answered this visit; they hold their
         /// seat on the check-in slide so it doesn't vanish mid-typing.
         var pulsedAspirations: Set<String> = []
@@ -52,7 +54,7 @@ extension WeeklyReview {
         let candidates: [(slide: WeekSlide, present: Bool)] = [
             (.effort, context.hasMetricGroups),
             (.moments, weeksBack == 0 && context.hasAspirations),
-            (.intentionsToClose, !intentionClosures.isEmpty),
+            (.intentionsToClose, !intentionClosures.isEmpty || (weeksBack == 0 && context.hasShelvedIntentions)),
             (.intentionsToSet, !intentionAsks.isEmpty && !context.intentionAsksDismissed),
             (.checkIn, offersCheckInSlide(context)),
             (.oversubscription, oversubscription != nil && !context.oversubscriptionDismissed),
@@ -66,7 +68,7 @@ extension WeeklyReview {
     /// week's pulse, plus the ones answered this visit so their note field
     /// survives the answer.
     func openCheckIns(pulsed: Set<String>) -> [AspirationWeek] {
-        aspirationWeeks.filter { $0.offersCheckIn || pulsed.contains($0.id) }
+        aspirationWeeks.filter { !$0.isArchived && ($0.offersCheckIn || pulsed.contains($0.id)) }
     }
 
     private func offersCheckInSlide(_ context: SlideContext) -> Bool {

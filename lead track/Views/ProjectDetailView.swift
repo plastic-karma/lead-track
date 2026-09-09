@@ -59,6 +59,10 @@ struct ProjectDetailView: View {
         }
     }
 
+    private var closingMomentOwners: [Aspiration] {
+        ProjectService.closingMomentOwners(for: project, among: allAspirations)
+    }
+
     var body: some View {
         List {
             timerSection
@@ -114,9 +118,10 @@ struct ProjectDetailView: View {
             GoalCalendarView(filter: .project(project))
         }
         .sheet(isPresented: $showingClosingMoment) {
+            let owners = closingMomentOwners
             MomentFormView(
-                aspiration: connectedAspirations.count == 1
-                    ? connectedAspirations.first
+                aspiration: owners.count == 1
+                    ? owners.first
                     : nil,
                 project: project,
                 prompt: ProjectService.closingMomentPrompt
@@ -271,7 +276,7 @@ extension ProjectDetailView {
 
     private func finishProject() {
         ProjectService.finish(project)
-        showingClosingMoment = true
+        showingClosingMoment = !closingMomentOwners.isEmpty
     }
 
     private func reopenProject() {

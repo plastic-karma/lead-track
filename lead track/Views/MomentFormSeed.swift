@@ -22,17 +22,24 @@ struct MomentFormSeed {
 
 extension MomentFormView {
     var aspirationSection: some View {
-        Section {
+        let choices = allAspirations.unarchived.inDisplayOrder
+        return Section {
             Picker("Aspiration", selection: aspirationSelection) {
                 Text("Choose an aspiration").tag(Aspiration?.none)
-                ForEach(allAspirations.inDisplayOrder) { option in
+                ForEach(choices) { option in
                     Label(option.title, systemImage: option.displayIcon)
                         .tag(Aspiration?.some(option))
                 }
             }
         } footer: {
-            if allAspirations.isEmpty {
-                Text("Create an aspiration before keeping this moment.")
+            if choices.isEmpty {
+                Text("Create or bring back an aspiration before keeping this moment.")
+            }
+        }
+        .onChange(of: aspiration?.isArchived) { _, archived in
+            if archived == true {
+                aspiration = nil
+                principle = nil
             }
         }
     }
