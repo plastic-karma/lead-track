@@ -25,13 +25,16 @@ struct MomentRediscoverySection: View {
     }
 
     var body: some View {
-        Group {
-            if let moment = rediscoveredMoment {
-                card(moment)
+        if enabled {
+            // Keep a real task host before a pinned Moment exists. An empty
+            // Group has no child to receive its task and cannot prepare one.
+            VStack(alignment: .leading, spacing: 0) {
+                if let moment = rediscoveredMoment {
+                    card(moment)
+                }
             }
+            .task(id: MomentRediscoveryPreferences.periodKey(period)) { prepare() }
         }
-        .task(id: MomentRediscoveryPreferences.periodKey(period)) { prepare() }
-        .onChange(of: enabled) { _, _ in prepare() }
     }
 
     private func card(_ moment: Moment) -> some View {
