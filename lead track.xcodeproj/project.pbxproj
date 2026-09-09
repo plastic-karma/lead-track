@@ -44,6 +44,10 @@
 		5A4E5A100000000000000004 /* MomentPhotoImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */; };
 		5A4E5A100000000000000006 /* RecentPhotoWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */; };
 		5A4E5A100000000000000008 /* MomentPhotoPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */; };
+		5A4E5A200000000000000002 /* AspirationShelvingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A200000000000000001 /* AspirationShelvingTests.swift */; };
+		5A4E5A200000000000000004 /* MomentRediscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A200000000000000003 /* MomentRediscoveryTests.swift */; };
+		5A4E5A200000000000000006 /* RetrospectiveReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A200000000000000005 /* RetrospectiveReaderTests.swift */; };
+		5A4E5A200000000000000008 /* ProjectReflectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4E5A200000000000000007 /* ProjectReflectionTests.swift */; };
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
 		DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */; };
@@ -173,6 +177,10 @@
 		CA1E4DA20260719000000001 /* GoalCalendarTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalCalendarTests.swift; sourceTree = "<group>"; };
 		5A4E5A100000000000000001 /* AppPrivacySettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppPrivacySettingsTests.swift; sourceTree = "<group>"; };
 		5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentPhotoImportTests.swift; sourceTree = "<group>"; };
+		5A4E5A200000000000000001 /* AspirationShelvingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AspirationShelvingTests.swift; sourceTree = "<group>"; };
+		5A4E5A200000000000000003 /* MomentRediscoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentRediscoveryTests.swift; sourceTree = "<group>"; };
+		5A4E5A200000000000000005 /* RetrospectiveReaderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RetrospectiveReaderTests.swift; sourceTree = "<group>"; };
+		5A4E5A200000000000000007 /* ProjectReflectionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectReflectionTests.swift; sourceTree = "<group>"; };
 		5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecentPhotoWindowTests.swift; sourceTree = "<group>"; };
 		5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MomentPhotoPersistenceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -350,6 +358,10 @@
 				5A4E5A100000000000000003 /* MomentPhotoImportTests.swift */,
 				5A4E5A100000000000000005 /* RecentPhotoWindowTests.swift */,
 				5A4E5A100000000000000007 /* MomentPhotoPersistenceTests.swift */,
+				5A4E5A200000000000000001 /* AspirationShelvingTests.swift */,
+				5A4E5A200000000000000003 /* MomentRediscoveryTests.swift */,
+				5A4E5A200000000000000005 /* RetrospectiveReaderTests.swift */,
+				5A4E5A200000000000000007 /* ProjectReflectionTests.swift */,
 			);
 			path = "lead trackTests";
 			sourceTree = "<group>";
@@ -768,6 +780,10 @@
 				5A4E5A100000000000000004 /* MomentPhotoImportTests.swift in Sources */,
 				5A4E5A100000000000000006 /* RecentPhotoWindowTests.swift in Sources */,
 				5A4E5A100000000000000008 /* MomentPhotoPersistenceTests.swift in Sources */,
+				5A4E5A200000000000000002 /* AspirationShelvingTests.swift in Sources */,
+				5A4E5A200000000000000004 /* MomentRediscoveryTests.swift in Sources */,
+				5A4E5A200000000000000006 /* RetrospectiveReaderTests.swift in Sources */,
+				5A4E5A200000000000000008 /* ProjectReflectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
