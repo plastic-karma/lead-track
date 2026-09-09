@@ -124,7 +124,7 @@ extension GoalSeason {
     }
 
     private static func titles(serving metric: Metric, among aspirations: [Aspiration]) -> [String] {
-        aspirations
+        aspirations.unarchived
             .sorted { $0.createdAt < $1.createdAt }
             .filter { $0.metrics.contains(where: { $0 === metric }) }
             .map(\.title)

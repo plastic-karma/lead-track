@@ -84,7 +84,7 @@ extension WeeklyReviewView {
     /// through the forward `Aspiration.metrics` relationship (the plain
     /// back-array on `Metric` never populates; see `GoalSeason.reviews`).
     private func intentionAskOwners(of metric: Metric) -> [Aspiration] {
-        aspirations.filter { $0.metrics.contains { $0 === metric } }
+        aspirations.unarchived.filter { $0.metrics.contains { $0 === metric } }
     }
 
     private var askChoiceShowing: Binding<Bool> {

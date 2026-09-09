@@ -83,7 +83,13 @@ extension ClusterCardView {
     /// Metric rows in their stored order — done rows fold in place, never
     /// re-sorted — then the intention rows, with an inset hairline between
     /// neighbors (and before the insight line when one closes the card).
+    @ViewBuilder
     private var rows: some View {
+        if let owner = cluster.aspiration, owner.isArchived {
+            NavigationLink("View aspiration · Bring back", value: owner)
+                .font(.caption)
+                .padding(.vertical, 8)
+        }
         DividedRows(items: rowItems, dividerAfterLast: insight != nil) { item in
             rowView(item)
         }
@@ -147,6 +153,11 @@ struct ClusterHeaderLabel<Trailing: View>: View {
                 .kerning(0.5)
                 .foregroundStyle(titleTint)
                 .lineLimit(1)
+            if cluster.aspiration?.isArchived == true {
+                Text("Set aside")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Spacer(minLength: 8)
             trailing
         }

@@ -12,8 +12,11 @@ extension AspirationDetailView {
             collapsibleCardHeader("The story so far", isExpanded: $storyExpanded)
             if storyExpanded {
                 momentsBlock
-                plusRow("Keep a moment") { showingKeepMoment = true }
+                if !aspiration.isArchived {
+                    plusRow("Keep a moment") { showingKeepMoment = true }
+                }
                 allMomentsRow
+                periodHistoryRow
                 cardDivider()
                 effortLedger
             }
@@ -62,6 +65,30 @@ extension AspirationDetailView {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var periodHistoryRow: some View {
+        NavigationLink {
+            let end = Date.now
+            let start = Calendar.current.date(
+                byAdding: .day, value: -AspirationRollup.recentWindowDays, to: end
+            ) ?? end
+            RetrospectiveView(
+                period: DateInterval(start: start, end: end), aspiration: aspiration
+            )
+        } label: {
+            HStack {
+                Text("Explore a period")
+                    .font(.subheadline)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 

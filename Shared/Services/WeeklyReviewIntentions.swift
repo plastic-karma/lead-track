@@ -28,6 +28,7 @@ extension WeeklyReview {
         /// The promotion that setting it again would earn, nil when none is
         /// due.
         let promotion: IntentionPromotion?
+        var ownerIsArchived: Bool = false
     }
 
     /// The closure list: unclosed intentions from the single most recently
@@ -65,7 +66,9 @@ extension WeeklyReview {
             perDay: intention.perDay,
             progressText: IntentionProgress.compute(for: intention, calendar: calendar)?.text,
             sourceRemoved: intention.isSourceRemoved,
-            promotion: IntentionRenewal.offerOnSetAgain(of: intention, among: all)
+            promotion: intention.aspiration?.isArchived == true ? nil
+                : IntentionRenewal.offerOnSetAgain(of: intention, among: all),
+            ownerIsArchived: intention.aspiration?.isArchived == true
         )
     }
 }

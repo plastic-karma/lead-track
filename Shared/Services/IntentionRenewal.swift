@@ -30,11 +30,15 @@ enum IntentionRenewal {
     /// context (and, from UI, should also arm the clone's question via
     /// `NotificationService.scheduleQuestion(for:)`; until then the next
     /// foreground sweep picks it up).
+    /// A set-aside owner rejects renewal before the source is closed.
     static func setAgain(
         _ source: Intention,
         now: Date = .now,
         calendar: Calendar = .current
-    ) -> Intention {
+    ) throws -> Intention {
+        guard source.aspiration?.isArchived != true else {
+            throw Intention.ValidationError.aspirationSetAside
+        }
         source.close(outcome: nil, at: now)
         let renewed = Intention(
             title: source.title,
@@ -88,6 +92,7 @@ enum IntentionRenewal {
     /// length. Nil for reflective intentions, and for derived ones whose
     /// metric was removed (there is nothing left to set a goal on).
     static func offer(for intention: Intention) -> IntentionPromotion? {
+        guard intention.aspiration?.isArchived != true else { return nil }
         switch intention.kind {
         case .reflective:
             return nil

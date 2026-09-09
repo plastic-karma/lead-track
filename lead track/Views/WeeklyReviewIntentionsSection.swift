@@ -20,16 +20,44 @@ enum IntentionClosureAction {
 extension WeeklyReviewView {
     @ViewBuilder
     func intentionsSection(_ review: WeeklyReview) -> some View {
-        if !review.intentionClosures.isEmpty {
+        if !review.intentionClosures.isEmpty || !shelvedCurrentIntentions.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                sectionBreak("Intentions to close")
+                if !review.intentionClosures.isEmpty {
+                    sectionBreak("Intentions to close")
+                }
                 ForEach(review.intentionClosures) { closure in
+                    if let owner = aspiration(for: closure.aspirationID), owner.isArchived {
+                        shelvedOwnerLink(owner)
+                    }
                     IntentionClosureRow(closure: closure) { action in
                         handle(action, closureID: closure.id)
                     }
                 }
+                if review.weeksBack == 0, !shelvedCurrentIntentions.isEmpty {
+                    sectionBreak("This week's commitments")
+                    ForEach(shelvedCurrentIntentions) { intention in
+                        if let owner = intention.aspiration {
+                            shelvedOwnerLink(owner)
+                        }
+                        IntentionRowView(intention: intention)
+                    }
+                }
             }
             .padding(.horizontal)
+        }
+    }
+
+    private var shelvedCurrentIntentions: [Intention] {
+        intentions.filter {
+            $0.aspiration?.isArchived == true && $0.isOpen && $0.isInCurrentWeek()
+        }
+        .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private func shelvedOwnerLink(_ owner: Aspiration) -> some View {
+        NavigationLink(value: owner) {
+            Text("\(owner.title) · Set aside · Bring back")
+                .font(.caption)
         }
     }
 
@@ -79,7 +107,7 @@ extension WeeklyReviewView {
 
     @ViewBuilder
     private func pulseRow(for week: WeeklyReview.AspirationWeek) -> some View {
-        if let aspiration = aspiration(for: week.id) {
+        if let aspiration = aspiration(for: week.id), !aspiration.isArchived {
             AspirationPulseRow(title: week.title) { rating, note in
                 recordCheckIn(rating, note: note, for: aspiration)
                 pulsedAspirations.insert(week.id)
@@ -105,8 +133,13 @@ extension WeeklyReviewView {
         switch action {
         case let .outcome(outcome):
             withAnimation { intention.close(outcome: outcome) }
+            NotificationService.cancelQuestion(for: intention)
         case .setAgain:
-            withAnimation { modelContext.insert(IntentionRenewal.setAgain(intention)) }
+            guard intention.aspiration?.isArchived == false else { return }
+            guard let renewed = try? IntentionRenewal.setAgain(intention) else { return }
+            withAnimation { modelContext.insert(renewed) }
+            NotificationService.cancelQuestion(for: intention)
+            NotificationService.scheduleQuestion(for: renewed)
         case let .acceptPromotion(promotion):
             accept(promotion, for: intention)
         case .declinePromotion:
@@ -115,6 +148,7 @@ extension WeeklyReviewView {
     }
 
     private func accept(_ promotion: IntentionPromotion, for intention: Intention) {
+        guard intention.aspiration?.isArchived == false else { return }
         switch promotion {
         case .weeklyGoal:
             guard let metric = intention.metric else { return }
@@ -150,6 +184,7 @@ extension WeeklyReviewView {
     /// week, the latest edit winning. Rating taps pass a nil note (leaving
     /// any typed note alone); the note field passes its text.
     func recordCheckIn(_ rating: AlignmentRating, note: String?, for aspiration: Aspiration) {
+        guard !aspiration.isArchived else { return }
         if let existing = AspirationAlignment.currentWeekCheckIn(of: aspiration) {
             existing.ratingRaw = rating.rawValue
             if let note { existing.note = note }
@@ -212,10 +247,10 @@ struct IntentionClosureRow: View {
 extension IntentionClosureRow {
     private var decisions: some View {
         HStack(spacing: 8) {
-            if closure.kind == .reflective {
+            if closure.kind == .reflective || (closure.ownerIsArchived && !closure.sourceRemoved) {
                 decisionButton("Done") { act(.outcome(.done)) }
                 decisionButton("Partly") { act(.outcome(.partly)) }
-            } else if !closure.sourceRemoved {
+            } else if !closure.sourceRemoved, !closure.ownerIsArchived {
                 decisionButton("Set Again") { act(.setAgain) }
                 if closure.promotion != nil {
                     decisionButton("Promote") { showingPromotion = true }

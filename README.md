@@ -4,6 +4,11 @@
 
 The app ships under the display name **LeadStone**; "lead track" is the internal project, scheme, and bundle name (`plastickarma.lead-track`) used throughout this repo.
 
+Read saved Moments, intention narrative, check-in notes, and unit-separated effort
+through [period retrospectives and opt-in Moment rediscovery](docs/MOMENTS.md#period-retrospectives).
+[Set aside an aspiration](docs/ASPIRATIONS.md#set-aside-and-bring-back) without
+deleting its history or hiding shared work; bring it back when it matters again.
+
 ## Requirements
 
 - Xcode 26 or later

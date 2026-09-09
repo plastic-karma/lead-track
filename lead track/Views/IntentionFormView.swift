@@ -35,6 +35,12 @@ struct IntentionFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if aspiration.isArchived {
+                    Section {
+                        Text("Bring this aspiration back before setting a new intention.")
+                        AspirationShelvingControl(aspiration: aspiration)
+                    }
+                }
                 titleSection
                 kindSection
                 if kind == .derived {
@@ -214,7 +220,7 @@ extension IntentionFormView {
     /// Checked without constructing a model — the same rules `Intention.make`
     /// enforces on save, plus a switched-on question needing words.
     private var isValid: Bool {
-        !trimmedTitle.isEmpty
+        !aspiration.isArchived && !trimmedTitle.isEmpty
             && (!asksDaily || !question.trimmedText.isEmpty)
             && Intention.isValidShape(
                 kind: kind,
@@ -238,6 +244,7 @@ extension IntentionFormView {
     }
 
     private func save() {
+        guard !aspiration.isArchived else { return }
         guard let intention = try? Intention.make(
             title: trimmedTitle,
             kind: kind,

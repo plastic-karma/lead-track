@@ -38,6 +38,12 @@ struct AdditionalReviewDetailView: View {
         return ScrollView {
             VStack(spacing: 18) {
                 periodNavigator(summary.period)
+                NavigationLink {
+                    RetrospectiveView(period: summary.period)
+                } label: {
+                    Label("Explore this period", systemImage: "book")
+                }
+                MomentRediscoverySection(period: summary.period)
                 stats(summary)
                 metricTotals(summary)
             }

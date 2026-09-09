@@ -18,7 +18,9 @@ extension AspirationDetailView {
                         .padding(.vertical, 11)
                     cardDivider()
                 }
-                plusRow("Set an intention") { showingSetIntention = true }
+                if !aspiration.isArchived {
+                    plusRow("Set an intention") { showingSetIntention = true }
+                }
             }
         }
         .padding(.horizontal, 16)

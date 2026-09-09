@@ -147,7 +147,7 @@ extension IntentionReviewTests {
     @Test
     func thirdConsecutiveWeekEarnsThePromotionOffer() throws {
         let first = try makeCounted(createdAt: weeksAgo(2))
-        let second = IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
+        let second = try IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
         let all = [first, second]
 
         let closure = try #require(closures(of: all).first)
@@ -163,7 +163,7 @@ extension IntentionReviewTests {
 
         let first = try makeCounted(createdAt: weeksAgo(2))
         first.promotionDismissed = true
-        let second = IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
+        let second = try IntentionRenewal.setAgain(first, now: weeksAgo(1), calendar: calendar)
         #expect(try #require(closures(of: [first, second]).first).promotion == nil)
     }
 }

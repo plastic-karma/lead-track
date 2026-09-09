@@ -7,6 +7,8 @@ import Foundation
 
 extension Intention {
     enum ValidationError: Error, Equatable {
+        /// Bring the owner back before making a new commitment.
+        case aspirationSetAside
         /// Reflective intentions carry no machinery at all: no target, no
         /// perDay, no ticks, no metric, no mode.
         case reflectiveCarriesMachinery
@@ -45,6 +47,7 @@ extension Intention {
         createdAt: Date = .now,
         calendar: Calendar = .current
     ) throws -> Intention {
+        guard !aspiration.isArchived else { throw ValidationError.aspirationSetAside }
         try validate(kind: kind, derivedMode: derivedMode, metric: metric, perDay: perDay, target: target)
         return Intention(
             title: title,

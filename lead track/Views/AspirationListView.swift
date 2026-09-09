@@ -14,7 +14,7 @@ struct AspirationListView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(aspirations.inDisplayOrder) { aspiration in
+                ForEach(aspirations.unarchived.inDisplayOrder) { aspiration in
                     card(aspiration)
                 }
             }
@@ -49,6 +49,11 @@ extension AspirationListView {
             NavigationLink(value: AllMetricsRoute()) {
                 Label("All Metrics", systemImage: "list.bullet")
             }
+            NavigationLink {
+                SetAsideAspirationsView()
+            } label: {
+                Label("Set-aside aspirations", systemImage: "archivebox")
+            }
         } label: {
             Label("More", systemImage: "ellipsis.circle")
         }
@@ -74,7 +79,7 @@ extension AspirationListView {
         withAnimation(.snappy) {
             AspirationReorder.applyMove(
                 all: aspirations,
-                visibleIDs: aspirations.inDisplayOrder.map(\.stableIdentity),
+                visibleIDs: aspirations.unarchived.inDisplayOrder.map(\.stableIdentity),
                 draggedID: draggedID,
                 targetID: targetID
             )
@@ -84,7 +89,7 @@ extension AspirationListView {
 
     @ViewBuilder
     private var emptyState: some View {
-        if aspirations.isEmpty {
+        if aspirations.unarchived.isEmpty {
             ContentUnavailableView {
                 Label("No Aspirations", systemImage: "mountain.2")
             } description: {

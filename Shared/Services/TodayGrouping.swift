@@ -29,7 +29,7 @@ enum TodayGrouping {
         metrics: [Metric],
         aspirations: [Aspiration]
     ) -> (groups: [Group], unaligned: [Metric]) {
-        let ordered = aspirations.inDisplayOrder
+        let ordered = aspirations.unarchived.inDisplayOrder
         var members: [[Metric]] = Array(repeating: [], count: ordered.count)
         var unaligned: [Metric] = []
         for metric in metrics {

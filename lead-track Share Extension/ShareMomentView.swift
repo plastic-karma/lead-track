@@ -43,17 +43,21 @@ struct ShareMomentView: View {
                 Text(saveError ?? "The shared library couldn't be updated.")
             }
         }
+        .onChange(of: selectedAspiration?.isArchived) { _, archived in
+            if archived == true { selectedAspiration = nil }
+        }
     }
 
     private var aspirationSection: some View {
-        Section {
-            if aspirations.isEmpty {
-                Text("Create an aspiration in LeadStone before keeping a moment.")
+        let choices = aspirations.unarchived.inDisplayOrder
+        return Section {
+            if choices.isEmpty {
+                Text("Create or bring back an aspiration in LeadStone before keeping a moment.")
                     .foregroundStyle(.secondary)
             } else {
                 Picker("Aspiration", selection: $selectedAspiration) {
                     Text("Choose an aspiration").tag(Aspiration?.none)
-                    ForEach(aspirations) { aspiration in
+                    ForEach(choices) { aspiration in
                         Text(aspiration.title).tag(Aspiration?.some(aspiration))
                     }
                 }
@@ -159,7 +163,7 @@ struct ShareMomentView: View {
     }
 
     private var canSave: Bool {
-        selectedAspiration != nil
+        selectedAspiration?.isArchived == false
             && !trimmedText.isEmpty
             && loader.state == .loaded
             && !isSaving
@@ -183,13 +187,14 @@ struct ShareMomentView: View {
     }
 
     private func selectOnlyAspiration() {
-        if aspirations.count == 1 {
-            selectedAspiration = aspirations.first
+        let choices = aspirations.unarchived
+        if choices.count == 1 {
+            selectedAspiration = choices.first
         }
     }
 
     private func save() {
-        guard let selectedAspiration else { return }
+        guard canSave, let selectedAspiration else { return }
         isSaving = true
         let moment = Moment(
             text: trimmedText,

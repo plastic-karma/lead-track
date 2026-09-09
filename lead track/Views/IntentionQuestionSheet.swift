@@ -23,6 +23,12 @@ struct IntentionQuestionSheet: View {
         NavigationStack {
             Form {
                 questionSection
+                if let owner = intention.aspiration, owner.isArchived {
+                    Section {
+                        Text("Questions are paused while this aspiration is set aside.")
+                        AspirationShelvingControl(aspiration: owner)
+                    }
+                }
             }
             .navigationTitle("Daily Question")
             .navigationBarTitleDisplayMode(.inline)
@@ -48,7 +54,8 @@ struct IntentionQuestionSheet: View {
     private var toolbarButtons: some ToolbarContent {
         ToolbarItem(placement: .confirmationAction) {
             Button("Save", action: save)
-                .disabled(asksDaily && question.trimmedText.isEmpty)
+                .disabled(!IntentionQuestionPlanner.isEligible(intention)
+                    || (asksDaily && question.trimmedText.isEmpty))
         }
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { dismiss() }
@@ -56,6 +63,7 @@ struct IntentionQuestionSheet: View {
     }
 
     private func save() {
+        guard IntentionQuestionPlanner.isEligible(intention) else { return }
         intention.applyQuestion(asksDaily ? question : nil)
         NotificationService.rescheduleQuestion(for: intention)
         dismiss()

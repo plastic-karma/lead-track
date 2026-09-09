@@ -11,6 +11,32 @@ enum IntentionQuestionPlanner {
     /// from here, so scheduled IDs can never outrun the cancel.
     static let maxSlotsPerWeek = 7
 
+    /// Shelving suspends questions, not the underlying commitment. Returning
+    /// only re-enables work in the current week; expired weeks stay history.
+    static func isEligible(
+        _ intention: Intention,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Bool {
+        intention.aspiration?.isArchived == false && intention.isOpen
+            && intention.isInCurrentWeek(now: now, calendar: calendar)
+    }
+
+    /// The complete scheduling gate, shared with the notification adapter.
+    static func fireDates(
+        for intention: Intention,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> [Date] {
+        guard isEligible(intention, now: now, calendar: calendar),
+              let question = intention.question, let stableID = intention.stableID
+        else { return [] }
+        return fireDates(
+            for: question, week: intention.weekInterval(calendar: calendar),
+            seed: stableID.stableSeed, now: now, calendar: calendar
+        )
+    }
+
     /// One fire date per remaining day of `week`, ascending — today included
     /// only while its drawn minute is still ahead of `now`, and nothing at or
     /// past the week's end (half-open, the tick idiom). Inverted window
