@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The calendar's toolbar filter: judge every daily goal, one metric, one
-/// project (grouped under its metric), or one aspiration. The active choice
-/// wears a checkmark and fills the toolbar glyph.
+/// The calendar's toolbar filter: show every daily goal, kept moments, one
+/// metric, one project (grouped under its metric), or one aspiration. The
+/// active choice wears a checkmark and fills the toolbar glyph.
 struct GoalCalendarFilterMenu: View {
     let metrics: [Metric]
     let aspirations: [Aspiration]
@@ -11,6 +11,7 @@ struct GoalCalendarFilterMenu: View {
     var body: some View {
         Menu {
             row("All Daily Goals", candidate: nil)
+            row("Moments", candidate: .moments)
             metricsSubmenu
             projectsSubmenu
             aspirationsSubmenu
