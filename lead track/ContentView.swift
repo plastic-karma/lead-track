@@ -37,8 +37,9 @@ struct ContentView: View {
     @State private var aspirationsPath = NavigationPath()
     @State private var additionalReviewRoute: AdditionalReviewRoute?
     /// Notification taps are staged by the responder before the first scene
-    /// renders: weekly opens the Week tab, an additional review presents its
-    /// period report, and an intention question opens its aspiration.
+    /// renders: metric alerts open that metric, weekly opens the Week tab, an
+    /// additional review presents its period report, and an intention question
+    /// opens its aspiration.
     private let notificationResponder = NotificationResponder.shared
 
     var body: some View {
@@ -73,12 +74,16 @@ struct ContentView: View {
         }
         .background(Theme.washedScreen)
         .onAppear {
+            routeToMetricIfRequested()
             routeToWeekIfRequested()
             routeToAspirationIfRequested()
             routeToAdditionalReviewIfRequested()
         }
         .onChange(of: notificationResponder.showWeeklyReview) {
             routeToWeekIfRequested()
+        }
+        .onChange(of: notificationResponder.pendingMetricID) {
+            routeToMetricIfRequested()
         }
         .onChange(of: notificationResponder.pendingAspirationID) {
             routeToAspirationIfRequested()
@@ -95,6 +100,20 @@ struct ContentView: View {
             selectedTab = .week
         }
         notificationResponder.showWeeklyReview = false
+    }
+
+    /// Consumes a metric notification by replacing the Today stack with that
+    /// metric's detail. A metric deleted since delivery degrades to opening the
+    /// app without leaving a stale route behind.
+    private func routeToMetricIfRequested() {
+        guard let id = notificationResponder.pendingMetricID else { return }
+        notificationResponder.pendingMetricID = nil
+        guard let metric = try? Metric.find(stableID: id, in: modelContext) else { return }
+        withAnimation(.snappy) {
+            selectedTab = .today
+        }
+        todayPath = NavigationPath()
+        todayPath.append(metric)
     }
 
     /// Consumes an additional-review notification by presenting that review's
