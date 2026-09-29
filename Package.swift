@@ -1,13 +1,10 @@
 // swift-tools-version: 6.1
 
-// Overlay package for non-Mac development. The Xcode project stays the source
-// of truth for app builds; this package compiles the platform-neutral subset
-// of Shared/ (and its tests) with the open-source Swift toolchain so domain
-// logic can be built and tested on Linux — and, on a macOS runner, the
-// SwiftData-backed services and their suites too, giving SessionService,
-// ProjectService, and the watch-action pipeline an executing test runner
-// (CI's simulator-based test step is skipped whenever the image ships no
-// bootable simulator).
+// Overlay package for local domain tests. The Xcode project stays the source
+// of truth for native xtool application builds; this package compiles the
+// platform-neutral subset of Shared/ and its tests on Linux. On a local macOS
+// host it also executes SwiftData-backed services and their suites, including
+// SessionService, ProjectService, and the watch-action pipeline.
 //
 // The overlay build defines LEADTRACK_OVERLAY: sources use it to compile out
 // framework calls that need a real app bundle at runtime (UserNotifications

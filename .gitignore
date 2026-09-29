@@ -1,3 +1,17 @@
 # SwiftPM build artifacts (Linux overlay package)
 .build/
 .swiftpm/
+
+# Native xtool release workspaces and artifacts
+.xtool/
+*.ipa
+
+# Local signing material must stay outside the repository
+.env
+.env.*
+*.key
+*.pem
+*.p8
+*.p12
+*.cer
+*.mobileprovision

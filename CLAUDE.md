@@ -8,15 +8,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
-This is an Xcode project (not SPM-based). Build and run via:
+Use the local source-built xtool native release stack. The canonical
+`lead track.xcodeproj` defines the application; `xtool-release.yml` imports its
+complete iOS/watchOS product graph without running Xcode:
 
-```bash
-# Build the iOS app
-xcodebuild -project "lead track.xcodeproj" -scheme "lead track" -destination 'platform=iOS Simulator,name=iPhone 16' build
-
-# Build the watchOS app (also builds automatically as a dependency of the iOS scheme)
-xcodebuild -project "lead track.xcodeproj" -scheme "lead-track Watch App" -destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' build
+```sh
+./scripts/build-release.sh --prepare-only  # Import configuration, without compiling.
+./scripts/build-release.sh --unsigned      # Compile and verify all five bundles.
+./scripts/build-release.sh --upload        # Distribution build and explicit TestFlight upload.
 ```
+
+Use `XTOOL` to select the installed native CLI or its local environment launcher.
+Setup, external signing, and artifact/Apple checks are in
+[docs/RELEASE.md](docs/RELEASE.md). Do not substitute GitHub Actions, remote Xcode
+runners, or an older upstream xtool binary.
 
 No external dependencies — uses only Apple frameworks (SwiftUI, SwiftData, Foundation).
 
@@ -32,31 +37,32 @@ swift test    # run the platform-neutral tests (swift-testing)
 How the subset stays cross-platform:
 
 - `Session`/`Metric`/`Project` wrap `@Model`, `@Relationship`, and `#Unique` in `#if canImport(SwiftData)` (SE-0367), so on Linux they compile as plain classes. Follow this pattern for new model attributes.
-- Files that need Apple-only frameworks outright (SwiftUI, ModelContext-coupled services, AppIntents, WidgetKit) are listed in the `exclude:` arrays in `Package.swift`. **A new Apple-only file in `Shared/` or `lead trackTests/` must be added there**, or `swift build` on Linux (and the `linux` CI job) breaks. Whole-file `#if canImport(...)` guards (e.g. `TimerActivityAttributes.swift`) also work and need no exclude entry.
+- Files that need Apple-only frameworks outright (SwiftUI, ModelContext-coupled services, AppIntents, WidgetKit) are listed in the `exclude:` arrays in `Package.swift`. **A new Apple-only file in `Shared/` or `lead trackTests/` must be added there**, or local `swift build` / `swift test` on Linux breaks. Whole-file `#if canImport(...)` guards (e.g. `TimerActivityAttributes.swift`) also work and need no exclude entry.
 - Targets use Swift language mode v5 to match the Xcode project's `SWIFT_VERSION`.
 
-The local toolchain on this dev box lives at `/workspace/tools/swift` (Swift 6.1.2, matching the `swift:6.1` Linux CI toolchain), exposed via `~/.local/bin/swift{,c}` wrapper scripts that set `LD_LIBRARY_PATH` to `/workspace/tools/sysdeps/lib` for libs the container lacks (ncurses, libxml2, icu).
+Use the locally installed Swift 6.4.0 toolchain selected by `xtool-release.yml`.
+Keep any compatibility-library environment or launcher outside the repository;
+do not change the global Swift selection just to build this app.
 
-### Validating the full app from a non-Mac machine
+### Full application validation
 
-The `xcodebuild` commands above require macOS. The Linux overlay does not fully
-exercise the UI and widget surfaces or SwiftData-backed behavior. GitHub Actions
-(`.github/workflows/ios.yml`) fills that gap: its macOS job always lints, runs the
-macOS overlay tests, and builds the full Xcode project for testing; it runs the
-Xcode tests when the runner has a bootable simulator. The Linux job runs
-`swift test` for the cross-platform overlay. A green run proves that every app
-target compiles and that every test the workflow could execute passed.
+The Linux overlay does not execute SwiftUI, widgets, or SwiftData-backed behavior.
+A local `./scripts/build-release.sh --unsigned` compiles and verifies the complete
+application, including the iOS widget, share extension, Watch app, and Watch
+widget. Watch device bundles retain both `arm64_32` and `arm64`.
 
-For every repository change, use the PR and CI procedure in
-[AGENTS.md](AGENTS.md). The workflow also supports `workflow_dispatch` for
-one-off validation, but that is not a substitute for the delivery pipeline.
+Compilation is not a simulator or device test. Exercise persistence, Watch sync,
+widgets, sharing, AppIntents, and capabilities on devices when available, and
+report runtime verification gaps. Do not claim that portable tests or Apple
+processing prove those behaviors. There is no cloud CI fallback.
 
 ## Feature delivery
 
-For every repository change, follow the mandatory pipeline and scope rules in
-[AGENTS.md](AGENTS.md) **without asking for confirmation**. It defines the local
-gates, PR and CI requirements, and which app-affecting changes must go through
-TestFlight. Run every applicable step and report it.
+Follow the local-only pipeline in [AGENTS.md](AGENTS.md): local lint/format/tests,
+native application builds, and local TestFlight delivery when in scope. GitHub is
+for source hosting and PR review only. Do not dispatch workflows or wait for CI
+checks. Preserve the existing TestFlight build for docs/tooling-only changes or
+when the user asks not to upload.
 
 ## Architecture
 
@@ -68,7 +74,7 @@ TestFlight. Run every applicable step and report it.
 
 ## Linting
 
-Both linters run directly in CI and as Xcode build phases on the iOS app target. To run manually:
+Run both linters locally; native xtool builds skip the Xcode project's validation-only linter phases:
 
 ```bash
 # SwiftLint — style and complexity checks
@@ -81,20 +87,24 @@ swiftformat --lint .
 swiftformat .
 ```
 
-Both tools ship official Linux binaries, so lint runs locally even on a non-Mac
-dev box (use the same versions CI pins in `.github/workflows/ios.yml`): download
-`swiftlint_linux_arm64.zip` (use `swiftlint-static`) from realm/SwiftLint and
-`swiftformat_linux_aarch64.zip` from nicklockwood/SwiftFormat releases into
-`~/.local/bin`. Run both before pushing — CI fails on any SwiftFormat diff.
+Use **SwiftLint 0.63.3** and **SwiftFormat 0.61.1**. Download their official
+[SwiftLint](https://github.com/realm/SwiftLint/releases/tag/0.63.3) and
+[SwiftFormat](https://github.com/nicklockwood/SwiftFormat/releases/tag/0.61.1)
+release binaries for the host architecture, verifying release checksums before
+installation. On Linux, use SwiftLint's `swiftlint-static` binary; set
+`LINUX_SOURCEKIT_LIB_PATH` to the active toolchain's `usr/lib` if needed.
+Keep these versions in sync with the local tools, not a hosted workflow.
+Run both before pushing. `.build/` and `.xtool/` are excluded; canonical sources
+remain covered.
 
 Complexity thresholds are intentionally strict (see `.swiftlint.yml`): max 5 cyclomatic complexity (warning), 30-line function bodies, 4 parameters. Keep code simple.
 
 ## Key Configuration
 
 - Deployment targets: iOS 26.2, watchOS 26.2
-- Swift version: 5.0 with modern concurrency features enabled
+- Compiler: Swift 6.4.0; application language mode: Swift 5.0 with modern concurrency
 - Bundle ID: `plastickarma.lead-track`
-- Automatic code signing, team ID 9492A97LWY
+- Signing team: `9492A97LWY`; local releases use an external distribution identity and per-bundle App Store profiles
 
 ## Localization policy
 
