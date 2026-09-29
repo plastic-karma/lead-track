@@ -1,0 +1,14 @@
+version: 1
+project: lead track.xcodeproj
+target: lead track
+swiftVersion: 6.4.0
+skippedBuildScripts:
+  SwiftLint: Validation-only phase; run the repository's lint gate separately.
+  SwiftFormat Check: Validation-only phase; run the repository's formatting gate separately.
+appStoreConnect:
+  appID: "6761788241"
+  locale: en-US
+  testNotes: >-
+    Native Linux release including LeadStone, its iPhone widgets and controls,
+    Share extension, Watch app and Watch widgets. Verify HealthKit access,
+    timer and metric intents, Live Activities, sharing and Watch sync.
