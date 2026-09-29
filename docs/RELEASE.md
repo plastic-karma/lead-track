@@ -1,164 +1,173 @@
-# Releasing — building an App Store `.ipa`
+# Releasing locally with xtool
 
-The [`Release IPA`](../.github/workflows/release.yml) workflow archives, signs, and
-exports a distributable `.ipa` on GitHub's macOS runners, so you can ship from any
-machine (including Linux/Windows, where Xcode isn't available). You download the
-`.ipa` and upload it to App Store Connect / TestFlight.
+All application builds, signing, and TestFlight uploads use the local,
+source-built [xtool native release stack](https://github.com/plastic-karma/xtool/blob/main/Documentation/xtool.docc/NativeReleases.md).
+GitHub hosts source and reviews only. There are no GitHub Actions build/release
+workflows, tag-triggered uploads, remote Xcode runners, or Codex Cloud setup steps.
 
-## Native Linux releases
+## Toolchain setup
 
-The source-built [xtool native release stack](https://github.com/plastic-karma/xtool/blob/main/Documentation/xtool.docc/NativeReleases.md)
-can also build, sign, and upload the complete project locally, without dispatching
-a GitHub release workflow:
+1. Build and install the native tools from the xtool checkout, following its
+   linked release guide. Use the source-built CLI, toolset, OpenAppleMacros server,
+   asset/AppIntents tools, and signer together, not an older upstream xtool binary.
+2. Import the Darwin SDKs from your own Xcode archive. Xcode supplies SDK inputs;
+   builds run locally on Linux without running Xcode or using a Mac runner.
+3. Install Swift 6.4.0, as selected by `xtool-release.yml`. Native SwiftData
+   `@Query` views need its synthesized-initializer rules; the application remains
+   in Swift 5 language mode. The manifest imports the canonical
+   `lead track.xcodeproj`, including its deployment targets and embedded products.
+4. Put the installed tools on `PATH`, or set `XTOOL` to the source-built CLI (or a
+   local launcher that supplies its Swift runtime environment). Do not store
+   workstation-specific toolchain paths in this repository.
+
+The default native installation is `${XDG_DATA_HOME:-$HOME/.local/share}/xtool/native`.
+`XTOOL_NATIVE_HOME` selects another installation. When rebuilding the macro server,
+install it and run `xtool sdk update` as described in xtool's release guide: the
+SDK contains its own copy, so replacing the installed executable alone is not
+enough.
+
+The project has no third-party app dependencies. The SwiftPM overlay at the root
+is for local domain tests, not a replacement for the complete application build.
+
+## Local validation and smoke builds
+
+Run the pinned linters and portable tests before publishing changes:
+
+```sh
+swiftlint
+swiftformat --lint .
+swift test
+```
+
+See [CLAUDE.md](../CLAUDE.md#linting) for tool versions and Linux setup. xtool skips
+the Xcode project's validation-only linter phases; the commands above are still
+required.
+
+From this repository:
 
 ```sh
 ./scripts/build-release.sh --prepare-only
-./scripts/build-release.sh --unsigned  # Ad-hoc smoke artifact, not TestFlight-installable.
-./scripts/build-release.sh --upload   # Distribution signing and explicit Apple upload.
+./scripts/build-release.sh --unsigned
 ```
 
-Install the source-built tools and imported Darwin SDK first, and authenticate
-`asc` using its protected credential store. Set `XTOOL` if the desired executable
-is not on `PATH`. The manifest selects Swift 6.4.0, needed for the native SwiftData
-`@Query` implementation's synthesized view initializers.
+`--prepare-only` imports the project into `.xtool/workspace/`; it does not compile,
+sign, or upload. `--unsigned` builds every product and produces a locally verified,
+ad-hoc-signed IPA. It is not distribution signing or proof of TestFlight readiness.
+The complete build includes:
 
-Keep the signing identity and all five provisioning profiles outside the repo.
-The default external configuration is
-`~/.config/xtool/signing/plastickarma.lead-track.yml`; `--signing` accepts another
-protected location. The build preserves the iPhone app, widget, share extension,
-Watch app, and Watch widget, including both Watch architectures.
+| Product | Bundle identifier | Device architectures |
+| --- | --- | --- |
+| LeadStone | `plastickarma.lead-track` | iOS `arm64` |
+| iPhone widget | `plastickarma.lead-track.widget` | iOS `arm64` |
+| Share extension | `plastickarma.lead-track.share` | iOS `arm64` |
+| Watch app | `plastickarma.lead-track.watchkitapp` | watchOS `arm64_32`, `arm64` |
+| Watch widget | `plastickarma.lead-track.watchkitapp.widget` | watchOS `arm64_32`, `arm64` |
 
-Artifacts and Apple receipts are under `.xtool/releases/<build-number>/`.
-`.xtool/` also contains generated sources and build caches; it is excluded from
-Git, SwiftLint, and SwiftFormat, while the canonical application sources remain
-covered by the normal validation gates. Existing GitHub workflows are unchanged.
+Do not drop extensions, capabilities, or architectures to get a build through.
+Linux overlay tests and native compilation do not execute Apple's persistence or
+UI runtime. Exercise the app on devices and report that verification separately.
 
-## One-time setup
+## External distribution signing and Apple authentication
 
-You need an **App Store Connect API key** (the modern, no-`.p12`-juggling way to sign
-in CI). Xcode uses it to create the distribution certificate and provisioning
-profiles automatically for all five signed targets: the app, its widget extension,
-its share extension, the watch app, and the watch widget extension.
+Reuse a valid distribution certificate and its matching private key. Provision an
+App Store distribution profile for **each of the five bundle identifiers** above,
+with the capabilities requested by that target. The signing team is `9492A97LWY`.
+The share and Watch widget identifiers need the App Group
+`group.plastickarma.lead-track` assigned in the
+[developer portal](https://developer.apple.com/account/resources/identifiers/list).
+Enable other requested capabilities before generating their profiles. Do not
+copy every profile entitlement into the app or silently remove requested ones.
 
-1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access**
-   → **Integrations** → **App Store Connect API** (Team Keys).
-2. Create a key with the **Admin** role. This is required: exporting an App Store
-   build makes Xcode create the **Apple Distribution** certificate via cloud
-   signing, and only an Admin-role key may do that. An App Manager/Developer key
-   can do *development* signing (so the archive step succeeds) but the export then
-   fails with `Cloud signing permission error`. Note the **Key ID** and the
-   **Issuer ID** shown on the page.
-3. Download the `AuthKey_<KEYID>.p8` file. **You can only download it once.**
-4. Make sure an app record for `plastickarma.lead-track` exists in App Store
-   Connect → **My Apps**. Five bundle IDs are signed: `plastickarma.lead-track`,
-   `.widget`, `.share`, `.watchkitapp`, and `.watchkitapp.widget`. The app, widget,
-   and watch app don't need manual registration: with an Admin key, cloud signing
-   registers missing bundle IDs automatically during Archive (observed when the
-   watch app shipped for the first time). The share extension and watch widget
-   App IDs are exceptions: their entitlements request an App Group, which API-key
-   cloud signing cannot create, so the release workflow pre-registers both via
-   [`register-app-group-bundle-ids.rb`](../.github/scripts/register-app-group-bundle-ids.rb).
-   Assigning the actual App Group to those App IDs is not supported by the public
-   API and remains a **one-time manual step**. In the
-   [developer portal](https://developer.apple.com/account/resources/identifiers/list),
-   edit both the `plastickarma.lead-track.share` and
-   `plastickarma.lead-track.watchkitapp.widget` identifiers and assign
-   `group.plastickarma.lead-track` under the App Groups capability for each.
-5. Add three repository secrets (**Settings → Secrets and variables → Actions →
-   New repository secret**):
+xtool validates the supplied identity/profiles; it does not create or revoke
+certificates or provision profiles during a release. No account-wide certificate
+cleanup is part of this workflow.
 
-   | Secret | Value |
-   | --- | --- |
-   | `APP_STORE_CONNECT_API_KEY_ID` | the Key ID, e.g. `2X9R4HXF34` |
-   | `APP_STORE_CONNECT_API_ISSUER_ID` | the Issuer ID (a UUID) |
-   | `APP_STORE_CONNECT_API_KEY` | the **entire text** of `AuthKey_<KEYID>.p8`, including the `-----BEGIN PRIVATE KEY-----` / `-----END PRIVATE KEY-----` lines |
+Default signing configuration:
 
-## Building an `.ipa`
+```text
+${XDG_CONFIG_HOME:-$HOME/.config}/xtool/signing/plastickarma.lead-track.yml
+```
 
-**On demand** (just want a build to download):
+The file contains paths to external files, not credential values:
 
-- GitHub → **Actions** → **Release IPA** → **Run workflow**. Optionally type a
-  marketing version (e.g. `1.2.0`); leave blank to keep the project's value. Tick
-  **publish_testflight** to also upload the build to TestFlight.
-- Or from this machine:
-  ```sh
-  # build only (download the artifact):
-  gh workflow run release.yml -f marketing_version=1.2.0
-  # build AND upload to TestFlight:
-  gh workflow run release.yml -f marketing_version=1.2.0 -f publish_testflight=true
-  gh run watch "$(gh run list --workflow=release.yml -L1 --json databaseId --jq '.[0].databaseId')" --exit-status
-  ```
+```yaml
+certificate: /private/location/distribution.cer
+privateKey: /private/location/distribution.key
+profiles:
+  plastickarma.lead-track: /private/location/App.mobileprovision
+  plastickarma.lead-track.widget: /private/location/Widget.mobileprovision
+  plastickarma.lead-track.share: /private/location/Share.mobileprovision
+  plastickarma.lead-track.watchkitapp: /private/location/Watch.mobileprovision
+  plastickarma.lead-track.watchkitapp.widget: /private/location/WatchWidget.mobileprovision
+```
 
-**By tagging a version** (publishes a GitHub Release **and** uploads to TestFlight):
+Protect the signing directory with mode `0700`, and the config and private inputs
+with `0600`. Keep them outside both the application and xtool repositories.
+`--signing /private/location/signing.yml` or `XTOOL_SIGNING_CONFIG` can override
+the default. Never commit credentials or put them in `xtool-release.yml`.
+
+Authenticate the local [asc CLI](https://github.com/rudrankriyam/App-Store-Connect-CLI)
+using its protected credential store and an App Store Connect API key authorized
+for uploads to this app. The existing App Store Connect app ID is `6761788241`.
+No GitHub secrets, GitHub Actions token, attached device, or USB connection is
+required for an App Store/TestFlight upload.
+
+## Distribution build and TestFlight upload
+
+Release from a clean, committed, reviewed revision after the local checks pass.
+Do not overlap release runs. Keep the existing working TestFlight build unless an
+app-affecting change or an explicit user request calls for another upload.
 
 ```sh
-git tag v1.2.0 && git push origin v1.2.0
+# Distribution-signed IPA only; no upload.
+./scripts/build-release.sh
+
+# Build, sign, verify, upload, and check Apple processing/tester access.
+./scripts/build-release.sh --upload
 ```
 
-A `v*` tag sets the marketing version from the tag (`v1.2.0` → `1.2.0`) and always
-uploads to TestFlight. The build number (`CFBundleVersion`) is derived from a UTC
-timestamp at build time, so every build is unique and accepted by App Store Connect.
+Upload is explicit: installation, preparation, ordinary builds, commits, pushes,
+and tags never upload anything. `--build-number` accepts a unique decimal build
+number; by default xtool uses the current Unix timestamp. A failed Apple upload
+can consume its number, so use a new one for a retry. The marketing version comes
+from the canonical Xcode project.
 
-## Testing on your iPhone (TestFlight)
+Each release is under `.xtool/releases/<build-number>/`, including `Payload/`, the
+IPA, `release.json`, and `verification.json`; uploaded releases also retain Apple
+receipts. `--output <directory>` selects another release parent. Existing release
+directories are not overwritten. `.xtool/` is excluded from Git and both linters;
+canonical application sources remain covered.
 
-App Store distribution builds **cannot be sideloaded** directly onto a device — they
-install through TestFlight. When the workflow publishes (the `publish_testflight`
-tick or a `v*` tag), it uploads the `.ipa` to App Store Connect for you via
-`xcrun altool`, so you don't need a Mac.
+The release command verifies all five bundles/seven architecture slices, Mach-O
+platform and deployment metadata, requested entitlements, and code/resource/CMS
+signatures before upload. It then checks the exact version/build for Apple's
+`VALID` processing state, unexpired status, beta-testing availability, and related
+TestFlight groups. Report those receipts, not just a successful upload command.
 
-1. Run the workflow with publishing enabled (see above) and wait for it to go green.
-2. In [App Store Connect](https://appstoreconnect.apple.com) → your app → **TestFlight**,
-   wait a few minutes for the build to finish **Processing**.
-3. Add yourself under **Internal Testing** (internal testers need no Beta App
-   Review, so it's immediate).
-4. On the iPhone: install the **TestFlight** app from the App Store, sign in with
-   that Apple ID, and tap **Install** next to the build.
-
-Prerequisite: an **app record** for `plastickarma.lead-track` must exist in App Store
-Connect → **My Apps** (separate from registering the bundle identifier). If it's
-missing, the upload step fails telling you to create it.
-
-### Manual upload (fallback)
-
-If you'd rather upload by hand, download the **lead-track-ipa** artifact from the run
-(tag builds also attach it to the GitHub Release) and drag it into the **Transporter**
-app (Mac App Store), or use Xcode → Organizer / `xcrun altool --upload-app`.
-
-## Notes
-
-- The export uses `method=app-store-connect` (App Store / TestFlight). The workflow
-  falls back to the legacy `app-store` value automatically on older Xcode.
-- This is independent of [`ios.yml`](../.github/workflows/ios.yml), which lints,
-  builds, and tests every push/PR. `release.yml` only runs on demand or on `v*` tags.
+In [App Store Connect](https://appstoreconnect.apple.com), open LeadStone's
+TestFlight page and check access for the intended internal tester group. Install
+with TestFlight on the iPhone, then verify Watch installation/sync, persistence,
+widgets, sharing, AppIntents, and protected capabilities. App Store distribution
+IPAs cannot be sideloaded. Internal testing does not require external Beta App
+Review; a `Ready to Submit` label can coexist with internal testing availability.
+Do not automatically expire older builds, enroll testers, or submit a public App
+Store release.
 
 ## Troubleshooting
 
-- **`Cloud signing permission error` / `No profiles for '…' were found` during
-  Export** (the Archive step succeeded first): the API key is not an **Admin** key.
-  Creating the Apple Distribution certificate via cloud signing requires the Admin
-  role. Generate a new Admin key, update the `APP_STORE_CONNECT_API_*` secrets, and
-  re-run. (You can't elevate an existing key's role — make a new one.)
-- **Upload step fails with "no suitable application records" / app not found**: the
-  app record doesn't exist yet. Create it in App Store Connect → **My Apps** for
-  bundle ID `plastickarma.lead-track`, then re-run.
-- **Build shows "Missing Compliance" in TestFlight** and testers can't install it:
-  answer the export-compliance question on the build in App Store Connect (most apps
-  using only standard/HTTPS encryption are exempt). To skip this prompt permanently,
-  add an `ITSAppUsesNonExemptEncryption` key to the app's Info.plist.
-- **Upload rejected: "must be built with the iOS 26 SDK"**: the runner built with an
-  older Xcode. The workflow's *Select newest Xcode* step picks the newest Xcode
-  installed on the runner; if that's still too old, the `macos-latest` image doesn't
-  have Xcode 26 yet — pin a newer image with `runs-on:` (e.g. a `macos-26` label).
-- **Upload rejected: "train version 'X' is closed" / "CFBundleShortVersionString must
-  contain a higher version"**: that marketing version is already on App Store Connect.
-  Re-run with a higher version — `-f marketing_version=1.0.1` or a higher `v*` tag.
-  (The build number auto-increments per run; only the marketing version can collide.)
-- **"You can only submit one build from version X to Beta App Review"**: external
-  TestFlight reviews only one build per version at a time, so a previously-submitted
-  build still *Waiting for Review* / *In Review* blocks the new one. On publish the
-  workflow auto-expires stuck builds **of the version being uploaded** first — the
-  *Expire builds stuck in Beta App Review* step, run by
-  [`expire-builds-in-review.rb`](../.github/scripts/expire-builds-in-review.rb) —
-  so the new build can be submitted; approved builds testers are using, and builds
-  of other versions, are left untouched. Fastest path of all: distribute to
-  **Internal Testing**, which skips Beta App Review entirely.
+- **xtool is missing or lacks `release`:** select the source-built native CLI with
+  `PATH`/`XTOOL`; do not install the retired upstream/cloud bootstrap binary.
+- **Macro or SDK mismatch:** verify Swift 6.4.0 and the selected native toolset,
+  reinstall the rebuilt macro server, and refresh the SDK with `xtool sdk update`.
+- **Missing/expired profile or entitlement mismatch:** repair the external profile
+  for the reported bundle. Preserve the existing identity and requested app
+  capabilities; do not revoke unrelated certificates or drop a product.
+- **Apple authentication, account agreement, or app-access failure:** resolve the
+  exact issue using local asc authentication or App Store Connect. Do not move
+  credentials to GitHub or fall back to a cloud release workflow.
+- **Build rejected or still processing:** use the saved Apple receipt for that
+  exact build. Fix rejection errors before retrying with a fresh build number;
+  processing alone does not mean testers have access.
+- **No internal tester access:** inspect the intended group's membership/build
+  access in App Store Connect. Do not expire another build or change tester
+  enrollment automatically.

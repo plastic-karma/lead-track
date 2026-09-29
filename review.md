@@ -1,5 +1,10 @@
 # LeadStone ("lead track") — combined code review
 
+> Historical review, not current delivery instructions. References below to CI,
+> cloud signing, and workflow scripts describe the retired GitHub automation.
+> Use [AGENTS.md](AGENTS.md) and the [local xtool release guide](docs/RELEASE.md)
+> for the current build, validation, and TestFlight process.
+
 *Merged: July 10, 2026.* This document unifies **two independent exhaustive reviews** of the
 full codebase into a single reference:
 

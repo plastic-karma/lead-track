@@ -11,25 +11,31 @@ deleting its history or hiding shared work; bring it back when it matters again.
 
 ## Requirements
 
-- Xcode 26 or later
+- Local source-built [xtool native release tools](https://github.com/plastic-karma/xtool/blob/main/Documentation/xtool.docc/NativeReleases.md)
+- Darwin SDKs imported from your Xcode archive; builds do not run Xcode
+- Swift 6.4.0 compiler, Swift 5 application language mode
 - iOS 26.2 / watchOS 26.2 deployment targets
-- Swift 5.0 with modern concurrency
 
 No external dependencies — uses only Apple frameworks (SwiftUI, SwiftData, Foundation).
 
 ## Build & Run
 
-```bash
-# iOS app
-xcodebuild -project "lead track.xcodeproj" -scheme "lead track" \
-  -destination 'platform=iOS Simulator,name=iPhone 16' build
+Build the complete iOS/watchOS application locally:
 
-# watchOS app
-xcodebuild -project "lead track.xcodeproj" -scheme "lead-track Watch App" \
-  -destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' build
+```sh
+./scripts/build-release.sh --prepare-only  # Import the canonical Xcode project.
+./scripts/build-release.sh --unsigned      # Full ad-hoc smoke IPA; no upload.
+./scripts/build-release.sh --upload        # Distribution build and TestFlight upload.
 ```
 
-You can also open `lead track.xcodeproj` in Xcode and run the desired scheme.
+Set `XTOOL` to the source-built CLI or a local environment launcher if it is not
+on `PATH`. The build preserves the iPhone app, iPhone widget, share extension,
+Watch app, and Watch widget, including both Watch device architectures.
+
+See [the local release guide](docs/RELEASE.md) for setup, external signing,
+artifacts, and Apple processing/tester-access checks. Keep credentials outside
+the repository. An unsigned smoke IPA is not TestFlight-installable, and a
+successful build does not prove device behavior.
 
 ## Project Layout
 
@@ -37,16 +43,18 @@ You can also open `lead track.xcodeproj` in Xcode and run the desired scheme.
 - `lead-track Watch App/` — watchOS app sources
 - `lead-track Widget/` — iOS widget extension
 - `lead-track Watch Widget/` — watchOS widget/complications extension
-- `Shared/` — models, services, and watch-sync logic compiled into all four targets above
+- `lead-track Share Extension/` — iOS share extension
+- `Shared/` — models, services, and watch-sync logic used by the phone, Watch app, and widget targets
 - `lead trackTests/` — unit tests
 - `lead trackUITests/` — UI tests
 - `Package.swift` — SwiftPM overlay that builds and tests the platform-neutral subset of `Shared/` (plus most unit tests) on Linux: `swift build` / `swift test`; see CLAUDE.md "Building & testing on Linux"
 - `docs/` — feature specs and the release guide
-- `scripts/` — asset tooling (app-icon generation)
+- `scripts/` — local xtool release launcher and app-icon generation
+- `xtool-release.yml` — native release configuration; imports `lead track.xcodeproj`
 
 ## Linting
 
-Both linters run automatically as Xcode build phases. To run manually:
+Use SwiftLint 0.63.3 and SwiftFormat 0.61.1 locally. Native xtool builds skip the validation-only Xcode linter phases, so run these explicitly:
 
 ```bash
 swiftlint              # style and complexity checks
@@ -54,49 +62,20 @@ swiftformat --lint .   # formatting check
 swiftformat .          # auto-fix formatting
 ```
 
-## Codex Cloud from ChatGPT mobile
-
-Create a Codex Cloud environment for this repository in ChatGPT, select Python
-3.12 and Swift 6.1, and use these repository-backed commands:
+## Local tests and delivery
 
 ```sh
-# Setup script
-./.codex/setup.sh
-
-# Maintenance script
-./.codex/maintenance.sh
-```
-
-The setup is idempotent and cache-safe. It installs checksum-pinned GitHub CLI
-2.101.0, xtool 1.19.2, SwiftLint 0.63.3, and SwiftFormat 0.61.1 binaries for the
-cloud runner architecture, resolves Swift packages, and sets a usable Git
-identity. Optional `CODEX_GIT_AUTHOR_NAME` and `CODEX_GIT_AUTHOR_EMAIL`
-environment variables replace the generic commit identity. The Linux gates are:
-
-```sh
-swiftlint
-swiftformat --lint .
 swift test
 ```
 
-Use Codex's GitHub connection to create and push a branch or pull request.
-Opening or updating a pull request starts both required GitHub Actions jobs
-automatically. Enable agent internet access only for required GitHub domains.
-Direct `gh workflow run` commands additionally require a `GH_TOKEN` environment
-variable available during the agent phase; Codex Cloud secrets are setup-only.
-If direct dispatch is necessary, use a dedicated fine-grained token restricted
-to this repository with only Contents and Actions access, never a broad personal
-token.
+The SwiftPM overlay tests portable domain logic on Linux. It does not execute
+Apple's SwiftData/SwiftUI runtime or the UI-test target. Pair it with a complete
+local xtool build for app changes and device testing where available.
 
-The environment installs xtool so Linux compatibility can be evaluated, but it
-does not replace the macOS workflow's full Xcode application build, simulator
-tests, signing, or TestFlight upload. Configuring xtool for device deployment
-would also require an Apple login, an Xcode archive, and a physically connected
-iOS device; none of that signing material belongs in Codex setup.
-
-Codex setup runs with internet access and caches the resulting container. The
-maintenance script reruns the same idempotent reconciliation after Codex checks
-out a task's selected branch.
+Follow [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) for local gates and delivery.
+GitHub is used only for source hosting and review: there are no Actions workflows,
+hosted CI requirements, remote Xcode release jobs, or Codex Cloud bootstrap.
+Commits, pushes, and tags do not build or upload the app.
 
 ## License
 
