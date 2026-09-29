@@ -3,6 +3,7 @@
 # Paths to exclude from linting
 excluded:
   - .build
+  - .xtool
   - DerivedData
 
 # Opt-in rules that help prevent overly complex code

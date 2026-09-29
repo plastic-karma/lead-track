@@ -1,9 +1,37 @@
-# Releasing — building an App Store `.ipa` from GitHub
+# Releasing — building an App Store `.ipa`
 
 The [`Release IPA`](../.github/workflows/release.yml) workflow archives, signs, and
 exports a distributable `.ipa` on GitHub's macOS runners, so you can ship from any
 machine (including Linux/Windows, where Xcode isn't available). You download the
 `.ipa` and upload it to App Store Connect / TestFlight.
+
+## Native Linux releases
+
+The source-built [xtool native release stack](https://github.com/plastic-karma/xtool/blob/main/Documentation/xtool.docc/NativeReleases.md)
+can also build, sign, and upload the complete project locally, without dispatching
+a GitHub release workflow:
+
+```sh
+./scripts/build-release.sh --prepare-only
+./scripts/build-release.sh --unsigned  # Ad-hoc smoke artifact, not TestFlight-installable.
+./scripts/build-release.sh --upload   # Distribution signing and explicit Apple upload.
+```
+
+Install the source-built tools and imported Darwin SDK first, and authenticate
+`asc` using its protected credential store. Set `XTOOL` if the desired executable
+is not on `PATH`. The manifest selects Swift 6.4.0, needed for the native SwiftData
+`@Query` implementation's synthesized view initializers.
+
+Keep the signing identity and all five provisioning profiles outside the repo.
+The default external configuration is
+`~/.config/xtool/signing/plastickarma.lead-track.yml`; `--signing` accepts another
+protected location. The build preserves the iPhone app, widget, share extension,
+Watch app, and Watch widget, including both Watch architectures.
+
+Artifacts and Apple receipts are under `.xtool/releases/<build-number>/`.
+`.xtool/` also contains generated sources and build caches; it is excluded from
+Git, SwiftLint, and SwiftFormat, while the canonical application sources remain
+covered by the normal validation gates. Existing GitHub workflows are unchanged.
 
 ## One-time setup
 
