@@ -11,8 +11,8 @@ struct WeekShareView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            header
-            heroLine
+            WeekShareHeader(formattedRange: review.formattedRange)
+            WeekShareHero(text: review.heroText, caption: review.heroCaption())
             WeekBarsView(
                 values: review.sessionSeries,
                 labels: WeekBarsView.weekdayLabels(
@@ -20,7 +20,14 @@ struct WeekShareView: View {
                 )
             )
             .frame(height: 72)
-            metricRows
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(review.metricWeeks) { week in
+                    WeekShareMetricRow(
+                        icon: week.icon, name: week.name, colorName: week.colorName, change: week.change,
+                        totalText: ValueFormatter.format(week.total, type: week.measurementType, unit: week.unit)
+                    )
+                }
+            }
         }
         .padding(24)
         .frame(width: 400)
@@ -30,8 +37,10 @@ struct WeekShareView: View {
 
 // MARK: - Pieces
 
-extension WeekShareView {
-    private var header: some View {
+private struct WeekShareHeader: View {
+    let formattedRange: String
+
+    var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Weekly Review")
                 .font(.title3.bold())
@@ -41,66 +50,54 @@ extension WeekShareView {
                 .foregroundStyle(.secondary)
         }
     }
+}
 
-    private var formattedRange: String {
-        review.formattedRange
-    }
+private struct WeekShareHero: View {
+    let text: String
+    let caption: String
 
-    private var heroLine: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(heroText)
+            Text(text)
                 .numeralStyle(.value)
-            Text(heroCaption)
+            Text(caption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
+}
 
-    private var heroText: String {
-        review.heroText
-    }
+private struct WeekShareMetricRow: View {
+    let icon: String
+    let name: String
+    let colorName: String?
+    let change: WeeklyReview.WeekChange
+    let totalText: String
+    @Environment(\.locale) private var locale
 
-    private var heroCaption: String {
-        review.heroCaption()
-    }
-
-    private var metricRows: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(review.metricWeeks) { week in
-                metricRow(week)
-            }
-        }
-    }
-
-    private func metricRow(_ week: WeeklyReview.MetricWeek) -> some View {
+    var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: week.icon)
+            Image(systemName: icon)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Theme.chipFill))
-            Text(week.name)
+            Text(name)
                 .font(.subheadline)
             Spacer()
-            changeGlyph(week)
-            Text(
-                ValueFormatter.format(
-                    week.total,
-                    type: week.measurementType,
-                    unit: week.unit
-                )
-            )
-            .numeralStyle(.stat)
+            changeGlyph
+            Text(totalText)
+                .numeralStyle(.stat)
         }
     }
 
     @ViewBuilder
-    private func changeGlyph(_ week: WeeklyReview.MetricWeek) -> some View {
-        switch week.change {
+    private var changeGlyph: some View {
+        switch change {
         case let .up(ratio):
-            glyphLabel("arrow.up.right", percent(ratio), tint: week)
+            glyphLabel("arrow.up.right", percent(ratio))
         case let .down(ratio):
-            glyphLabel("arrow.down.right", percent(ratio), tint: week)
+            glyphLabel("arrow.down.right", percent(ratio))
         case .flat, .noBaseline:
             EmptyView()
         }
@@ -108,13 +105,12 @@ extension WeekShareView {
 
     private func glyphLabel(
         _ symbol: String,
-        _ text: String,
-        tint week: WeeklyReview.MetricWeek
+        _ text: String
     ) -> some View {
         HStack(spacing: 3) {
             Image(systemName: symbol)
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(MetricColor.color(named: week.colorName))
+                .foregroundStyle(MetricColor.color(named: colorName))
             Text(text)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -122,7 +118,8 @@ extension WeekShareView {
     }
 
     private func percent(_ ratio: Double) -> String {
-        "\(Int((abs(ratio) * 100).rounded()))%"
+        abs(ratio)
+            .formatted(.percent.precision(.fractionLength(0)).rounded(rule: .toNearestOrAwayFromZero).locale(locale))
     }
 }
 

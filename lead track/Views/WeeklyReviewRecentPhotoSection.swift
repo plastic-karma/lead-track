@@ -47,7 +47,7 @@ private struct WeeklyRecentPhotosSection: View {
     @State private var composerDraft: WeeklyMomentPhotoDraft?
 
     var body: some View {
-        captureCard
+        WeeklyPhotoCaptureCard(openPicker: { showingPicker = true })
             .sheet(isPresented: $showingPicker, onDismiss: presentQueuedDraft) {
                 RecentMomentPhotoPicker(window: window, prepare: prepare)
             }
@@ -62,28 +62,6 @@ private struct WeeklyRecentPhotosSection: View {
             }
     }
 
-    private var captureCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Keep photos from the last 7 days", systemImage: "photo.on.rectangle.angled")
-                .font(.subheadline.weight(.medium))
-            Text("Choose up to four photos, then add the words and aspiration that make them a moment.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Button {
-                showingPicker = true
-            } label: {
-                ActionChip(voice: .opening(.accentColor)) {
-                    Label("Choose photos", systemImage: "photo.stack")
-                }
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardShape())
-    }
-
     private func prepare(_ draft: WeeklyMomentPhotoDraft) {
         queuedDraft = draft
         showingPicker = false
@@ -93,6 +71,30 @@ private struct WeeklyRecentPhotosSection: View {
         guard let queuedDraft else { return }
         composerDraft = queuedDraft
         self.queuedDraft = nil
+    }
+}
+
+private struct WeeklyPhotoCaptureCard: View {
+    let openPicker: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Keep photos from the last 7 days", systemImage: "photo.on.rectangle.angled")
+                .font(.subheadline.weight(.medium))
+            Text("Choose up to four photos, then add the words and aspiration that make them a moment.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: openPicker) {
+                ActionChip(voice: .opening(.accentColor)) {
+                    Label("Choose photos", systemImage: "photo.stack")
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.cardShape())
     }
 }
 

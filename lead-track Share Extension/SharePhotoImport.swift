@@ -73,7 +73,7 @@ enum SharePhotoImport {
     }
 }
 
-struct SharePhoto: Identifiable {
+struct SharePhoto: Equatable, Identifiable {
     let id = UUID()
     let data: Data
 }

@@ -3,10 +3,32 @@ import WidgetKit
 
 struct WatchTimerEntry: TimelineEntry {
     let date: Date
-    let running: WatchMetricSnapshot?
+    let running: WatchTimerDisplayState?
+
+    init(date: Date, running: WatchMetricSnapshot?) {
+        self.date = date
+        self.running = running.flatMap(WatchTimerDisplayState.init)
+    }
 
     var relevance: TimelineEntryRelevance? {
         TimelineEntryRelevance(score: running == nil ? 0 : 100)
+    }
+}
+
+struct WatchTimerDisplayState: Equatable {
+    let name: String
+    let icon: String
+    let colorName: String?
+    let startedAt: Date
+    let countdownInterval: ClosedRange<Date>?
+
+    init?(metric: WatchMetricSnapshot) {
+        guard let startedAt = metric.runningSince else { return nil }
+        name = metric.name
+        icon = metric.displayIcon
+        colorName = metric.colorName
+        self.startedAt = startedAt
+        countdownInterval = metric.countdownInterval
     }
 }
 
@@ -43,7 +65,7 @@ struct WatchTimerProvider: TimelineProvider {
 
 struct WatchTimerWidgetView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: WatchTimerEntry
+    let running: WatchTimerDisplayState?
 
     var body: some View {
         content
@@ -52,42 +74,11 @@ struct WatchTimerWidgetView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let metric = entry.running, let since = metric.runningSince {
-            runningView(metric, since: since)
+        if let running {
+            WatchTimerRunningContent(timer: running, isInline: family == .accessoryInline)
         } else {
             idleView
         }
-    }
-
-    @ViewBuilder
-    private func runningView(
-        _ metric: WatchMetricSnapshot,
-        since: Date
-    ) -> some View {
-        if family == .accessoryInline {
-            Text("\(metric.name) \(Text(liveTimer: metric.countdownInterval, countingUpFrom: since))")
-        } else {
-            rectangularView(metric, since: since)
-        }
-    }
-
-    private func rectangularView(
-        _ metric: WatchMetricSnapshot,
-        since: Date
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Image(systemName: metric.displayIcon)
-                Text(metric.name)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .font(.headline)
-            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
-                .roundedDigits(.title3, weight: .semibold)
-                .foregroundStyle(metric.displayColor)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -95,18 +86,57 @@ struct WatchTimerWidgetView: View {
         if family == .accessoryInline {
             Text("No timer running")
         } else {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Image(systemName: "timer")
-                    Text("LeadStone")
-                }
-                .font(.headline)
-                Text("No timer running")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            WatchTimerIdleContent()
         }
+    }
+}
+
+private struct WatchTimerRunningContent: View {
+    let timer: WatchTimerDisplayState
+    let isInline: Bool
+
+    var body: some View {
+        if isInline {
+            Text("\(timer.name) \(Text(liveTimer: timer.countdownInterval, countingUpFrom: timer.startedAt))")
+        } else {
+            WatchTimerRectangularContent(timer: timer)
+        }
+    }
+}
+
+private struct WatchTimerRectangularContent: View {
+    let timer: WatchTimerDisplayState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: timer.icon)
+                Text(timer.name)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .font(.headline)
+            Text(liveTimer: timer.countdownInterval, countingUpFrom: timer.startedAt)
+                .roundedDigits(.title3, weight: .semibold)
+                .foregroundStyle(MetricColor.color(named: timer.colorName))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct WatchTimerIdleContent: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "timer")
+                Text("LeadStone")
+            }
+            .font(.headline)
+            Text("No timer running")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -120,7 +150,7 @@ struct WatchTimerWidget: Widget {
             kind: kind,
             provider: WatchTimerProvider()
         ) { entry in
-            WatchTimerWidgetView(entry: entry)
+            WatchTimerWidgetView(running: entry.running)
         }
         .configurationDisplayName("Active Timer")
         .description("Shows the currently running timer.")

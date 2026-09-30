@@ -1,15 +1,50 @@
 import SwiftUI
 
-/// Shared row layout: metric icon and name, a live elapsed timer or today's
-/// total underneath, and a trailing action glyph.
+/// The row's display values, independent of goal, health and sync metadata.
+struct WatchMetricLabelContent: Equatable {
+    let name: String
+    let icon: String
+    let colorName: String?
+    let measurementType: MeasurementType?
+    let unit: String?
+    let todayTotal: Double
+    let runningSince: Date?
+    let countdownInterval: ClosedRange<Date>?
+
+    init(metric: WatchMetricSnapshot) {
+        name = metric.name
+        icon = metric.displayIcon
+        colorName = metric.colorName
+        measurementType = metric.measurementType
+        unit = metric.unit
+        todayTotal = metric.todayTotal
+        runningSince = metric.runningSince
+        countdownInterval = metric.countdownInterval
+    }
+
+    var displayColor: Color {
+        MetricColor.color(named: colorName)
+    }
+
+    var prominentColor: Color {
+        MetricColor.prominentColor(named: colorName)
+    }
+}
+
+/// Shared row layout: icon and name, a live timer or today's total, and action.
 struct WatchMetricLabel: View {
-    let metric: WatchMetricSnapshot
+    let content: WatchMetricLabelContent
     let accessory: String
     let accessoryColor: Color
 
     var body: some View {
         HStack(spacing: 6) {
-            details
+            VStack(alignment: .leading, spacing: 2) {
+                Label(content.name, systemImage: content.icon)
+                    .font(.headline)
+                    .lineLimit(1)
+                subtitle
+            }
             Spacer(minLength: 4)
             Image(systemName: accessory)
                 .font(.title3)
@@ -17,21 +52,12 @@ struct WatchMetricLabel: View {
         }
     }
 
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(metric.name, systemImage: metric.displayIcon)
-                .font(.headline)
-                .lineLimit(1)
-            subtitle
-        }
-    }
-
     @ViewBuilder
     private var subtitle: some View {
-        if let since = metric.runningSince {
-            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
+        if let since = content.runningSince {
+            Text(liveTimer: content.countdownInterval, countingUpFrom: since)
                 .roundedDigits(.caption)
-                .foregroundStyle(metric.displayColor)
+                .foregroundStyle(content.displayColor)
         } else {
             Text(todayText)
                 .roundedDigits(.caption2)
@@ -40,15 +66,14 @@ struct WatchMetricLabel: View {
     }
 
     private var todayText: String {
-        if metric.measurementType == .binary {
-            return metric.todayTotal > 0 ? "Done today" : "Not done yet"
+        if content.measurementType == .binary {
+            return content.todayTotal > 0 ? "Done today" : "Not done yet"
         }
-        // An unknown type (snapshot from a newer phone) reads as a count:
-        // the row is display-only, so a plain figure is the safest rendering.
+        // Unknown types from newer phones remain display-only counts.
         let total = ValueFormatter.format(
-            metric.todayTotal,
-            type: metric.measurementType ?? .count,
-            unit: metric.unit
+            content.todayTotal,
+            type: content.measurementType ?? .count,
+            unit: content.unit
         )
         return "\(total) today"
     }

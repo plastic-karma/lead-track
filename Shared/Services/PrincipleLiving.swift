@@ -13,11 +13,17 @@ enum PrincipleLiving {
     /// Weeks of history the lived underline renders.
     static let historyWeeks = 12
 
+    /// Calendar identity travels with a dot as the trailing window advances.
+    struct Week: Identifiable, Equatable {
+        let id: Date
+        let isLived: Bool
+    }
+
     /// One principle's lived record.
     struct Record: Equatable {
-        /// One flag per trailing week, oldest first, the week containing
-        /// `now` last — the underline's dots.
-        let weeks: [Bool]
+        /// One calendar-identified status per trailing week, oldest first,
+        /// with the week containing `now` last — the underline's dots.
+        let weeks: [Week]
         /// The most recent day the principle was lived, nil until any
         /// activity exists — lifetime, not windowed to the strip.
         let lastLived: Date?
@@ -26,7 +32,7 @@ enum PrincipleLiving {
 
         /// The count the underline is captioned with ("9 of 12").
         var livedCount: Int {
-            weeks.count(where: { $0 })
+            weeks.count(where: \.isLived)
         }
     }
 
@@ -50,7 +56,7 @@ enum PrincipleLiving {
         )
         let latest = events.max { $0.date < $1.date }
         return Record(
-            weeks: starts.map { livedWeeks.contains($0) },
+            weeks: starts.map { Week(id: $0, isLived: livedWeeks.contains($0)) },
             lastLived: latest?.date,
             lastLivedVia: latest?.via
         )

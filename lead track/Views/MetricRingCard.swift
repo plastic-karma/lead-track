@@ -9,12 +9,10 @@ import SwiftUI
 /// rings. Metrics with one goal get a single full-size ring; metrics with
 /// none keep the plain hero numeral; binary habits show today's check.
 struct MetricRingCard: View {
-    @Environment(\.modelContext) private var modelContext
     let metric: Metric
     let activeSession: Session?
     let todayTotal: TimeInterval
     let weekTotal: TimeInterval
-    @State private var isSyncingHealth = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -30,7 +28,7 @@ struct MetricRingCard: View {
                 coachRow(coachLine)
             }
             if metric.isHealthLinked {
-                healthProvenance
+                MetricHealthProvenance(metric: metric)
             }
         }
         .padding(.vertical, 6)
@@ -163,7 +161,7 @@ extension MetricRingCard {
     private func goalText(_ goal: Double) -> String {
         metric.measurementType == .duration
             ? DurationFormatter.compact(goal)
-            : String(Int(goal))
+            : Int(goal).formatted()
     }
 
     private var accessibilitySummary: String {
@@ -268,10 +266,13 @@ extension MetricRingCard {
 
 // MARK: - Health Provenance
 
-extension MetricRingCard {
-    /// Health metrics record themselves, so instead of the record dock the
-    /// card carries where the numbers come from and a manual sync.
-    private var healthProvenance: some View {
+/// Health metrics record themselves, so their instrument carries a manual sync.
+private struct MetricHealthProvenance: View {
+    @Environment(\.modelContext) private var modelContext
+    let metric: Metric
+    @State private var isSyncingHealth = false
+
+    var body: some View {
         HStack(spacing: 16) {
             Label("From Apple Health", systemImage: "heart.fill")
                 .font(.footnote)

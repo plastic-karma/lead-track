@@ -12,24 +12,37 @@ struct AllMetricsRoute: Hashable {}
 /// filters for favorites and each archive state. Rows only navigate; archive
 /// side effects stay on the metric detail screen.
 struct AllMetricsView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @State private var filter = MetricStatusFilter.all
 
     var body: some View {
         VStack(spacing: 0) {
             filterPicker
-            content
+            AllMetricsContent(metrics: metrics, filter: filter)
         }
-        .background(Theme.washedScreen)
+        .background { Theme.washedScreen }
         .navigationTitle("All Metrics")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var filterPicker: some View {
+        Picker("Status", selection: $filter) {
+            ForEach(MetricStatusFilter.allCases) { option in
+                Text(option.rawValue).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("Metric Status Filter")
+        .padding(.horizontal)
+        .padding(.vertical, 12)
     }
 }
 
 // MARK: - Content
 
-extension AllMetricsView {
+private struct AllMetricsContent: View {
+    let metrics: [Metric]
+    let filter: MetricStatusFilter
     private var visibleMetrics: [Metric] {
         let ordered = metrics.inDisplayOrder
         return switch filter {
@@ -44,39 +57,36 @@ extension AllMetricsView {
         }
     }
 
-    private var filterPicker: some View {
-        Picker("Status", selection: $filter) {
-            ForEach(MetricStatusFilter.allCases) { option in
-                Text(option.rawValue).tag(option)
-            }
-        }
-        .pickerStyle(.segmented)
-        .accessibilityIdentifier("Metric Status Filter")
-        .padding(.horizontal)
-        .padding(.vertical, 12)
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        if visibleMetrics.isEmpty {
+    var body: some View {
+        let visible = visibleMetrics
+        if visible.isEmpty {
             emptyState
         } else {
-            List(visibleMetrics) { metric in
-                NavigationLink(value: metric) {
-                    row(metric)
-                }
-                .swipeActions(edge: .leading) {
-                    if !metric.isHealthLinked {
-                        favoriteButton(metric)
-                    }
-                }
+            List(visible) { metric in
+                AllMetricRow(metric: metric)
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
     }
+}
 
-    private func row(_ metric: Metric) -> some View {
+private struct AllMetricRow: View {
+    @Environment(\.modelContext) private var modelContext
+    let metric: Metric
+
+    var body: some View {
+        NavigationLink(value: metric) {
+            label
+        }
+        .swipeActions(edge: .leading) {
+            if !metric.isHealthLinked {
+                favoriteButton
+            }
+        }
+    }
+
+    private var label: some View {
         HStack(spacing: 12) {
             MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 34)
                 .accessibilityHidden(true)
@@ -102,7 +112,7 @@ extension AllMetricsView {
         return "Archived \(date.formatted(.dateTime.month(.abbreviated).day().year()))"
     }
 
-    private func favoriteButton(_ metric: Metric) -> some View {
+    private var favoriteButton: some View {
         Button {
             toggleFavorite(metric)
         } label: {
@@ -131,7 +141,7 @@ extension AllMetricsView {
 
 // MARK: - Empty state
 
-extension AllMetricsView {
+extension AllMetricsContent {
     private var emptyState: some View {
         ContentUnavailableView(
             emptyTitle,

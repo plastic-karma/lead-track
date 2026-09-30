@@ -6,7 +6,7 @@ struct WeekdaySelector: View {
     @Binding var excludedWeekdays: Set<Int>
     @ScaledMetric(relativeTo: .subheadline) private var diameter: CGFloat = 38
 
-    private let calendar = Calendar.current
+    @Environment(\.calendar) private var calendar
 
     var body: some View {
         HStack(spacing: 6) {

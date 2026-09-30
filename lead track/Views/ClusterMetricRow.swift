@@ -24,11 +24,13 @@ struct ClusterMetricRow: View {
     @State private var quickLogTrigger = false
 
     var body: some View {
-        // One pass over the session history per render; every consumer below
-        // (value line, progress track, done row, binary action) shares it.
-        let total = todayTotal
-        return NavigationLink(value: metric) {
-            row(total)
+        NavigationLink(value: metric) {
+            ClusterMetricContent(
+                metric: metric, runningSession: runningSession, day: day,
+                showingCountEntry: $showingCountEntry,
+                showingCountdownPicker: $showingCountdownPicker,
+                showingDurationEntry: $showingDurationEntry, quickLogTrigger: $quickLogTrigger
+            )
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -60,6 +62,26 @@ struct ClusterMetricRow: View {
         }
         .sensoryFeedback(.increase, trigger: quickLogTrigger)
         .recordingFeedback(isActive: runningSession != nil)
+    }
+
+    private var recordingDay: Date? {
+        Calendar.current.isDateInToday(day) ? nil : day
+    }
+}
+
+private struct ClusterMetricContent: View {
+    @Environment(\.modelContext) private var modelContext
+    let metric: Metric
+    let runningSession: Session?
+    let day: Date
+    @Binding var showingCountEntry: Bool
+    @Binding var showingCountdownPicker: Bool
+    @Binding var showingDurationEntry: Bool
+    @Binding var quickLogTrigger: Bool
+
+    var body: some View {
+        let total = todayTotal
+        row(total)
     }
 
     /// A met goal quiets the row in place — unless its timer is running,
@@ -98,7 +120,7 @@ struct ClusterMetricRow: View {
 
 // MARK: - Active Row
 
-extension ClusterMetricRow {
+extension ClusterMetricContent {
     private func activeRow(_ total: TimeInterval) -> some View {
         HStack(alignment: .center, spacing: 12) {
             MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 30)
@@ -123,7 +145,7 @@ extension ClusterMetricRow {
                 .lineLimit(1)
             Spacer(minLength: 6)
             todayValue(total)
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .monospacedDigit()
             if let goal = goalText {
                 Text("of \(goal)")
@@ -176,7 +198,7 @@ extension ClusterMetricRow {
 
 // MARK: - Done Row
 
-extension ClusterMetricRow {
+extension ClusterMetricContent {
     private func doneRow(_ total: TimeInterval) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
@@ -200,7 +222,7 @@ extension ClusterMetricRow {
 
 // MARK: - Action Circle
 
-extension ClusterMetricRow {
+extension ClusterMetricContent {
     @ViewBuilder
     private func actionButton(_ total: TimeInterval) -> some View {
         switch metric.measurementType {
@@ -309,6 +331,6 @@ extension ClusterMetricRow {
             .foregroundStyle(metric.displayColor)
             .symbolEffect(.pulse, isActive: runningSession != nil)
             .frame(width: 44, height: 44)
-            .background(Circle().fill(metric.displayColor.opacity(0.15)))
+            .background { Circle().fill(metric.displayColor.opacity(0.15)) }
     }
 }

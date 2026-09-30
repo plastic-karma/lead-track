@@ -2,12 +2,17 @@ import SwiftUI
 
 struct WeeklyReviewSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @AppStorage(WeeklyReviewSettings.enabledKey) private var isEnabled = false
     @AppStorage(WeeklyReviewSettings.dayKey) private var day = WeeklyReviewSettings.defaultDay
     @AppStorage(WeeklyReviewSettings.hourKey) private var hour = WeeklyReviewSettings.defaultHour
     @AppStorage(WeeklyReviewSettings.minuteKey) private var minute = WeeklyReviewSettings.defaultMinute
 
-    private let weekdays = Calendar.current.weekdaySymbols
+    private var weekdays: [String] {
+        var calendar = Calendar.current
+        calendar.locale = locale
+        return calendar.weekdaySymbols
+    }
 
     var body: some View {
         NavigationStack {
@@ -24,9 +29,7 @@ struct WeeklyReviewSettingsView: View {
 
     private var form: some View {
         Form {
-            Section(footer: Text(
-                "Get a weekly summary of your progress."
-            )) {
+            Section {
                 Toggle(
                     "Weekly Review Notification",
                     isOn: $isEnabled
@@ -35,6 +38,8 @@ struct WeeklyReviewSettingsView: View {
                     dayPicker
                     timePicker
                 }
+            } footer: {
+                Text("Get a weekly summary of your progress.")
             }
         }
         // Re-arm the notification on every edit: waiting for the next

@@ -39,7 +39,7 @@ final class RecentMomentPhotoLibrary {
     private(set) var photos: [Photo] = []
 
     private let imageManager = PHCachingImageManager()
-    private var assetsByID: [String: PHAsset] = [:]
+    @ObservationIgnored private var assetsByID: [String: PHAsset] = [:]
 
     init() {
         accessState = Self.accessState(

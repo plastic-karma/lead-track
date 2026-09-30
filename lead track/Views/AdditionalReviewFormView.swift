@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AdditionalReviewFormView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     private let original: AdditionalReview?
     private let save: (AdditionalReview) -> Void
@@ -35,36 +36,15 @@ struct AdditionalReviewFormView: View {
 
     private var form: some View {
         Form {
-            reviewSection
+            AdditionalReviewIdentitySection(name: $name, cycle: $cycle)
             if cycle == .custom {
-                customCycleSection
+                AdditionalReviewCustomCycleSection(unit: $customUnit, interval: $customInterval)
             }
-            notificationSection
+            AdditionalReviewNotificationSection(time: timeBinding, nextDescription: nextReviewDescription)
         }
         .navigationTitle(original == nil ? "Add Review" : "Edit Review")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarItems }
-    }
-
-    private var reviewSection: some View {
-        Section("Review") {
-            TextField("Name", text: $name)
-            cyclePicker
-        }
-    }
-
-    private var notificationSection: some View {
-        Section {
-            DatePicker(
-                "Time",
-                selection: timeBinding,
-                displayedComponents: .hourAndMinute
-            )
-        } header: {
-            Text("Notification")
-        } footer: {
-            Text(nextReviewDescription)
-        }
     }
 
     @ToolbarContentBuilder
@@ -78,49 +58,13 @@ struct AdditionalReviewFormView: View {
         }
     }
 
-    private var cyclePicker: some View {
-        Picker("Cycle", selection: $cycle) {
-            Text("Monthly").tag(AdditionalReviewCycleKind.monthly)
-            Text("Quarterly").tag(AdditionalReviewCycleKind.quarterly)
-            Text("Yearly").tag(AdditionalReviewCycleKind.yearly)
-            Text("Custom").tag(AdditionalReviewCycleKind.custom)
-        }
-    }
-
-    private var customCycleSection: some View {
-        Section {
-            Picker("Unit", selection: $customUnit) {
-                Text("Days").tag(AdditionalReviewCycleUnit.days)
-                Text("Months").tag(AdditionalReviewCycleUnit.months)
-            }
-            .pickerStyle(.segmented)
-            Stepper(
-                customIntervalLabel,
-                value: $customInterval,
-                in: 1 ... customUnit.maximumInterval
-            )
-        } header: {
-            Text("Custom Cycle")
-        } footer: {
-            Text("The first review arrives when this complete period ends.")
-        }
-        .onChange(of: customUnit) {
-            customInterval = min(customInterval, customUnit.maximumInterval)
-        }
-    }
-
-    private var customIntervalLabel: String {
-        let unit = customUnit == .days ? "day" : "month"
-        return "Every \(customInterval) \(unit)\(customInterval == 1 ? "" : "s")"
-    }
-
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var nextReviewDescription: String {
         let next = AdditionalReviewSchedule.nextReviewDate(for: draft)
-        return "Next review: \(next.formatted(date: .abbreviated, time: .shortened)). "
+        return "Next review: \(next.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale))). "
             + "It will total the completed period ending that day."
     }
 
@@ -169,5 +113,68 @@ struct AdditionalReviewFormView: View {
     private func commit() {
         save(draft)
         dismiss()
+    }
+}
+
+private struct AdditionalReviewIdentitySection: View {
+    @Binding var name: String
+    @Binding var cycle: AdditionalReviewCycleKind
+
+    var body: some View {
+        Section("Review") {
+            TextField("Name", text: $name)
+            Picker("Cycle", selection: $cycle) {
+                Text("Monthly").tag(AdditionalReviewCycleKind.monthly)
+                Text("Quarterly").tag(AdditionalReviewCycleKind.quarterly)
+                Text("Yearly").tag(AdditionalReviewCycleKind.yearly)
+                Text("Custom").tag(AdditionalReviewCycleKind.custom)
+            }
+        }
+    }
+}
+
+private struct AdditionalReviewCustomCycleSection: View {
+    @Binding var unit: AdditionalReviewCycleUnit
+    @Binding var interval: Int
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        Section {
+            Picker("Unit", selection: $unit) {
+                Text("Days").tag(AdditionalReviewCycleUnit.days)
+                Text("Months").tag(AdditionalReviewCycleUnit.months)
+            }
+            .pickerStyle(.segmented)
+            Stepper(intervalLabel, value: $interval, in: 1 ... unit.maximumInterval)
+        } header: {
+            Text("Custom Cycle")
+        } footer: {
+            Text("The first review arrives when this complete period ends.")
+        }
+        .onChange(of: unit) {
+            interval = min(interval, unit.maximumInterval)
+        }
+    }
+
+    private var intervalLabel: String {
+        let name = unit == .days
+            ? (interval == 1 ? "day" : "days")
+            : (interval == 1 ? "month" : "months")
+        return "Every \(interval.formatted(.number.locale(locale))) \(name)"
+    }
+}
+
+private struct AdditionalReviewNotificationSection: View {
+    @Binding var time: Date
+    let nextDescription: String
+
+    var body: some View {
+        Section {
+            DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
+        } header: {
+            Text("Notification")
+        } footer: {
+            Text(nextDescription)
+        }
     }
 }

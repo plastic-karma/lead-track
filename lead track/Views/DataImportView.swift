@@ -13,13 +13,17 @@ struct DataImportView: View {
     var body: some View {
         NavigationStack {
             Form {
-                introSection
-                actionSection
+                ImportIntroductionSection()
+                ImportActionSection {
+                    summary = nil
+                    errorMessage = nil
+                    showingPicker = true
+                }
                 if let summary {
-                    summarySection(summary)
+                    ImportSummarySection(summary: summary)
                 }
                 if let errorMessage {
-                    errorSection(errorMessage)
+                    ImportErrorSection(message: errorMessage)
                 }
             }
             .navigationTitle("Import Data")
@@ -41,8 +45,8 @@ struct DataImportView: View {
 
 // MARK: - Sections
 
-extension DataImportView {
-    private var introSection: some View {
+private struct ImportIntroductionSection: View {
+    var body: some View {
         Section {
             Text(
                 "Import sessions from a CSV file produced by "
@@ -53,22 +57,24 @@ extension DataImportView {
             .foregroundStyle(.secondary)
         }
     }
+}
 
-    private var actionSection: some View {
+private struct ImportActionSection: View {
+    let chooseFile: () -> Void
+
+    var body: some View {
         Section {
-            Button {
-                summary = nil
-                errorMessage = nil
-                showingPicker = true
-            } label: {
+            Button(action: chooseFile) {
                 Label("Choose CSV File", systemImage: "square.and.arrow.down")
             }
         }
     }
+}
 
-    private func summarySection(
-        _ summary: CSVImporter.ImportSummary
-    ) -> some View {
+private struct ImportSummarySection: View {
+    let summary: CSVImporter.ImportSummary
+
+    var body: some View {
         Section("Imported") {
             row("Sessions created", summary.sessionsCreated)
             row("Metrics created", summary.metricsCreated)
@@ -82,18 +88,22 @@ extension DataImportView {
         }
     }
 
-    private func errorSection(_ message: String) -> some View {
-        Section {
-            Label(message, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-        }
-    }
-
     private func row(_ label: String, _ value: Int) -> some View {
         HStack {
             Text(label)
             Spacer()
             Text("\(value)").foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct ImportErrorSection: View {
+    let message: String
+
+    var body: some View {
+        Section {
+            Label(message, systemImage: "exclamationmark.triangle")
+                .foregroundStyle(.red)
         }
     }
 }

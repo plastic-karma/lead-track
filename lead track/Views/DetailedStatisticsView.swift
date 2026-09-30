@@ -13,11 +13,25 @@ struct DetailedStatisticsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section { trends }
-                goalsSection
-                Section("Metrics") { durationGrid }
-                Section("Sessions") { sessionsGrid }
-                Section("Streaks") { streakGrid }
+                Section {
+                    TrendsChartView(
+                        dailyTotals: dailyTotals, measurementType: measurementType, unit: unit,
+                        dailyGoal: dailyGoal, weeklyGoal: weeklyGoal, tint: tint
+                    )
+                }
+                DetailedGoalsSection(
+                    dailyTotals: dailyTotals, measurementType: measurementType, unit: unit,
+                    dailyGoal: dailyGoal, weeklyGoal: weeklyGoal, excludedWeekdays: excludedWeekdays, tint: tint
+                )
+                Section("Metrics") {
+                    DetailedDurationGrid(dailyTotals: dailyTotals, measurementType: measurementType)
+                }
+                Section("Sessions") {
+                    DetailedSessionsGrid(dailyTotals: dailyTotals, measurementType: measurementType)
+                }
+                Section("Streaks") {
+                    DetailedStreakGrid(dailyTotals: dailyTotals, excludedWeekdays: excludedWeekdays)
+                }
             }
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
@@ -28,24 +42,20 @@ struct DetailedStatisticsView: View {
             }
         }
     }
-
-    private var trends: some View {
-        TrendsChartView(
-            dailyTotals: dailyTotals,
-            measurementType: measurementType,
-            unit: unit,
-            dailyGoal: dailyGoal,
-            weeklyGoal: weeklyGoal,
-            tint: tint
-        )
-    }
 }
 
 // MARK: - Goals
 
-extension DetailedStatisticsView {
-    @ViewBuilder
-    private var goalsSection: some View {
+private struct DetailedGoalsSection: View {
+    let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+    let unit: String?
+    let dailyGoal: TimeInterval?
+    let weeklyGoal: TimeInterval?
+    let excludedWeekdays: [Int]
+    let tint: Color
+
+    var body: some View {
         if dailyGoal != nil || weeklyGoal != nil {
             Section("Goals") {
                 goalsGrid
@@ -89,7 +99,6 @@ extension DetailedStatisticsView {
             goal: goal,
             excludedWeekdays: excludedWeekdays,
             measurementType: measurementType,
-            unit: unit,
             tint: tint
         )
     }
@@ -100,7 +109,6 @@ extension DetailedStatisticsView {
             current: SessionStatistics.currentWeekTotal(from: dailyTotals),
             goal: goal,
             measurementType: measurementType,
-            unit: unit,
             tint: tint
         )
     }
@@ -108,8 +116,11 @@ extension DetailedStatisticsView {
 
 // MARK: - Metrics
 
-extension DetailedStatisticsView {
-    private var durationGrid: some View {
+private struct DetailedDurationGrid: View {
+    let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+
+    var body: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 statItem(
@@ -146,7 +157,22 @@ extension DetailedStatisticsView {
         }
     }
 
-    private var streakGrid: some View {
+    private func statItem(
+        _ title: String,
+        _ value: TimeInterval
+    ) -> some View {
+        StatGridItem(
+            title: title,
+            text: ValueFormatter.formatShort(value, type: measurementType)
+        )
+    }
+}
+
+private struct DetailedStreakGrid: View {
+    let dailyTotals: [DailyTotal]
+    let excludedWeekdays: [Int]
+
+    var body: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 StatGridItem(
@@ -166,8 +192,13 @@ extension DetailedStatisticsView {
             }
         }
     }
+}
 
-    private var sessionsGrid: some View {
+private struct DetailedSessionsGrid: View {
+    let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+
+    var body: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 countItem(
@@ -206,11 +237,7 @@ extension DetailedStatisticsView {
             }
         }
     }
-}
 
-// MARK: - Helpers
-
-extension DetailedStatisticsView {
     private func statItem(
         _ title: String,
         _ value: TimeInterval
@@ -225,7 +252,7 @@ extension DetailedStatisticsView {
         _ title: String,
         _ count: Int
     ) -> some View {
-        StatGridItem(title: title, text: "\(count)")
+        StatGridItem(title: title, text: count.formatted())
     }
 
     private func rateItem(

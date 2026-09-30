@@ -10,25 +10,20 @@ import SwiftUI
 /// the browsed day — rows keep recording, onto that day, so a missed log can
 /// be added late — and the right chevron walks back to today.
 struct MetricListView: View {
-    /// Internal (not private) so the cluster arrangement in its own file can
-    /// render under the same queries.
-    @Query(sort: \Metric.createdAt) var metrics: [Metric]
-    @Query(sort: \Aspiration.createdAt) var aspirations: [Aspiration]
-    @Query(sort: \Intention.createdAt) var intentions: [Intention]
-    @Query(filter: Session.isRunningPredicate) var runningSessions: [Session]
+    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
+    @Query(sort: \Intention.createdAt) private var intentions: [Intention]
+    @Query(filter: Session.isRunningPredicate) private var runningSessions: [Session]
     /// Explicit expand choices by cluster id, overriding the folded default —
     /// per-cluster and transient by design, so tomorrow always starts with
     /// every cluster folded again.
-    @State var expansionOverrides: [String: Bool] = [:]
+    @State private var expansionOverrides: [String: Bool] = [:]
     /// The cluster card lifted by a long-press drag, dimmed until the drop.
-    /// Internal so the cluster arrangement in its own file can drive it.
-    @State var draggingClusterID: String?
+    @State private var draggingClusterID: String?
     /// How many days back the screen is browsing (0 = today) — the Week
     /// tab's `weeksBack` one timescale down. The header chevrons drive it;
     /// the day dial and the cluster sections both render the browsed day.
-    @State var daysBack = 0
-    /// Writes the drag-reorder rank rewrites; internal like the queries.
-    @Environment(\.modelContext) var modelContext
+    @State private var daysBack = 0
     @State private var showingAddSheet = false
     /// Raising the responder's review flag slides the app to the Week tab
     /// (see `ContentView`) — the same route a tapped weekly notification
@@ -45,16 +40,20 @@ struct MetricListView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 DayDialView(metrics: metrics.unarchived, daysBack: $daysBack)
-                clusterSections
+                TodayClusterSections(
+                    metrics: metrics, aspirations: aspirations, intentions: intentions,
+                    runningSessions: runningSessions, daysBack: daysBack,
+                    expansionOverrides: $expansionOverrides, draggingClusterID: $draggingClusterID
+                )
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
         .aspirationReorderDropSurface(draggingID: $draggingClusterID)
-        .background(Theme.washedScreen)
+        .background { Theme.washedScreen }
         .navigationTitle("Today")
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
+            ToolbarItem(placement: .topBarLeading) {
                 appMenu
             }
             ToolbarItem {

@@ -7,22 +7,34 @@ import SwiftUI
 /// the last day it was lived (see `PrincipleLiving`). Hollow dots are
 /// silence, never debt; the quiet plus row is the only doorway for holding a
 /// new vow, and the eyebrow collapses the card like its siblings.
-extension AspirationDetailView {
-    var principlesCard: some View {
+struct AspirationPrinciplesCard: View {
+    @Environment(\.modelContext) private var modelContext
+    let aspiration: Aspiration
+    @State private var isExpanded = true
+    @State private var showingHoldPrinciple = false
+    @State private var principleDraft = ""
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            collapsibleCardHeader("Held as principles", isExpanded: $principlesExpanded)
-            if principlesExpanded {
+            AspirationCardHeader(title: "Held as principles", isExpanded: $isExpanded)
+            if isExpanded {
                 ForEach(heldPrinciples) { principle in
-                    principleRow(principle)
-                    cardDivider()
+                    AspirationPrincipleRow(
+                        principle: principle,
+                        intentions: aspiration.intentions,
+                        tint: aspiration.displayColor
+                    )
+                    Divider()
                 }
-                plusRow("Hold a principle") { showingHoldPrinciple = true }
+                AspirationPlusRow(title: "Hold a principle", tint: aspiration.displayColor) {
+                    showingHoldPrinciple = true
+                }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, principlesExpanded ? 0 : 12)
+        .padding(.bottom, isExpanded ? 0 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardShape())
+        .background { Theme.cardShape() }
         .alert("Hold a Principle", isPresented: $showingHoldPrinciple) {
             TextField("The vow, in your words", text: $principleDraft)
             Button("Hold", action: holdPrinciple)
@@ -47,10 +59,14 @@ extension AspirationDetailView {
 
 // MARK: - Rows
 
-extension AspirationDetailView {
-    private func principleRow(_ principle: Principle) -> some View {
-        let record = PrincipleLiving.record(for: principle, in: aspiration.intentions)
-        return VStack(alignment: .leading, spacing: 0) {
+private struct AspirationPrincipleRow: View {
+    let principle: Principle
+    let intentions: [Intention]
+    let tint: Color
+
+    var body: some View {
+        let record = PrincipleLiving.record(for: principle, in: intentions)
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(principle.text)
                     .font(.system(size: 20, design: .serif))
@@ -74,8 +90,8 @@ extension AspirationDetailView {
     /// first, filled when lived, hollow when not.
     private func livedUnderline(_ record: PrincipleLiving.Record) -> some View {
         HStack(spacing: 5) {
-            ForEach(Array(record.weeks.enumerated()), id: \.offset) { _, lived in
-                livedDot(lived)
+            ForEach(record.weeks) { week in
+                livedDot(week.isLived)
             }
         }
         .accessibilityLabel(

@@ -7,6 +7,7 @@ import WatchKit
 /// SwiftUI first evaluates the scene body, which a background wake may skip, so
 /// the queued snapshot would never be delivered and the complications would
 /// stay frozen. Activating in the delegate makes the wake reliably land.
+@MainActor
 final class WatchAppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
         WatchSyncController.shared.activate()

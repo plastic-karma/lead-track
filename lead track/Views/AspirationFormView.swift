@@ -24,7 +24,7 @@ struct AspirationFormView: View {
     @State private var showingPhotoLoadFailure = false
     @State private var saveTrigger = false
 
-    private let iconOptions = [
+    private static let iconOptions = [
         "mountain.2", "sparkles", "star", "heart", "leaf",
         "flame", "book", "figure.run", "brain.head.profile",
         "trophy", "target", "crown",
@@ -47,139 +47,45 @@ struct AspirationFormView: View {
 
     var body: some View {
         NavigationStack {
-            editor
-        }
-    }
-
-    private var editor: some View {
-        ZStack {
-            Theme.screenBackground.ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    cover
-                    content
+            ZStack {
+                Theme.screenBackground.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        AspirationEditorCover(imageData: imageData, tint: color.color)
+                        VStack(alignment: .leading, spacing: 28) {
+                            AspirationEditorHeading(
+                                title: $title, icon: $icon, color: color, iconOptions: Self.iconOptions
+                            )
+                            AspirationEditorWhy(detail: $detail, tint: color.color)
+                            AspirationEditorColor(color: $color)
+                            AspirationFeedPicker(
+                                selectedMetrics: $selectedMetrics,
+                                selectedProjects: $selectedProjects,
+                                tint: color.color,
+                                prominentTint: color.prominentColor
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
+                    }
                 }
+                .scrollIndicators(.hidden)
+                .ignoresSafeArea(edges: .top)
             }
-            .scrollIndicators(.hidden)
-            .ignoresSafeArea(edges: .top)
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { toolbar }
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .photosPicker(isPresented: $showingPhotoPicker, selection: $photoItem, matching: .images)
-        .sensoryFeedback(.success, trigger: saveTrigger)
-        .onChange(of: photoItem) { _, item in
-            Task { await loadPhoto(item) }
-        }
-        .alert("Couldn't Load Photo", isPresented: $showingPhotoLoadFailure) {} message: {
-            Text("The selected photo couldn't be loaded. Your current cover is unchanged.")
-        }
-    }
-}
-
-// MARK: - Layout
-
-extension AspirationFormView {
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            headerBlock
-            whySection
-            colorSection
-            AspirationFeedPicker(
-                selectedMetrics: $selectedMetrics,
-                selectedProjects: $selectedProjects,
-                tint: color.color,
-                prominentTint: color.prominentColor
-            )
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 20)
-        .padding(.bottom, 40)
-    }
-
-    private var cover: some View {
-        coverBackground
-            .frame(height: 230)
-            .frame(maxWidth: .infinity)
-            .clipped()
-            .overlay(alignment: .bottom) {
-                LinearGradient(
-                    colors: [.clear, Theme.screenBackground],
-                    startPoint: UnitPoint(x: 0.5, y: 0.55),
-                    endPoint: .bottom
-                )
-            }
-    }
-
-    @ViewBuilder
-    private var coverBackground: some View {
-        if let image = currentCover {
-            image.resizable().scaledToFill()
-        } else {
-            LinearGradient(
-                colors: [color.color, color.color.opacity(0.5)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private var headerBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            iconBadge
-            VStack(alignment: .leading, spacing: 4) {
-                FormEyebrow(text: "Aspiration", tint: color.color)
-                TextField("Name your aspiration", text: $title, axis: .vertical)
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1 ... 3)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbar }
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+            .photosPicker(isPresented: $showingPhotoPicker, selection: $photoItem, matching: .images)
+            .sensoryFeedback(.success, trigger: saveTrigger)
+            .modifier(AspirationCoverImport(
+                photoItem: $photoItem, imageData: $imageData,
+                showingPhotoLoadFailure: $showingPhotoLoadFailure
+            ))
+            .alert("Couldn't Load Photo", isPresented: $showingPhotoLoadFailure) {} message: {
+                Text("The selected photo couldn't be loaded. Your current cover is unchanged.")
             }
         }
-    }
-
-    private var iconBadge: some View {
-        Menu {
-            Picker("Icon", selection: $icon) {
-                ForEach(iconOptions, id: \.self) { option in
-                    Image(systemName: option).tag(option)
-                }
-            }
-        } label: {
-            Image(systemName: icon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 46, height: 46)
-                .background(
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(color.prominentColor)
-                )
-        }
-        .accessibilityLabel("Icon")
-        .accessibilityValue(icon.replacingOccurrences(of: ".", with: " "))
-    }
-
-    private var whySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            FormEyebrow(text: "Why this matters", tint: color.color)
-            TextField("What makes this matter to you?", text: $detail, axis: .vertical)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .lineLimit(2 ... 8)
-        }
-    }
-
-    private var colorSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            FormEyebrow(text: "Color", tint: color.color)
-            ColorSwatchRow(selection: $color)
-        }
-    }
-
-    private var currentCover: Image? {
-        guard let data = imageData, let uiImage = UIImage(data: data) else {
-            return nil
-        }
-        return Image(uiImage: uiImage)
     }
 }
 
@@ -223,23 +129,6 @@ extension AspirationFormView {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Imports the picked cover. The stored bytes are re-encoded display
-    /// pixels — the same downscale-and-JPEG pass moment photos take — never
-    /// the picker's original file, so EXIF metadata (including the GPS
-    /// coordinates of where the photo was taken) is stripped before anything
-    /// reaches the store. A failed load keeps the existing cover and says so.
-    private func loadPhoto(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
-        guard let raw = try? await item.loadTransferable(type: Data.self),
-              let cover = MomentPhotoImport.downscaledJPEG(from: raw)
-        else {
-            photoItem = nil
-            showingPhotoLoadFailure = true
-            return
-        }
-        imageData = cover
-    }
-
     private func removePhoto() {
         imageData = nil
         photoItem = nil
@@ -259,5 +148,126 @@ extension AspirationFormView {
         }
         saveTrigger.toggle()
         dismiss()
+    }
+}
+
+private struct AspirationEditorCover: View {
+    let imageData: Data?
+    let tint: Color
+
+    var body: some View {
+        Group {
+            if let imageData, let image = AspirationCoverImages.image(from: imageData) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [tint, tint.opacity(0.5)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        }
+        .frame(height: 230)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .overlay(alignment: .bottom) {
+            LinearGradient(
+                colors: [.clear, Theme.screenBackground],
+                startPoint: UnitPoint(x: 0.5, y: 0.55),
+                endPoint: .bottom
+            )
+        }
+    }
+}
+
+private struct AspirationEditorHeading: View {
+    @Binding var title: String
+    @Binding var icon: String
+    let color: MetricColor
+    let iconOptions: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Menu {
+                Picker("Icon", selection: $icon) {
+                    ForEach(iconOptions, id: \.self) { option in
+                        Image(systemName: option).tag(option)
+                    }
+                }
+            } label: {
+                Image(systemName: icon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 46, height: 46)
+                    .background {
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .fill(color.prominentColor)
+                    }
+            }
+            .accessibilityLabel("Icon")
+            .accessibilityValue(icon.replacingOccurrences(of: ".", with: " "))
+            VStack(alignment: .leading, spacing: 4) {
+                FormEyebrow(text: "Aspiration", tint: color.color)
+                TextField("Name your aspiration", text: $title, axis: .vertical)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1 ... 3)
+            }
+        }
+    }
+}
+
+private struct AspirationEditorWhy: View {
+    @Binding var detail: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FormEyebrow(text: "Why this matters", tint: tint)
+            TextField("What makes this matter to you?", text: $detail, axis: .vertical)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .lineLimit(2 ... 8)
+        }
+    }
+}
+
+private struct AspirationEditorColor: View {
+    @Binding var color: MetricColor
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            FormEyebrow(text: "Color", tint: color.color)
+            ColorSwatchRow(selection: $color)
+        }
+    }
+}
+
+private struct AspirationCoverImport: ViewModifier {
+    @Binding var photoItem: PhotosPickerItem?
+    @Binding var imageData: Data?
+    @Binding var showingPhotoLoadFailure: Bool
+
+    func body(content: Content) -> some View {
+        content.onChange(of: photoItem) { _, item in
+            Task { await loadPhoto(item) }
+        }
+    }
+
+    /// Imports the picked cover. The stored bytes are re-encoded display
+    /// pixels — the same downscale-and-JPEG pass moment photos take — never
+    /// the picker's original file, so EXIF metadata (including the GPS
+    /// coordinates of where the photo was taken) is stripped before anything
+    /// reaches the store. A failed load keeps the existing cover and says so.
+    private func loadPhoto(_ item: PhotosPickerItem?) async {
+        guard let item else { return }
+        guard let raw = try? await item.loadTransferable(type: Data.self),
+              let cover = MomentPhotoImport.downscaledJPEG(from: raw)
+        else {
+            photoItem = nil
+            showingPhotoLoadFailure = true
+            return
+        }
+        imageData = cover
     }
 }

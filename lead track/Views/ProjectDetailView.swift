@@ -38,12 +38,6 @@ struct ProjectDetailView: View {
         sessions.filter { !$0.isRunning }
     }
 
-    private var visibleSessions: [Session] {
-        showingAllSessions
-            ? completedSessions
-            : Array(completedSessions.prefix(SessionStatistics.sessionListPreviewLimit))
-    }
-
     private var metricTint: Color {
         MetricColor.color(named: project.metric?.colorName)
     }
@@ -64,9 +58,13 @@ struct ProjectDetailView: View {
     }
 
     var body: some View {
+        let completed = completedSessions
         List {
-            timerSection
-            aspirationsSection
+            ProjectRecordingSection(
+                project: project, activeSession: activeSession,
+                showingCountEntry: $showingCountEntry, showingDurationEntry: $showingDurationEntry
+            )
+            ProjectAspirationsSection(aspirations: connectedAspirations)
             StatisticsView(
                 sessions: sessions,
                 measurementType: project.metric?.measurementType ?? .duration,
@@ -76,10 +74,15 @@ struct ProjectDetailView: View {
                 showingDetailedStats: $showingDetailedStats,
                 tint: metricTint
             )
-            activitySection
-            statusSection
-            if !completedSessions.isEmpty {
-                sessionsSection
+            ActivitySection(
+                dailyTotals: SessionStatistics.dailyTotals(from: sessions), tint: metricTint
+            )
+            ProjectStatusSection(project: project, onFinish: finishProject, onReopen: reopenProject)
+            if !completed.isEmpty {
+                ProjectSessionsSection(
+                    completedSessions: completed, isExpanded: $showingAllSessions,
+                    onMove: { sessionToMove = $0 }
+                )
             }
         }
         .sheet(isPresented: $showingDetailedStats) {
@@ -154,9 +157,14 @@ struct ProjectDetailView: View {
 
 // MARK: - Sections
 
-extension ProjectDetailView {
-    @ViewBuilder
-    private var timerSection: some View {
+private struct ProjectRecordingSection: View {
+    @Environment(\.modelContext) private var modelContext
+    let project: Project
+    let activeSession: Session?
+    @Binding var showingCountEntry: Bool
+    @Binding var showingDurationEntry: Bool
+
+    var body: some View {
         if project.metric?.measurementType == .count {
             countSection
         } else {
@@ -197,33 +205,46 @@ extension ProjectDetailView {
         }
     }
 
-    @ViewBuilder
-    private var aspirationsSection: some View {
-        if !connectedAspirations.isEmpty {
+    private func startTimer() {
+        guard let metric = project.metric else { return }
+        withAnimation {
+            SessionService.startSession(
+                for: metric,
+                project: project,
+                in: modelContext
+            )
+        }
+    }
+}
+
+private struct ProjectAspirationsSection: View {
+    let aspirations: [Aspiration]
+
+    var body: some View {
+        if !aspirations.isEmpty {
             Section("Part of") {
-                AspirationChipsRow(aspirations: connectedAspirations)
+                AspirationChipsRow(aspirations: aspirations)
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
         }
     }
+}
 
-    private var activitySection: some View {
-        ActivitySection(
-            dailyTotals: SessionStatistics.dailyTotals(from: sessions),
-            tint: metricTint
-        )
-    }
+private struct ProjectStatusSection: View {
+    let project: Project
+    let onFinish: () -> Void
+    let onReopen: () -> Void
 
-    private var statusSection: some View {
+    var body: some View {
         Section {
             if project.status == .active {
                 Toggle("Default Project", isOn: defaultBinding)
                 Button("Mark as Finished") {
-                    finishProject()
+                    onFinish()
                 }
             } else {
                 Button("Reopen Project") {
-                    reopenProject()
+                    onReopen()
                 }
             }
         } footer: {
@@ -239,13 +260,24 @@ extension ProjectDetailView {
             set: { ProjectService.setDefault(project, $0) }
         )
     }
+}
 
-    private var sessionsSection: some View {
+private struct ProjectSessionsSection: View {
+    @Environment(\.modelContext) private var modelContext
+    let completedSessions: [Session]
+    @Binding var isExpanded: Bool
+    let onMove: (Session) -> Void
+
+    private var visibleSessions: ArraySlice<Session> {
+        completedSessions.prefix(isExpanded ? completedSessions.count : SessionStatistics.sessionListPreviewLimit)
+    }
+
+    var body: some View {
         Section("Sessions") {
             ForEach(visibleSessions) { session in
                 SessionRowView(session: session)
                     .swipeActions(edge: .leading) {
-                        Button { sessionToMove = session } label: {
+                        Button { onMove(session) } label: {
                             Label("Move", systemImage: "folder")
                         }
                         .tint(.blue)
@@ -254,8 +286,16 @@ extension ProjectDetailView {
             .onDelete(perform: deleteSessions)
             SessionListExpandButton(
                 totalCount: completedSessions.count,
-                isExpanded: $showingAllSessions
+                isExpanded: $isExpanded
             )
+        }
+    }
+
+    private func deleteSessions(_ offsets: IndexSet) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(visibleSessions[index])
+            }
         }
     }
 }
@@ -263,17 +303,6 @@ extension ProjectDetailView {
 // MARK: - Actions
 
 extension ProjectDetailView {
-    private func startTimer() {
-        guard let metric = project.metric else { return }
-        withAnimation {
-            SessionService.startSession(
-                for: metric,
-                project: project,
-                in: modelContext
-            )
-        }
-    }
-
     private func finishProject() {
         ProjectService.finish(project)
         showingClosingMoment = !closingMomentOwners.isEmpty
@@ -286,13 +315,5 @@ extension ProjectDetailView {
     private func deleteProject() {
         modelContext.delete(project)
         dismiss()
-    }
-
-    private func deleteSessions(_ offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(visibleSessions[index])
-            }
-        }
     }
 }

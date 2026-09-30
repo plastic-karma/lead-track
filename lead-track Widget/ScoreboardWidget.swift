@@ -10,7 +10,7 @@ struct ScoreboardEntry: TimelineEntry {
     var loadFailed = false
 }
 
-struct MetricSnapshot: Identifiable {
+struct MetricSnapshot: Equatable, Identifiable {
     let id: String
     let name: String
     let icon: String
@@ -129,67 +129,48 @@ extension ScoreboardProvider {
 // MARK: - Widget Views
 
 struct ScoreboardWidgetView: View {
-    let entry: ScoreboardEntry
-    @Environment(\.widgetFamily) var family
-    @ScaledMetric(relativeTo: .caption2) private var ringLabelSize: CGFloat = 10
-    @ScaledMetric(relativeTo: .caption2) private var streakIconSize: CGFloat = 11
+    let metrics: [MetricSnapshot]
+    let loadFailed: Bool
+    @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        if entry.loadFailed {
-            loadFailedView
-        } else if entry.metrics.isEmpty {
-            emptyView
+        if loadFailed {
+            ScoreboardPlaceholder(icon: "exclamationmark.triangle", title: "Couldn't load data")
+        } else if metrics.isEmpty {
+            ScoreboardPlaceholder(icon: "chart.bar", title: "No metrics yet")
         } else {
-            metricsGrid
-        }
-    }
-
-    private var loadFailedView: some View {
-        VStack {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Couldn't load data")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var emptyView: some View {
-        VStack {
-            Image(systemName: "chart.bar")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("No metrics yet")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var metricsGrid: some View {
-        VStack(spacing: 8) {
-            ForEach(visibleMetrics) { metric in
-                metricRow(metric)
+            VStack(spacing: 8) {
+                ForEach(metrics.prefix(family == .systemSmall ? 2 : 4)) { metric in
+                    ScoreboardMetricRow(metric: metric, showsGoals: family != .systemSmall)
+                }
             }
         }
     }
+}
 
-    private var visibleMetrics: [MetricSnapshot] {
-        switch family {
-        case .systemSmall:
-            Array(entry.metrics.prefix(2))
-        default:
-            Array(entry.metrics.prefix(4))
+private struct ScoreboardPlaceholder: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        VStack {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
 
 // MARK: - Metric Row
 
-extension ScoreboardWidgetView {
-    private func metricRow(
-        _ metric: MetricSnapshot
-    ) -> some View {
+private struct ScoreboardMetricRow: View {
+    let metric: MetricSnapshot
+    let showsGoals: Bool
+
+    var body: some View {
         HStack(spacing: 8) {
             Image(systemName: metric.icon)
                 .font(.body)
@@ -200,13 +181,13 @@ extension ScoreboardWidgetView {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer()
-            if family != .systemSmall {
-                goalRings(metric)
+            if showsGoals {
+                goalRings
             }
-            streakBadge(metric.streak, tint: metric.displayColor)
+            ScoreboardStreakBadge(days: metric.streak, tint: metric.displayColor)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilitySummary(metric))
+        .accessibilityLabel(accessibilitySummary)
         // The row shows exactly what the optional biometric app lock guards —
         // names, goal progress, streaks — so it is marked privacy-sensitive:
         // the system redacts it wherever it hides private data (a locked lock
@@ -216,11 +197,9 @@ extension ScoreboardWidgetView {
     }
 
     @ViewBuilder
-    private func goalRings(
-        _ metric: MetricSnapshot
-    ) -> some View {
+    private var goalRings: some View {
         if let goal = metric.dailyGoal, !metric.isRestDay {
-            miniRing(
+            ScoreboardMiniRing(
                 current: metric.todayTotal,
                 goal: goal,
                 label: "D",
@@ -228,7 +207,7 @@ extension ScoreboardWidgetView {
             )
         }
         if let goal = metric.weeklyGoal {
-            miniRing(
+            ScoreboardMiniRing(
                 current: metric.weeklyTotal,
                 goal: goal,
                 label: "W",
@@ -237,52 +216,61 @@ extension ScoreboardWidgetView {
         }
     }
 
-    private func miniRing(
-        current: TimeInterval,
-        goal: TimeInterval,
-        label: String,
-        tint: Color
-    ) -> some View {
+    private var accessibilitySummary: String {
+        var parts = [metric.name]
+        if let goal = metric.dailyGoal, goal > 0 {
+            parts.append(
+                metric.isRestDay
+                    ? "rest day"
+                    : "\(goalPercent(metric.todayTotal, of: goal).formatted()) percent of daily goal"
+            )
+        }
+        if let goal = metric.weeklyGoal, goal > 0 {
+            parts.append("\(goalPercent(metric.weeklyTotal, of: goal).formatted()) percent of weekly goal")
+        }
+        parts.append("\(metric.streak.formatted()) day streak")
+        return parts.joined(separator: ", ")
+    }
+
+    private func goalPercent(_ current: TimeInterval, of goal: TimeInterval) -> Int {
+        Int((min(current / goal, 1) * 100).rounded())
+    }
+}
+
+private struct ScoreboardMiniRing: View {
+    let current: TimeInterval
+    let goal: TimeInterval
+    let label: String
+    let tint: Color
+    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 10
+
+    var body: some View {
         RingGauge(
             fraction: goal > 0 ? min(current / goal, 1.0) : 0,
             tint: tint,
             lineWidth: 3
         ) {
             Text(label)
-                .font(.system(size: ringLabelSize).bold())
+                .font(.system(size: labelSize).bold())
                 .foregroundStyle(tint)
         }
         .frame(width: 26, height: 26)
     }
+}
 
-    private func streakBadge(_ days: Int, tint: Color) -> some View {
+private struct ScoreboardStreakBadge: View {
+    let days: Int
+    let tint: Color
+    @ScaledMetric(relativeTo: .caption2) private var iconSize: CGFloat = 11
+
+    var body: some View {
         HStack(spacing: 2) {
             Image(systemName: "flame.fill")
-                .font(.system(size: streakIconSize))
-            Text("\(days)")
+                .font(.system(size: iconSize))
+            Text(days, format: .number)
                 .roundedDigits(.caption, weight: .bold)
         }
         .foregroundStyle(days > 0 ? tint : Color.secondary)
-    }
-
-    private func accessibilitySummary(_ metric: MetricSnapshot) -> String {
-        var parts = [metric.name]
-        if let goal = metric.dailyGoal, goal > 0 {
-            parts.append(
-                metric.isRestDay
-                    ? "rest day"
-                    : "\(goalPercent(metric.todayTotal, of: goal)) percent of daily goal"
-            )
-        }
-        if let goal = metric.weeklyGoal, goal > 0 {
-            parts.append("\(goalPercent(metric.weeklyTotal, of: goal)) percent of weekly goal")
-        }
-        parts.append("\(metric.streak) day streak")
-        return parts.joined(separator: ", ")
-    }
-
-    private func goalPercent(_ current: TimeInterval, of goal: TimeInterval) -> Int {
-        Int((min(current / goal, 1) * 100).rounded())
     }
 }
 
@@ -296,7 +284,7 @@ struct ScoreboardWidget: Widget {
             kind: kind,
             provider: ScoreboardProvider()
         ) { entry in
-            ScoreboardWidgetView(entry: entry)
+            ScoreboardWidgetView(metrics: entry.metrics, loadFailed: entry.loadFailed)
                 .containerBackground(.fill, for: .widget)
         }
         .configurationDisplayName("Scoreboard")

@@ -26,20 +26,24 @@ extension WeeklyReviewView {
                     sectionBreak("Intentions to close")
                 }
                 ForEach(review.intentionClosures) { closure in
-                    if let owner = aspiration(for: closure.aspirationID), owner.isArchived {
-                        shelvedOwnerLink(owner)
-                    }
-                    IntentionClosureRow(closure: closure) { action in
-                        handle(action, closureID: closure.id)
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let owner = aspiration(for: closure.aspirationID), owner.isArchived {
+                            shelvedOwnerLink(owner)
+                        }
+                        IntentionClosureRow(closure: closure) { action in
+                            handle(action, closureID: closure.id)
+                        }
                     }
                 }
                 if review.weeksBack == 0, !shelvedCurrentIntentions.isEmpty {
                     sectionBreak("This week's commitments")
                     ForEach(shelvedCurrentIntentions) { intention in
-                        if let owner = intention.aspiration {
-                            shelvedOwnerLink(owner)
+                        VStack(alignment: .leading, spacing: 12) {
+                            if let owner = intention.aspiration {
+                                shelvedOwnerLink(owner)
+                            }
+                            IntentionRowView(intention: intention)
                         }
-                        IntentionRowView(intention: intention)
                     }
                 }
             }

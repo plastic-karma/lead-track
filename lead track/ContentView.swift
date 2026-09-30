@@ -30,62 +30,78 @@ private struct AdditionalReviewRoute: Identifiable {
 /// that a nested scroll view would otherwise collapse. The built-in page dots
 /// are hidden since `AppTabBar` is the visible affordance.
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @State private var selectedTab: AppTab = .today
     @State private var todayPath = NavigationPath()
     @State private var weekPath = NavigationPath()
     @State private var aspirationsPath = NavigationPath()
     @State private var additionalReviewRoute: AdditionalReviewRoute?
-    /// Notification taps are staged by the responder before the first scene
-    /// renders: weekly opens the Week tab, an additional review presents its
-    /// period report, and an intention question opens its aspiration.
-    private let notificationResponder = NotificationResponder.shared
 
     var body: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
-                NavigationStack(path: $todayPath) {
-                    MetricListView()
-                        .appDestinations()
+                Tab(value: AppTab.today) {
+                    NavigationStack(path: $todayPath) {
+                        MetricListView()
+                            .appDestinations()
+                    }
                 }
-                .tag(AppTab.today)
 
-                NavigationStack(path: $weekPath) {
-                    WeeklyReviewView()
-                        .appDestinations()
+                Tab(value: AppTab.week) {
+                    NavigationStack(path: $weekPath) {
+                        WeeklyReviewView()
+                            .appDestinations()
+                    }
                 }
-                .tag(AppTab.week)
 
-                NavigationStack(path: $aspirationsPath) {
-                    AspirationListView()
-                        .appDestinations()
+                Tab(value: AppTab.aspirations) {
+                    NavigationStack(path: $aspirationsPath) {
+                        AspirationListView()
+                            .appDestinations()
+                    }
                 }
-                .tag(AppTab.aspirations)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
-            AppTabBar(selectedTab: animatedSelection)
+            AppTabBar(selectedTab: $selectedTab.animation(.snappy))
         }
         .sheet(item: $additionalReviewRoute) { route in
             NavigationStack {
                 AdditionalReviewDetailView(reviewID: route.id)
             }
         }
-        .background(Theme.washedScreen)
-        .onAppear {
-            routeToWeekIfRequested()
-            routeToAspirationIfRequested()
-            routeToAdditionalReviewIfRequested()
-        }
-        .onChange(of: notificationResponder.showWeeklyReview) {
-            routeToWeekIfRequested()
-        }
-        .onChange(of: notificationResponder.pendingAspirationID) {
-            routeToAspirationIfRequested()
-        }
-        .onChange(of: notificationResponder.pendingAdditionalReviewID) {
-            routeToAdditionalReviewIfRequested()
-        }
+        .background { Theme.washedScreen }
+        .modifier(NotificationRoutingModifier(
+            selectedTab: $selectedTab,
+            aspirationsPath: $aspirationsPath,
+            additionalReviewRoute: $additionalReviewRoute
+        ))
+    }
+}
+
+/// Notification state is read only here, not by the three-page hierarchy.
+private struct NotificationRoutingModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
+    @Binding var selectedTab: AppTab
+    @Binding var aspirationsPath: NavigationPath
+    @Binding var additionalReviewRoute: AdditionalReviewRoute?
+    private let notificationResponder = NotificationResponder.shared
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                routeToWeekIfRequested()
+                routeToAspirationIfRequested()
+                routeToAdditionalReviewIfRequested()
+            }
+            .onChange(of: notificationResponder.showWeeklyReview) {
+                routeToWeekIfRequested()
+            }
+            .onChange(of: notificationResponder.pendingAspirationID) {
+                routeToAspirationIfRequested()
+            }
+            .onChange(of: notificationResponder.pendingAdditionalReviewID) {
+                routeToAdditionalReviewIfRequested()
+            }
     }
 
     /// Consumes the review deep-link flag by switching to the Week tab.
@@ -119,21 +135,6 @@ struct ContentView: View {
         }
         aspirationsPath = NavigationPath()
         aspirationsPath.append(aspiration)
-    }
-}
-
-private extension ContentView {
-    /// Tab-bar taps animate the page transition (a swipe already slides
-    /// natively), so a tap settles the same way a finished swipe does.
-    var animatedSelection: Binding<AppTab> {
-        Binding(
-            get: { selectedTab },
-            set: { newValue in
-                withAnimation(.snappy) {
-                    selectedTab = newValue
-                }
-            }
-        )
     }
 }
 

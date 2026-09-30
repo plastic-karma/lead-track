@@ -6,32 +6,39 @@ struct SessionRowView: View {
 
     var body: some View {
         HStack {
-            timestamp
+            SessionTimestamp(startedAt: session.startedAt, showsDate: showsDate)
             Spacer()
-            valueLabel
+            SessionValueLabel(session: session)
         }
     }
+}
+
+private struct SessionTimestamp: View {
+    let startedAt: Date
+    let showsDate: Bool
 
     /// Day-grouped lists carry the date in their section header, so rows
     /// only repeat the time of day.
-    @ViewBuilder
-    private var timestamp: some View {
+    var body: some View {
         if showsDate {
             VStack(alignment: .leading) {
-                Text(session.startedAt, style: .date)
+                Text(startedAt, style: .date)
                     .font(.subheadline)
-                Text(session.startedAt, style: .time)
+                Text(startedAt, style: .time)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         } else {
-            Text(session.startedAt, style: .time)
+            Text(startedAt, style: .time)
                 .font(.subheadline)
         }
     }
+}
 
-    @ViewBuilder
-    private var valueLabel: some View {
+private struct SessionValueLabel: View {
+    let session: Session
+
+    var body: some View {
         if session.isRunning {
             TimerDisplay(
                 startedAt: session.startedAt,

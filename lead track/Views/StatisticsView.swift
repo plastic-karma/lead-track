@@ -22,7 +22,10 @@ struct StatisticsView: View {
         let totals = dailyTotals
         if !totals.isEmpty {
             Section("Statistics") {
-                statsContent(totals)
+                StatisticsSummaryGrid(
+                    totals: totals, measurementType: measurementType,
+                    weeklyGoal: weeklyGoal, excludedWeekdays: excludedWeekdays, tint: tint
+                )
                 paceBanner(totals)
                 Button {
                     showingDetailedStats = true
@@ -56,8 +59,16 @@ struct StatisticsView: View {
             excludedWeekdays: excludedWeekdays
         )
     }
+}
 
-    private func statsContent(_ totals: [DailyTotal]) -> some View {
+private struct StatisticsSummaryGrid: View {
+    let totals: [DailyTotal]
+    let measurementType: MeasurementType
+    let weeklyGoal: TimeInterval?
+    let excludedWeekdays: [Int]
+    let tint: Color
+
+    var body: some View {
         Grid(horizontalSpacing: 16, verticalSpacing: 12) {
             GridRow {
                 if let goal = weeklyGoal {
@@ -81,7 +92,7 @@ struct StatisticsView: View {
 
 // MARK: - Items
 
-extension StatisticsView {
+private extension StatisticsSummaryGrid {
     private func weekItem(_ goal: TimeInterval, totals: [DailyTotal]) -> some View {
         GoalProgressView(
             label: "Week",
@@ -90,7 +101,6 @@ extension StatisticsView {
             ),
             goal: goal,
             measurementType: measurementType,
-            unit: unit,
             tint: tint
         )
     }

@@ -42,9 +42,20 @@ struct GoalCalendarView: View {
         )
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                monthHeader
-                filterChip
-                calendarCard(month)
+                GoalCalendarMonthHeader(month: monthAnchor, step: step, returnToCurrentMonth: returnToCurrentMonth)
+                if let active = filter {
+                    GoalCalendarFilterChip(
+                        title: active.title,
+                        icon: active.icon,
+                        tint: active.tint,
+                        clear: clearFilter
+                    )
+                }
+                GoalCalendarGrid(
+                    month: month, calendar: calendar, tint: tint, fillTint: fillTint,
+                    selectedDay: $selectedDay
+                )
+                .gesture(monthSwipe)
                 summaryLine(month)
                 dayPanel
             }
@@ -77,63 +88,15 @@ struct GoalCalendarView: View {
 // MARK: - Header & chrome
 
 extension GoalCalendarView {
-    private var monthHeader: some View {
-        HStack(spacing: 10) {
-            chevron("chevron.left", label: "Earlier month") { step(-1) }
-            Spacer()
-            Button {
-                withAnimation(.snappy(duration: 0.25)) {
-                    monthAnchor = GoalCalendar.monthStart(containing: .now, calendar: calendar)
-                }
-            } label: {
-                Text(monthAnchor, format: .dateTime.month(.wide).year())
-                    .font(.headline)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Current month")
-            .accessibilityHint("Returns to the current month")
-            Spacer()
-            chevron("chevron.right", label: "Later month") { step(1) }
+    private func returnToCurrentMonth() {
+        withAnimation(.snappy(duration: 0.25)) {
+            monthAnchor = GoalCalendar.monthStart(containing: .now, calendar: calendar)
         }
     }
 
-    private func chevron(
-        _ symbol: String,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.footnote.weight(.semibold))
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(Theme.chipFill))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-    }
-
-    /// The active filter as a wearable chip, cleared with its x.
-    @ViewBuilder
-    private var filterChip: some View {
-        if let active = filter {
-            HStack(spacing: 6) {
-                Image(systemName: active.icon)
-                Text(active.title)
-                    .lineLimit(1)
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        filter = nil
-                    }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                }
-                .accessibilityLabel("Clear filter")
-            }
-            .font(.footnote.weight(.medium))
-            .foregroundStyle(active.tint)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(active.tint.opacity(0.14)))
+    private func clearFilter() {
+        withAnimation(.snappy(duration: 0.2)) {
+            filter = nil
         }
     }
 
@@ -148,71 +111,6 @@ extension GoalCalendarView {
 // MARK: - Grid
 
 extension GoalCalendarView {
-    private func calendarCard(_ month: GoalCalendarMonth) -> some View {
-        VStack(spacing: 8) {
-            weekdayHeader
-            VStack(spacing: 4) {
-                ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
-                    weekRow(week, month: month)
-                }
-            }
-        }
-        .cardSurface()
-        .gesture(monthSwipe)
-    }
-
-    private var weekdayHeader: some View {
-        let symbols = GoalCalendar.weekdaySymbols(calendar: calendar)
-        return HStack(spacing: 4) {
-            ForEach(0 ..< 7, id: \.self) { column in
-                Text(symbols[column])
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private func weekRow(_ week: [Date?], month: GoalCalendarMonth) -> some View {
-        HStack(spacing: 4) {
-            ForEach(0 ..< 7, id: \.self) { column in
-                daySlot(week[column], month: month)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func daySlot(_ day: Date?, month: GoalCalendarMonth) -> some View {
-        if let day {
-            Button {
-                withAnimation(.snappy(duration: 0.2)) {
-                    selectedDay = selectedDay == day ? nil : day
-                }
-            } label: {
-                GoalCalendarDayCell(
-                    model: cellModel(for: day, in: month),
-                    tint: tint,
-                    fillTint: fillTint
-                )
-            }
-            .buttonStyle(.plain)
-        } else {
-            Color.clear
-                .frame(maxWidth: .infinity, minHeight: 1)
-        }
-    }
-
-    private func cellModel(for day: Date, in month: GoalCalendarMonth) -> GoalCalendarDayCell.Model {
-        GoalCalendarDayCell.Model(
-            day: day,
-            fraction: month.fraction(on: day),
-            detail: month.cellDetail(on: day),
-            isToday: calendar.isDateInToday(day),
-            isSelected: selectedDay == day,
-            isMuted: day > calendar.startOfDay(for: .now)
-        )
-    }
-
     private var monthSwipe: some Gesture {
         DragGesture(minimumDistance: 24)
             .onEnded { value in
@@ -246,7 +144,7 @@ extension GoalCalendarView {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
+        ToolbarItem(placement: .topBarLeading) {
             GoalCalendarFilterMenu(
                 metrics: metrics,
                 aspirations: aspirations,
@@ -255,6 +153,143 @@ extension GoalCalendarView {
         }
         ToolbarItem(placement: .confirmationAction) {
             Button("Done") { dismiss() }
+        }
+    }
+}
+
+private struct GoalCalendarMonthHeader: View {
+    let month: Date
+    let step: (Int) -> Void
+    let returnToCurrentMonth: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            chevron("chevron.left", label: "Earlier month") { step(-1) }
+            Spacer()
+            Button(action: returnToCurrentMonth) {
+                Text(month, format: .dateTime.month(.wide).year())
+                    .font(.headline)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Current month")
+            .accessibilityHint("Returns to the current month")
+            Spacer()
+            chevron("chevron.right", label: "Later month") { step(1) }
+        }
+    }
+
+    private func chevron(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.footnote.weight(.semibold))
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Theme.chipFill))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
+private struct GoalCalendarFilterChip: View {
+    let title: String
+    let icon: String
+    let tint: Color
+    let clear: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(title).lineLimit(1)
+            Button(action: clear) {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .accessibilityLabel("Clear filter")
+        }
+        .font(.footnote.weight(.medium))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(tint.opacity(0.14)))
+    }
+}
+
+private struct GoalCalendarGrid: View {
+    let month: GoalCalendarMonth
+    let calendar: Calendar
+    let tint: Color
+    let fillTint: Color
+    @Binding var selectedDay: Date?
+
+    private struct Week: Identifiable {
+        let id: Date
+        let slots: [Slot]
+    }
+
+    private struct Slot: Identifiable {
+        let column: Int
+        let day: Date?
+
+        var id: SlotID {
+            day.map { .day($0) } ?? .padding(column)
+        }
+    }
+
+    private var weeks: [Week] {
+        month.weeks.compactMap { days in
+            guard let firstDay = days.first(where: { $0 != nil }) ?? nil else { return nil }
+            return Week(id: firstDay, slots: days.enumerated().map { Slot(column: $0.offset, day: $0.element) })
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            let symbols = GoalCalendar.weekdaySymbols(calendar: calendar)
+            HStack(spacing: 4) {
+                ForEach(0 ..< 7, id: \.self) { column in
+                    Text(symbols[column])
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            VStack(spacing: 4) {
+                ForEach(weeks) { week in
+                    HStack(spacing: 4) {
+                        ForEach(week.slots) { slot in
+                            daySlot(slot.day)
+                        }
+                    }
+                }
+            }
+        }
+        .cardSurface()
+    }
+
+    private enum SlotID: Hashable {
+        case day(Date)
+        case padding(Int)
+    }
+
+    @ViewBuilder
+    private func daySlot(_ day: Date?) -> some View {
+        if let day {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    selectedDay = selectedDay == day ? nil : day
+                }
+            } label: {
+                GoalCalendarDayCell(
+                    model: GoalCalendarDayCell.Model(
+                        day: day, fraction: month.fraction(on: day), detail: month.cellDetail(on: day),
+                        isToday: calendar.isDateInToday(day), isSelected: selectedDay == day,
+                        isMuted: day > calendar.startOfDay(for: .now)
+                    ),
+                    tint: tint, fillTint: fillTint
+                )
+            }
+            .buttonStyle(.plain)
+        } else {
+            Color.clear.frame(maxWidth: .infinity, minHeight: 1)
         }
     }
 }

@@ -3,49 +3,34 @@ import SwiftData
 import SwiftUI
 import UIKit
 
-/// The moment composer — "Keep a moment", the counterpart of an intention's
-/// *let go*. Capture from an aspiration arrives pre-bound; an unbound weekly
-/// photo draft asks for its aspiration here, while sharing uses the extension's
-/// focused composer. Only the text and aspiration are required; the
-/// `occurredAt` picker backdates freely but never
-/// past now, the location chip fetches once on an explicit tap, photos
-/// downscale on import, and provenance optionally records the metric or project
-/// it came from.
-/// Passing an existing moment switches to edit; the owning aspiration and
-/// `createdAt` never change.
+/// Keep or edit a moment without changing its owning aspiration or creation date.
 struct MomentFormView: View {
-    // Internal, not private: the composer's behavior lives in its own file
-    // (`MomentFormActions`), which reads and writes this state — the same
-    // cross-file split as `AspirationDetailView`'s section files.
-    @Environment(\.modelContext) var modelContext
-    @Environment(\.dismiss) var dismiss
-    @Environment(\.openURL) var openURL
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
-    let editing: Moment?
-    let choosesAspiration: Bool
-    let prompt: String?
+    private let editing: Moment?
+    private let choosesAspiration: Bool
+    private let prompt: String?
+    private let seed: MomentFormSeed
 
-    @Query(sort: \Aspiration.createdAt) var allAspirations: [Aspiration]
-    @Query(sort: \Metric.createdAt) private var allMetrics: [Metric]
-    @Query(sort: \Project.startedAt) private var allProjects: [Project]
-
-    @State var aspiration: Aspiration?
-    @State var text: String
-    @State var occurredAt: Date
-    @State var provenance: MomentProvenance
-    @State var principle: Principle?
-    @State var latitude: Double?
-    @State var longitude: Double?
-    @State var placeName: String
-    @State var photoData: [PickedPhoto]
-    @State var photoItems: [PhotosPickerItem] = []
-    @State var photoImportFailureCount: Int
-    @State var locationStatus: LocationStatus = .idle
-    @State var reader = MomentLocationReader()
-    @State var saveTrigger = false
+    @State private var aspiration: Aspiration?
+    @State private var text: String
+    @State private var occurredAt: Date
+    @State private var provenance: MomentProvenance
+    @State private var principle: Principle?
+    @State private var latitude: Double?
+    @State private var longitude: Double?
+    @State private var placeName: String
+    @State private var photoData: [PickedPhoto] = []
+    @State private var didInitializePhotos = false
+    @State private var photoImportFailureCount: Int
+    @State private var locationStatus: MomentLocationStatus = .idle
+    @State private var reader: MomentLocationReader?
+    @State private var saveTrigger = false
     @State private var photoViewerRoute: MomentPhotoViewerRoute?
 
-    /// Soft cap, enforced here in the composer, never in the schema.
+    /// Soft cap enforced only for imports, never existing saved photos.
     static let photoCap = 4
 
     init(
@@ -58,75 +43,168 @@ struct MomentFormView: View {
         editing = moment
         choosesAspiration = moment == nil && aspiration == nil
         self.prompt = prompt
+        self.seed = seed
         _aspiration = State(initialValue: moment?.aspiration ?? aspiration)
         _text = State(initialValue: moment?.text ?? "")
         _occurredAt = State(initialValue: moment?.occurredAt ?? min(seed.occurredAt, Date.now))
-        _provenance = State(
-            initialValue: MomentProvenance(
-                metric: moment?.metric,
-                project: moment?.project ?? project
-            )
-        )
+        _provenance = State(initialValue: MomentProvenance(metric: moment?.metric, project: moment?.project ?? project))
         _principle = State(initialValue: moment?.principle)
         _latitude = State(initialValue: moment?.latitude)
         _longitude = State(initialValue: moment?.longitude)
         _placeName = State(initialValue: moment?.placeName ?? "")
-        let existingPhotos = moment?.photos
-            .sorted { $0.sortIndex < $1.sortIndex }
-            .map { PickedPhoto(data: $0.data) }
-        let seededPhotos = seed.photos.prefix(Self.photoCap).map(PickedPhoto.init(data:))
-        _photoData = State(initialValue: existingPhotos ?? seededPhotos)
-        _photoImportFailureCount = State(
-            initialValue: moment == nil ? seed.importFailureCount : 0
-        )
+        _photoImportFailureCount = State(initialValue: moment == nil ? seed.importFailureCount : 0)
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 if choosesAspiration {
-                    aspirationSection
+                    MomentAspirationSection(aspiration: $aspiration, principle: $principle)
                 }
-                textSection
-                whenSection
-                locationSection
-                photosSection
-                provenanceSection
-                if !heldPrinciples.isEmpty {
-                    livesSection
-                }
+                MomentTextSection(text: $text, prompt: prompt, aspirationTitle: aspiration?.title)
+                MomentWhenSection(occurredAt: $occurredAt)
+                MomentLocationSection(
+                    hasLocation: latitude != nil && longitude != nil,
+                    placeName: placeName, status: locationStatus,
+                    onRemove: removeLocation, onResolve: resolveLocation, onSettings: openSettings
+                )
+                MomentPhotosSection(
+                    photos: photoData, failureCount: photoImportFailureCount,
+                    onRemove: removePhoto, onView: viewPhoto, onImport: loadPhotos
+                )
+                MomentProvenanceSection(aspiration: aspiration, provenance: $provenance)
+                MomentPrincipleSection(aspiration: aspiration, principle: $principle)
             }
             .navigationTitle(editing == nil ? "Keep a Moment" : "Edit Moment")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbar }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Keep", action: save)
+                        .disabled(trimmedText.isEmpty || !hasAvailableOwner || !didInitializePhotos)
+                }
+            }
             .sensoryFeedback(.success, trigger: saveTrigger)
-            .onChange(of: photoItems) { _, items in
-                Task { await loadPhotos(items) }
+            .onAppear(perform: initializePhotos)
+        }
+        .fullScreenCover(item: $photoViewerRoute) { MomentPhotoViewer(route: $0) }
+    }
+
+    private var trimmedText: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hasAvailableOwner: Bool {
+        guard let aspiration else { return false }
+        return editing != nil || !aspiration.isArchived
+    }
+
+    private func initializePhotos() {
+        guard !didInitializePhotos else { return }
+        if let editing {
+            photoData = editing.photos.sorted { $0.sortIndex < $1.sortIndex }
+                .map { PickedPhoto(data: $0.data) }
+        } else {
+            photoData = seed.photos.prefix(Self.photoCap).map(PickedPhoto.init(data:))
+        }
+        didInitializePhotos = true
+    }
+
+    private func loadPhotos(_ items: [PhotosPickerItem]) async {
+        var failures = 0
+        for item in items where photoData.count < Self.photoCap {
+            if let data = await downscaledData(from: item) {
+                photoData.append(PickedPhoto(data: data))
+            } else {
+                failures += 1
             }
         }
-        .fullScreenCover(item: $photoViewerRoute) { route in
-            MomentPhotoViewer(route: route)
+        photoImportFailureCount = failures
+    }
+
+    private func downscaledData(from item: PhotosPickerItem) async -> Data? {
+        guard let raw = try? await item.loadTransferable(type: Data.self) else { return nil }
+        return MomentPhotoImport.downscaledJPEG(from: raw)
+    }
+
+    private func removePhoto(_ photo: PickedPhoto) {
+        photoData.removeAll { $0.id == photo.id }
+    }
+
+    private func viewPhoto(_ photo: PickedPhoto) {
+        guard let index = photoData.firstIndex(where: { $0.id == photo.id }) else { return }
+        photoViewerRoute = MomentPhotoViewerRoute(photos: photoData.map(\.data), selectedIndex: index)
+    }
+
+    private func resolveLocation() {
+        let reader = reader ?? MomentLocationReader()
+        self.reader = reader
+        locationStatus = .resolving
+        Task { applyLocation(await reader.resolve()) }
+    }
+
+    private func applyLocation(_ outcome: MomentLocationReader.Outcome) {
+        switch outcome {
+        case let .resolved(place):
+            latitude = place.latitude
+            longitude = place.longitude
+            placeName = place.name
+            locationStatus = .idle
+        case .denied:
+            locationStatus = .denied
+        case .failed:
+            locationStatus = .idle
         }
+    }
+
+    private func removeLocation() {
+        latitude = nil
+        longitude = nil
+        placeName = ""
+        locationStatus = .idle
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
+    }
+
+    private func save() {
+        guard didInitializePhotos, let aspiration, hasAvailableOwner, !trimmedText.isEmpty else { return }
+        let moment = editing ?? Moment(text: trimmedText, aspiration: aspiration)
+        moment.text = trimmedText
+        moment.occurredAt = occurredAt
+        moment.metric = provenance.metric
+        moment.project = provenance.project
+        moment.principle = principle
+        moment.latitude = latitude
+        moment.longitude = longitude
+        moment.placeName = placeName
+        if editing == nil { modelContext.insert(moment) }
+        MomentPhotoReconciler.sync(photoData.map(\.data), with: moment, in: modelContext)
+        saveTrigger.toggle()
+        dismiss()
     }
 }
 
-// MARK: - Provenance & location state
+/// Identity belongs to the imported occurrence, never its bytes or array slot.
+private struct PickedPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
+}
 
-/// The moment's optional source — none, or exactly one metric or project.
-/// Hashable so it drives the composer's `Picker` selection.
+/// Exactly one optional source for the composer's picker.
 enum MomentProvenance: Hashable {
     case none
     case metric(Metric)
     case project(Project)
 
     init(metric: Metric?, project: Project?) {
-        if let project {
-            self = .project(project)
-        } else if let metric {
-            self = .metric(metric)
-        } else {
-            self = .none
-        }
+        if let project { self = .project(project) }
+        else if let metric { self = .metric(metric) }
+        else { self = .none }
     }
 
     var metric: Metric? {
@@ -138,48 +216,77 @@ enum MomentProvenance: Hashable {
     }
 }
 
-extension MomentFormView {
-    /// The location chip's state — idle, mid-fetch, or blocked after a denied
-    /// tap (which earns the footnote, shown only inside this open composer).
-    enum LocationStatus {
-        case idle
-        case resolving
-        case denied
+private enum MomentLocationStatus: Equatable {
+    case idle, resolving, denied
+}
+
+private struct MomentAspirationSection: View {
+    @Query(sort: \Aspiration.createdAt) private var allAspirations: [Aspiration]
+    @Binding var aspiration: Aspiration?
+    @Binding var principle: Principle?
+
+    var body: some View {
+        let choices = allAspirations.unarchived.inDisplayOrder
+        Section {
+            Picker("Aspiration", selection: aspirationSelection) {
+                Text("Choose an aspiration").tag(Aspiration?.none)
+                ForEach(choices) { option in
+                    Label(option.title, systemImage: option.displayIcon).tag(Aspiration?.some(option))
+                }
+            }
+        } footer: {
+            if choices.isEmpty {
+                Text("Create or bring back an aspiration before keeping this moment.")
+            }
+        }
+        .onChange(of: aspiration?.isArchived) { _, archived in
+            if archived == true {
+                aspiration = nil
+                principle = nil
+            }
+        }
+    }
+
+    private var aspirationSelection: Binding<Aspiration?> {
+        Binding(
+            get: { aspiration },
+            set: { selected in
+                aspiration = selected
+                principle = nil
+            }
+        )
     }
 }
 
-// MARK: - Text & time
+private struct MomentTextSection: View {
+    @Binding var text: String
+    let prompt: String?
+    let aspirationTitle: String?
 
-extension MomentFormView {
-    private var textSection: some View {
+    var body: some View {
         Section {
             if let prompt {
-                Text(prompt)
-                    .font(.subheadline.weight(.medium))
+                Text(prompt).font(.subheadline.weight(.medium))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            TextField(
-                prompt == nil ? "What grew out of this?" : "Your reflection",
-                text: $text,
-                axis: .vertical
-            )
-            .lineLimit(3 ... 8)
+            TextField(prompt == nil ? "What grew out of this?" : "Your reflection", text: $text, axis: .vertical)
+                .lineLimit(3 ... 8)
         } header: {
             Text("Moment")
         } footer: {
-            Text(momentPrivacyNote)
+            if let aspirationTitle {
+                Text("Kept under \(aspirationTitle). Only you will ever read it.")
+            } else {
+                Text("Choose where this moment belongs. Only you will ever read it.")
+            }
         }
     }
+}
 
-    private var momentPrivacyNote: String {
-        if let aspiration {
-            "Kept under \(aspiration.title). Only you will ever read it."
-        } else {
-            "Choose where this moment belongs. Only you will ever read it."
-        }
-    }
+private struct MomentWhenSection: View {
+    @Binding var occurredAt: Date
 
-    private var whenSection: some View {
+    var body: some View {
         Section("When") {
             DatePicker(
                 "When it happened",
@@ -191,171 +298,150 @@ extension MomentFormView {
     }
 }
 
-// MARK: - Location
+private struct MomentLocationSection: View {
+    let hasLocation: Bool
+    let placeName: String
+    let status: MomentLocationStatus
+    let onRemove: () -> Void
+    let onResolve: () -> Void
+    let onSettings: () -> Void
 
-extension MomentFormView {
-    private var locationSection: some View {
+    var body: some View {
         Section {
             if hasLocation {
-                keptLocationRow
+                HStack {
+                    let trimmed = placeName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    Label(trimmed.isEmpty ? "Location" : trimmed, systemImage: "mappin.and.ellipse")
+                    Spacer()
+                    Button("Remove", role: .destructive, action: onRemove)
+                        .font(.caption).buttonStyle(.borderless)
+                }
             } else {
-                addLocationButton
+                Button(action: onResolve) {
+                    HStack {
+                        Label("Add location", systemImage: "mappin")
+                        Spacer()
+                        if status == .resolving { ProgressView() }
+                    }
+                }
+                .disabled(status == .resolving || status == .denied)
             }
         } footer: {
-            if locationStatus == .denied {
-                deniedFootnote
-            }
-        }
-    }
-
-    private var hasLocation: Bool {
-        latitude != nil && longitude != nil
-    }
-
-    private var placeLabel: String {
-        let trimmed = placeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Location" : trimmed
-    }
-
-    private var keptLocationRow: some View {
-        HStack {
-            Label(placeLabel, systemImage: "mappin.and.ellipse")
-            Spacer()
-            Button("Remove", role: .destructive, action: removeLocation)
-                .font(.caption)
-                .buttonStyle(.borderless)
-        }
-    }
-
-    private var addLocationButton: some View {
-        Button(action: resolveLocation) {
-            HStack {
-                Label("Add location", systemImage: "mappin")
-                Spacer()
-                if locationStatus == .resolving {
-                    ProgressView()
+            if status == .denied {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Location access is off. It's used only to label a moment you choose to keep.")
+                    Button("Open Settings", action: onSettings).font(.caption)
                 }
             }
-        }
-        .disabled(locationStatus == .resolving || locationStatus == .denied)
-    }
-
-    private var deniedFootnote: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Location access is off. It's used only to label a moment you choose to keep.")
-            Button("Open Settings", action: openSettings)
-                .font(.caption)
         }
     }
 }
 
-// MARK: - Photos
+private struct MomentPhotosSection: View {
+    let photos: [PickedPhoto]
+    let failureCount: Int
+    let onRemove: (PickedPhoto) -> Void
+    let onView: (PickedPhoto) -> Void
+    let onImport: ([PhotosPickerItem]) async -> Void
+    @State private var items: [PhotosPickerItem] = []
 
-extension MomentFormView {
-    private var photosSection: some View {
+    var body: some View {
         Section {
-            if !photoData.isEmpty {
-                photoStrip
+            if !photos.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 10) {
+                        ForEach(photos.enumerated(), id: \.element.id) { index, photo in
+                            MomentPickedPhotoCell(
+                                photo: photo, number: index + 1, count: photos.count,
+                                onRemove: onRemove, onView: onView
+                            )
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
             }
-            if photoData.count < Self.photoCap {
-                photoPicker
+            if photos.count < MomentFormView.photoCap {
+                PhotosPicker(
+                    selection: $items,
+                    maxSelectionCount: MomentFormView.photoCap - photos.count,
+                    matching: .images
+                ) {
+                    Label("Add photos", systemImage: "photo.on.rectangle")
+                }
             }
         } header: {
             Text("Photos")
         } footer: {
-            if photoImportFailureCount > 0 {
-                Text(importFailureNote)
+            if failureCount == 1 {
+                Text("One photo couldn't be imported.")
+            } else if failureCount > 1 {
+                Text("\(failureCount) photos couldn't be imported.")
             }
         }
-    }
-
-    /// The visible outcome of a failed import — an iCloud photo that wouldn't
-    /// download, an undecodable file — so picked photos never just vanish.
-    private var importFailureNote: String {
-        photoImportFailureCount == 1
-            ? "One photo couldn't be imported."
-            : "\(photoImportFailureCount) photos couldn't be imported."
-    }
-
-    private var photoStrip: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 10) {
-                ForEach(Array(photoData.enumerated()), id: \.element.id) { indexedPhoto in
-                    photoThumb(indexedPhoto.element, at: indexedPhoto.offset)
-                }
+        .onChange(of: items) { _, selected in
+            guard !selected.isEmpty else { return }
+            Task {
+                await onImport(selected)
+                items = []
             }
-        }
-        .scrollIndicators(.hidden)
-    }
-
-    @ViewBuilder
-    private func photoThumb(_ photo: PickedPhoto, at index: Int) -> some View {
-        if let image = UIImage(data: photo.data) {
-            ZStack(alignment: .topTrailing) {
-                viewPhotoButton(image, at: index)
-                removePhotoButton(photo, at: index)
-            }
-        }
-    }
-
-    private func viewPhotoButton(_ image: UIImage, at index: Int) -> some View {
-        Button {
-            photoViewerRoute = MomentPhotoViewerRoute(
-                photos: photoData.map(\.data),
-                selectedIndex: index
-            )
-        } label: {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("View photo \(index + 1) of \(photoData.count)")
-        .accessibilityHint("Opens the photo full screen")
-    }
-
-    private func removePhotoButton(_ photo: PickedPhoto, at index: Int) -> some View {
-        Button {
-            removePhoto(photo)
-        } label: {
-            Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(.white, .black.opacity(0.5))
-                .padding(4)
-                .frame(width: 44, height: 44, alignment: .topTrailing)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Remove photo \(index + 1) of \(photoData.count)")
-        .accessibilityHint("Removes this photo from the moment")
-    }
-
-    private var photoPicker: some View {
-        PhotosPicker(
-            selection: $photoItems,
-            maxSelectionCount: Self.photoCap - photoData.count,
-            matching: .images
-        ) {
-            Label("Add photos", systemImage: "photo.on.rectangle")
         }
     }
 }
 
-// MARK: - Provenance
+private struct MomentPickedPhotoCell: View {
+    let photo: PickedPhoto
+    let number: Int
+    let count: Int
+    let onRemove: (PickedPhoto) -> Void
+    let onView: (PickedPhoto) -> Void
+    @State private var image: UIImage?
 
-extension MomentFormView {
-    private var provenanceSection: some View {
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            if let image {
+                Button { onView(photo) } label: {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 72, height: 72)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View photo \(number) of \(count)")
+                .accessibilityHint("Opens the photo full screen")
+                Button { onRemove(photo) } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.white, .black.opacity(0.5))
+                        .padding(4)
+                        .frame(width: 44, height: 44, alignment: .topTrailing)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove photo \(number) of \(count)")
+                .accessibilityHint("Removes this photo from the moment")
+            }
+        }
+        .task(id: photo.data) { image = UIImage(data: photo.data) }
+    }
+}
+
+private struct MomentProvenanceSection: View {
+    @Query(sort: \Metric.createdAt) private var allMetrics: [Metric]
+    @Query(sort: \Project.startedAt) private var allProjects: [Project]
+    let aspiration: Aspiration?
+    @Binding var provenance: MomentProvenance
+
+    var body: some View {
+        let metrics = allMetrics.filter(isAttachedMetric) + allMetrics.filter { !isAttachedMetric($0) }
+        let projects = allProjects.filter(isAttachedProject) + allProjects.filter { !isAttachedProject($0) }
         Section {
             Picker("Source", selection: $provenance) {
                 Text("None").tag(MomentProvenance.none)
-                ForEach(orderedMetrics) { metric in
-                    Label(metric.name, systemImage: metric.displayIcon)
-                        .tag(MomentProvenance.metric(metric))
+                ForEach(metrics) { metric in
+                    Label(metric.name, systemImage: metric.displayIcon).tag(MomentProvenance.metric(metric))
                 }
-                ForEach(orderedProjects) { project in
-                    Label(project.name, systemImage: "folder")
-                        .tag(MomentProvenance.project(project))
+                ForEach(projects) { project in
+                    Label(project.name, systemImage: "folder").tag(MomentProvenance.project(project))
                 }
             }
         } header: {
@@ -363,16 +449,6 @@ extension MomentFormView {
         } footer: {
             Text("Optional — the metric or project this moment came from.")
         }
-    }
-
-    /// The aspiration's own attachments first, then everything else reachable,
-    /// each group keeping the query's creation order.
-    private var orderedMetrics: [Metric] {
-        allMetrics.filter(isAttachedMetric) + allMetrics.filter { !isAttachedMetric($0) }
-    }
-
-    private var orderedProjects: [Project] {
-        allProjects.filter(isAttachedProject) + allProjects.filter { !isAttachedProject($0) }
     }
 
     private func isAttachedMetric(_ metric: Metric) -> Bool {
@@ -384,28 +460,23 @@ extension MomentFormView {
     }
 }
 
-// MARK: - Lives
+private struct MomentPrincipleSection: View {
+    let aspiration: Aspiration?
+    @Binding var principle: Principle?
 
-extension MomentFormView {
-    /// Present only once the aspiration holds any principles: the vow this
-    /// testimony is evidence of. Provenance, never a score — a tagged moment
-    /// lights no strip (see `PrincipleLiving`).
-    private var livesSection: some View {
-        Section {
-            Picker("Principle", selection: $principle) {
-                Text("None").tag(Principle?.none)
-                ForEach(heldPrinciples) { held in
-                    Text(held.text).tag(Principle?.some(held))
+    var body: some View {
+        let principles = (aspiration?.principles ?? []).sorted { $0.createdAt < $1.createdAt }
+        if !principles.isEmpty {
+            Section {
+                Picker("Principle", selection: $principle) {
+                    Text("None").tag(Principle?.none)
+                    ForEach(principles) { held in Text(held.text).tag(Principle?.some(held)) }
                 }
+            } header: {
+                Text("Lives a principle")
+            } footer: {
+                Text("Optional — the vow this moment is evidence of.")
             }
-        } header: {
-            Text("Lives a principle")
-        } footer: {
-            Text("Optional — the vow this moment is evidence of.")
         }
-    }
-
-    private var heldPrinciples: [Principle] {
-        (aspiration?.principles ?? []).sorted { $0.createdAt < $1.createdAt }
     }
 }

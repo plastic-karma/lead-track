@@ -13,7 +13,7 @@ struct AspirationPastIntentionsView: View {
     var body: some View {
         List {
             ForEach(pastIntentions) { intention in
-                historyRow(intention)
+                AspirationPastIntentionRow(intention: intention)
             }
             .onDelete(perform: deleteIntentions)
         }
@@ -50,35 +50,6 @@ extension AspirationPastIntentionsView {
         }
     }
 
-    private func historyRow(_ intention: Intention) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Week of \(intention.weekStart.formatted(.dateTime.month(.abbreviated).day()))")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            HStack {
-                Text(intention.title)
-                    .font(.subheadline)
-                Spacer()
-                Text(historyDetail(intention))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    /// The narrative ending: the outcome word, or the final accumulation
-    /// standing as fact, or "unclosed" — never a judgment.
-    private func historyDetail(_ intention: Intention) -> String {
-        if let progress = IntentionProgress.compute(for: intention) {
-            return progress.text
-        }
-        if intention.isSourceRemoved {
-            return "source removed"
-        }
-        return intention.outcome?.label ?? "unclosed"
-    }
-
     private func deleteIntentions(_ offsets: IndexSet) {
         let targets = offsets.map { pastIntentions[$0] }
         withAnimation {
@@ -87,5 +58,34 @@ extension AspirationPastIntentionsView {
                 modelContext.delete(intention)
             }
         }
+    }
+}
+
+private struct AspirationPastIntentionRow: View {
+    let intention: Intention
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Week of \(intention.weekStart.formatted(.dateTime.month(.abbreviated).day()))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            HStack {
+                Text(intention.title)
+                    .font(.subheadline)
+                Spacer()
+                Text(historyDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var historyDetail: String {
+        if let progress = IntentionProgress.compute(for: intention) {
+            return progress.text
+        }
+        if intention.isSourceRemoved { return "source removed" }
+        return intention.outcome?.label ?? "unclosed"
     }
 }

@@ -27,7 +27,7 @@ enum AppLockGracePeriod: Int, CaseIterable, Identifiable {
 @Observable
 final class AppLockService {
     private(set) var isLocked: Bool
-    private var backgroundedAt: Date?
+    @ObservationIgnored private var backgroundedAt: Date?
     private let disabledForTest: Bool
 
     init() {

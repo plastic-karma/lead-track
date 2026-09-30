@@ -41,28 +41,29 @@ struct IntentionFormView: View {
                         AspirationShelvingControl(aspiration: aspiration)
                     }
                 }
-                titleSection
-                kindSection
+                IntentionTitleSection(title: $title, aspirationTitle: aspiration.title)
+                IntentionKindSection(kind: $kind)
                 if kind == .derived {
-                    metricSection
+                    IntentionMetricSection(
+                        aspiration: aspiration, metric: $metric, mode: $mode,
+                        showingAttach: $showingAttach
+                    )
                 }
-                shapeSection
-                questionSection
-                if !heldPrinciples.isEmpty {
-                    servesSection
+                if kind != .reflective {
+                    IntentionShapeSection(
+                        perDay: $perDay, targetCount: $targetCount, amountText: $amountText,
+                        perDayAllowed: perDayAllowed, usesAmount: kind == .derived && mode == .valueSum,
+                        amountUnit: amountUnit, countNoun: countNoun
+                    )
+                }
+                IntentionDailyQuestionSection(asksDaily: $asksDaily, question: $question)
+                if !aspiration.principles.isEmpty {
+                    IntentionPrincipleSection(aspiration: aspiration, principle: $principle)
                 }
             }
             .navigationTitle("Set an Intention")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Set", action: save)
-                        .disabled(!isValid)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .toolbar { toolbar }
             .sheet(isPresented: $showingAttach) {
                 AspirationAttachSheet(aspiration: aspiration)
             }
@@ -73,20 +74,36 @@ struct IntentionFormView: View {
             }
         }
     }
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            Button("Set", action: save)
+                .disabled(!isValid)
+        }
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") { dismiss() }
+        }
+    }
 }
 
-// MARK: - Sections
+private struct IntentionTitleSection: View {
+    @Binding var title: String
+    let aspirationTitle: String
 
-extension IntentionFormView {
-    private var titleSection: some View {
+    var body: some View {
         Section {
             TextField("What do you intend this week?", text: $title)
         } footer: {
-            Text("Lives only this week, under \(aspiration.title). It closes at the next weekly review.")
+            Text("Lives only this week, under \(aspirationTitle). It closes at the next weekly review.")
         }
     }
+}
 
-    private var kindSection: some View {
+private struct IntentionKindSection: View {
+    @Binding var kind: IntentionKind
+
+    var body: some View {
         Section {
             Picker("Kind", selection: $kind) {
                 Text("Reflective").tag(IntentionKind.reflective)
@@ -106,12 +123,19 @@ extension IntentionFormView {
         case .derived: "Accrues on its own from sessions you already log."
         }
     }
+}
 
-    private var metricSection: some View {
+private struct IntentionMetricSection: View {
+    let aspiration: Aspiration
+    @Binding var metric: Metric?
+    @Binding var mode: DerivedMode
+    @Binding var showingAttach: Bool
+
+    var body: some View {
         Section("Metric") {
             Picker("Metric", selection: $metric) {
                 Text("Choose…").tag(Metric?.none)
-                ForEach(attachedMetrics) { option in
+                ForEach(aspiration.metrics.sorted { $0.createdAt < $1.createdAt }) { option in
                     Text(option.name).tag(Metric?.some(option))
                 }
             }
@@ -124,45 +148,55 @@ extension IntentionFormView {
             Button("Attach another metric…") { showingAttach = true }
         }
     }
+}
 
-    @ViewBuilder
-    private var shapeSection: some View {
-        if kind != .reflective {
-            Section {
-                if perDayAllowed {
-                    Toggle("Every day", isOn: $perDay)
-                }
-                if !perDay {
-                    targetField
-                }
-            } footer: {
-                if perDay {
-                    Text("Once a day counts, from today through the end of the week.")
-                }
-            }
-        }
-    }
+private struct IntentionShapeSection: View {
+    @Binding var perDay: Bool
+    @Binding var targetCount: Int
+    @Binding var amountText: String
+    let perDayAllowed: Bool
+    let usesAmount: Bool
+    let amountUnit: String
+    let countNoun: String
 
-    private var questionSection: some View {
+    var body: some View {
         Section {
-            Toggle("Daily Question", isOn: $asksDaily)
-            if asksDaily {
-                IntentionQuestionEditor(question: $question)
+            if perDayAllowed {
+                Toggle("Every day", isOn: $perDay)
+            }
+            if !perDay {
+                if usesAmount {
+                    HStack {
+                        TextField(amountUnit, text: $amountText)
+                            .keyboardType(.decimalPad)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
+                        Text("\(amountUnit) / week")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Stepper(value: $targetCount, in: 1 ... 99) {
+                        Text("\(targetCount) \(countNoun) / week")
+                    }
+                }
             }
         } footer: {
-            if asksDaily {
-                Text("Asks once a day, at a random time inside your window, through the end of the week.")
+            if perDay {
+                Text("Once a day counts, from today through the end of the week.")
             }
         }
     }
+}
 
-    /// Present only once the aspiration holds any principles — the why
-    /// threaded through the commitment, never a required field.
-    private var servesSection: some View {
+private struct IntentionPrincipleSection: View {
+    let aspiration: Aspiration
+    @Binding var principle: Principle?
+
+    var body: some View {
         Section {
             Picker("Serves", selection: $principle) {
                 Text("The why itself").tag(Principle?.none)
-                ForEach(heldPrinciples) { held in
+                ForEach(aspiration.principles.sorted { $0.createdAt < $1.createdAt }) { held in
                     Text(held.text).tag(Principle?.some(held))
                 }
             }
@@ -170,43 +204,18 @@ extension IntentionFormView {
             Text("The principle this intention lives out, if it names one.")
         }
     }
-
-    @ViewBuilder
-    private var targetField: some View {
-        if kind == .derived, mode == .valueSum {
-            HStack {
-                TextField(amountUnit, text: $amountText)
-                    .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 80)
-                Text("\(amountUnit) / week")
-                    .foregroundStyle(.secondary)
-            }
-        } else {
-            Stepper(value: $targetCount, in: 1 ... 99) {
-                Text("\(targetCount) \(countNoun) / week")
-            }
-        }
-    }
 }
 
 // MARK: - Draft & save
 
 extension IntentionFormView {
-    private var attachedMetrics: [Metric] {
-        aspiration.metrics.sorted { $0.createdAt < $1.createdAt }
-    }
-
-    private var heldPrinciples: [Principle] {
-        aspiration.principles.sorted { $0.createdAt < $1.createdAt }
-    }
-
     private var perDayAllowed: Bool {
         kind == .counted || (kind == .derived && mode == .sessionCount)
     }
 
     private var countNoun: String {
-        kind == .counted ? "times" : "sessions"
+        if kind == .counted { return targetCount == 1 ? "time" : "times" }
+        return targetCount == 1 ? "session" : "sessions"
     }
 
     private var amountUnit: String {

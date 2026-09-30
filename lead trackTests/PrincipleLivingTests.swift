@@ -106,7 +106,7 @@ extension PrincipleLivingTests {
 
         let record = record(for: principle, in: [intention])
         #expect(record.weeks.count == PrincipleLiving.historyWeeks)
-        #expect(record.weeks.last == true)
+        #expect(record.weeks.last?.isLived == true)
         #expect(record.livedCount == 1)
         #expect(record.lastLived == weekStart)
         #expect(record.lastLivedVia == "Write before checking email")
@@ -120,9 +120,9 @@ extension PrincipleLivingTests {
         #expect(past.tick(at: weeksAgo(3), calendar: calendar))
 
         let record = record(for: principle, in: [past])
-        #expect(record.weeks[PrincipleLiving.historyWeeks - 4] == true)
+        #expect(record.weeks[PrincipleLiving.historyWeeks - 4].isLived)
         #expect(record.livedCount == 1)
-        #expect(record.weeks.last == false)
+        #expect(record.weeks.last?.isLived == false)
     }
 
     @Test
@@ -155,7 +155,7 @@ extension PrincipleLivingTests {
         reflective.close(outcome: .done)
 
         let record = record(for: principle, in: [reflective])
-        #expect(record.weeks.allSatisfy { !$0 })
+        #expect(record.weeks.allSatisfy { !$0.isLived })
         #expect(record.lastLived == nil)
         #expect(record.lastLivedVia == nil)
     }
@@ -179,7 +179,7 @@ extension PrincipleLivingTests {
 
         addSession(to: metric, at: weekStart)
         let record = record(for: principle, in: [derived])
-        #expect(record.weeks.last == true)
+        #expect(record.weeks.last?.isLived == true)
         #expect(record.lastLivedVia == "Deep work on the essay")
     }
 
@@ -237,12 +237,43 @@ extension PrincipleLivingTests {
     }
 
     @Test
+    func weekRolloverKeepsActivityAttachedToItsCalendarIdentity() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        let start = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 21)))
+        let next = try #require(calendar.date(byAdding: .weekOfYear, value: 1, to: start))
+        let aspiration = makeAspiration()
+        let principle = makePrinciple(of: aspiration)
+        let intention = try Intention.make(
+            title: "Morning pages", kind: .counted, aspiration: aspiration,
+            target: 3, createdAt: start, calendar: calendar
+        )
+        intention.principle = principle
+        #if canImport(SwiftData)
+        context.insert(intention)
+        #endif
+        #expect(intention.tick(at: start, calendar: calendar))
+        let before = PrincipleLiving.record(for: principle, in: [intention], now: start, calendar: calendar)
+        let after = PrincipleLiving.record(for: principle, in: [intention], now: next, calendar: calendar)
+
+        #expect(before.weeks.dropFirst() == after.weeks.dropLast())
+        #expect(after.weeks.first?.id != before.weeks.first?.id)
+        #expect(after.weeks.last?.id == next)
+        #expect(after.weeks.last?.isLived == false)
+        #expect(after.weeks.first(where: { $0.id == start })?.isLived == true)
+        #expect(after.livedCount == before.livedCount)
+    }
+
+    @Test
     func neverLivedReadsAsTwelveHollowWeeks() {
         let aspiration = makeAspiration()
         let principle = makePrinciple(of: aspiration)
 
         let record = record(for: principle, in: [])
-        #expect(record.weeks == Array(repeating: false, count: PrincipleLiving.historyWeeks))
+        #expect(record.weeks.count == PrincipleLiving.historyWeeks)
+        #expect(record.weeks.allSatisfy { !$0.isLived })
         #expect(record.livedCount == 0)
         #expect(record.lastLived == nil)
     }

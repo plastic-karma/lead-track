@@ -10,26 +10,15 @@ struct AspirationCoverBanner: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            background
+            AspirationBannerBackground(aspiration: aspiration)
             scrim
-            heading
+            AspirationBannerHeading(
+                icon: aspiration.displayIcon, title: aspiration.title, createdAt: aspiration.createdAt
+            )
         }
         .frame(height: 344)
         .frame(maxWidth: .infinity)
         .clipped()
-    }
-
-    @ViewBuilder
-    private var background: some View {
-        if let image = aspiration.coverImage {
-            image.resizable().scaledToFill()
-        } else {
-            LinearGradient(
-                colors: [aspiration.displayColor, aspiration.displayColor.opacity(0.55)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
     }
 
     private var scrim: some View {
@@ -44,19 +33,25 @@ struct AspirationCoverBanner: View {
             endPoint: .bottom
         )
     }
+}
 
-    private var heading: some View {
+private struct AspirationBannerHeading: View {
+    let icon: String
+    let title: String
+    let createdAt: Date
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 7) {
-                Image(systemName: aspiration.displayIcon)
+                Image(systemName: icon)
                     .font(.caption)
-                Text("Since \(aspiration.createdAt.formatted(.dateTime.month(.wide).year()))")
+                Text("Since \(createdAt.formatted(.dateTime.month(.wide).year()))")
                     .font(.caption2.weight(.semibold))
                     .textCase(.uppercase)
                     .kerning(1.4)
             }
             .foregroundStyle(.white.opacity(0.88))
-            Text(aspiration.title)
+            Text(title)
                 .font(.largeTitle.bold())
                 .lineLimit(2)
                 .foregroundStyle(.white)
@@ -70,17 +65,18 @@ struct AspirationCoverBanner: View {
 /// The story card's closing ledger: the lifetime figure on the numeral scale,
 /// the trailing-30-day momentum line beneath it.
 struct AspirationRollupHeader: View {
-    let rollup: AspirationRollup
+    let lifetimeSummary: String
+    let recentParts: [String]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(rollup.lifetimeSummary)
+            Text(lifetimeSummary)
                 .numeralStyle(.value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-            if !rollup.recentParts.isEmpty {
+            if !recentParts.isEmpty {
                 Label(
-                    "\(rollup.recentParts.joined(separator: " · ")) in the last 30 days",
+                    "\(recentParts.joined(separator: " · ")) in the last 30 days",
                     systemImage: "arrow.up.right"
                 )
                 .font(.caption)
@@ -88,5 +84,23 @@ struct AspirationRollupHeader: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct AspirationBannerBackground: View {
+    let aspiration: Aspiration
+
+    var body: some View {
+        Group {
+            if let image = aspiration.coverImage {
+                image.resizable().scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [aspiration.displayColor, aspiration.displayColor.opacity(0.55)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        }
     }
 }

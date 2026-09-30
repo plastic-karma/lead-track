@@ -56,7 +56,7 @@ struct MetricFormView: View {
         }
     }
 
-    private let iconOptions = [
+    private static let iconOptions = [
         "clock", "book", "laptopcomputer",
         "figure.run", "figure.walk", "figure.strengthtraining.traditional",
         "figure.yoga", "figure.mind.and.body", "bicycle",
@@ -70,13 +70,18 @@ struct MetricFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                nameSection
-                descriptionSection
-                typePicker
-                countLogSection
+                MetricNameSection(name: $name, isDuplicate: nameIsDuplicate)
+                MetricDescriptionSection(details: $details)
+                MetricTypeSection(
+                    kind: $kind, unit: $unit, healthSource: $healthSource,
+                    isEditing: isEditing, showsHealthOption: showsHealthOption
+                )
+                if kind == .count {
+                    MetricCountLoggingSection(countLogStyle: $countLogStyle)
+                }
                 healthExportSection
-                iconPicker
-                colorPicker
+                MetricIconSection(options: iconChoices, selection: $icon)
+                MetricColorSection(selection: $color)
             }
             .navigationTitle(formTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -122,7 +127,7 @@ struct MetricFormView: View {
     private func adjustIcon(forKind newKind: MetricFormKind) {
         if newKind == .health {
             icon = healthSource.defaultIcon
-        } else if !iconOptions.contains(icon) {
+        } else if !Self.iconOptions.contains(icon) {
             icon = "clock"
         }
     }
@@ -219,26 +224,41 @@ struct MetricFormView: View {
 
 // MARK: - Sections
 
-extension MetricFormView {
-    private var nameSection: some View {
+private struct MetricNameSection: View {
+    @Binding var name: String
+    let isDuplicate: Bool
+
+    var body: some View {
         Section {
             TextField("Name", text: $name)
-            if nameIsDuplicate {
+            if isDuplicate {
                 Text("A metric with this name already exists.")
                     .font(.caption)
                     .foregroundStyle(.red)
             }
         }
     }
+}
 
-    private var descriptionSection: some View {
+private struct MetricDescriptionSection: View {
+    @Binding var details: String
+
+    var body: some View {
         Section("Description") {
             TextField("Optional description", text: $details, axis: .vertical)
                 .lineLimit(1 ... 4)
         }
     }
+}
 
-    private var typePicker: some View {
+private struct MetricTypeSection: View {
+    @Binding var kind: MetricFormKind
+    @Binding var unit: String
+    @Binding var healthSource: HealthDataSource
+    let isEditing: Bool
+    let showsHealthOption: Bool
+
+    var body: some View {
         Section {
             Picker("Measurement", selection: $kind) {
                 Text("Duration").tag(MetricFormKind.duration)
@@ -263,52 +283,6 @@ extension MetricFormView {
             Text("Type")
         } footer: {
             typeFooter
-        }
-    }
-
-    /// Count metrics choose what the log button does — ask for the amount,
-    /// or add one right away. Stays editable on edit, unlike the type.
-    @ViewBuilder
-    private var countLogSection: some View {
-        if kind == .count {
-            Section {
-                Picker("Log Button", selection: $countLogStyle) {
-                    Text("Ask Amount").tag(CountLogStyle.askAmount)
-                    Text("Add 1").tag(CountLogStyle.incrementByOne)
-                }
-                .pickerStyle(.segmented)
-            } header: {
-                Text("Logging")
-            } footer: {
-                Text(countLogFooter)
-            }
-        }
-    }
-
-    private var countLogFooter: String {
-        switch countLogStyle {
-        case .askAmount:
-            return "Logging asks how many to add — for amounts that vary, like words written."
-        case .incrementByOne:
-            return "Logging adds 1 right away — for one-at-a-time moments, like a prayer."
-                + " The menu keeps custom amounts."
-        }
-    }
-
-    /// The Health segment appears only on devices with health data — and
-    /// always when reopening an existing health metric, so the fixed
-    /// selection still renders.
-    private var showsHealthOption: Bool {
-        kind == .health
-            || (!isEditing && HealthMetricSyncService.shared.isAvailable)
-    }
-
-    /// Export is offered for timer metrics on devices with health data — and
-    /// always when it is already on, so the stored choice still renders.
-    @ViewBuilder
-    private var healthExportSection: some View {
-        if kind == .duration, healthExport != nil || HealthSessionExportService.shared.isAvailable {
-            MetricFormHealthExportSection(selection: $healthExport)
         }
     }
 
@@ -337,24 +311,82 @@ extension MetricFormView {
             + " LeadStone will ask to read only this from Apple Health when you save."
             + " Nothing is written back, and you can change access anytime in the Health app."
     }
+}
 
-    private var iconPicker: some View {
-        Section("Icon") {
-            IconGridPicker(options: iconChoices, selection: $icon)
+/// Count metrics choose what the log button does — ask for the amount,
+/// or add one right away. Stays editable on edit, unlike the type.
+private struct MetricCountLoggingSection: View {
+    @Binding var countLogStyle: CountLogStyle
+
+    var body: some View {
+        Section {
+            Picker("Log Button", selection: $countLogStyle) {
+                Text("Ask Amount").tag(CountLogStyle.askAmount)
+                Text("Add 1").tag(CountLogStyle.incrementByOne)
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Logging")
+        } footer: {
+            Text(countLogFooter)
+        }
+    }
+
+    private var countLogFooter: String {
+        switch countLogStyle {
+        case .askAmount:
+            return "Logging asks how many to add — for amounts that vary, like words written."
+        case .incrementByOne:
+            return "Logging adds 1 right away — for one-at-a-time moments, like a prayer."
+                + " The menu keeps custom amounts."
+        }
+    }
+}
+
+extension MetricFormView {
+    /// The Health segment appears only on devices with health data — and
+    /// always when reopening an existing health metric, so the fixed
+    /// selection still renders.
+    private var showsHealthOption: Bool {
+        kind == .health
+            || (!isEditing && HealthMetricSyncService.shared.isAvailable)
+    }
+
+    /// Export is offered for timer metrics on devices with health data — and
+    /// always when it is already on, so the stored choice still renders.
+    @ViewBuilder
+    private var healthExportSection: some View {
+        if kind == .duration, healthExport != nil || HealthSessionExportService.shared.isAvailable {
+            MetricFormHealthExportSection(selection: $healthExport)
         }
     }
 
     /// Health metrics lead with icons matching the health sources; the other
     /// kinds keep the standard set.
     private var iconChoices: [String] {
-        guard kind == .health else { return iconOptions }
+        guard kind == .health else { return Self.iconOptions }
         let healthIcons = HealthDataSource.allCases.map(\.defaultIcon)
-        return healthIcons + iconOptions.filter { !healthIcons.contains($0) }
+        return healthIcons + Self.iconOptions.filter { !healthIcons.contains($0) }
     }
+}
 
-    private var colorPicker: some View {
+private struct MetricIconSection: View {
+    let options: [String]
+    @Binding var selection: String
+
+    var body: some View {
+        Section("Icon") {
+            IconGridPicker(options: options, selection: $selection)
+        }
+    }
+}
+
+private struct MetricColorSection: View {
+    @Binding var selection: MetricColor
+
+    var body: some View {
         Section("Color") {
-            ColorGridPicker(selection: $color)
+            ColorGridPicker(selection: $selection)
         }
     }
 }

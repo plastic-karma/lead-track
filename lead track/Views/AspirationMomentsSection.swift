@@ -6,49 +6,108 @@ import UIKit
 /// effort as one narrative: the most recent kept moments with their place and
 /// photos, the quiet doorways to keep another and to the full timeline, and,
 /// closing the card, the effort ledger. It never begs and never counts.
-extension AspirationDetailView {
-    var storyCard: some View {
+struct AspirationStoryCard: View {
+    @Environment(\.modelContext) private var modelContext
+    let aspiration: Aspiration
+    @State private var isExpanded = true
+    @State private var showingKeepMoment = false
+    @State private var editingMoment: Moment?
+    @State private var photoViewerRoute: MomentPhotoViewerRoute?
+    @State private var momentPendingDelete: Moment?
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            collapsibleCardHeader("The story so far", isExpanded: $storyExpanded)
-            if storyExpanded {
-                momentsBlock
+            AspirationCardHeader(title: "The story so far", isExpanded: $isExpanded)
+            if isExpanded {
+                AspirationRecentMoments(
+                    aspiration: aspiration, editingMoment: $editingMoment,
+                    photoViewerRoute: $photoViewerRoute, onDelete: requestDelete
+                )
                 if !aspiration.isArchived {
-                    plusRow("Keep a moment") { showingKeepMoment = true }
+                    AspirationPlusRow(title: "Keep a moment", tint: aspiration.displayColor) {
+                        showingKeepMoment = true
+                    }
                 }
-                allMomentsRow
-                periodHistoryRow
-                cardDivider()
-                effortLedger
+                AspirationStoryDoorways(aspiration: aspiration)
+                Divider()
+                AspirationEffortLedger(aspiration: aspiration)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, storyExpanded ? 0 : 12)
+        .padding(.bottom, isExpanded ? 0 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardShape())
+        .background { Theme.cardShape() }
+        .sheet(isPresented: $showingKeepMoment) {
+            MomentFormView(aspiration: aspiration)
+        }
+        .sheet(item: $editingMoment) { moment in
+            MomentFormView(aspiration: aspiration, moment: moment)
+        }
+        .fullScreenCover(item: $photoViewerRoute) { route in
+            MomentPhotoViewer(route: route)
+        }
+        .confirmationDialog(
+            "Delete this moment?",
+            isPresented: momentDeletePresented,
+            presenting: momentPendingDelete
+        ) { moment in
+            Button("Delete Moment", role: .destructive) { deleteMoment(moment) }
+        } message: { _ in
+            Text("Its photos are deleted with it. This can't be undone.")
+        }
     }
+}
 
-    @ViewBuilder
-    private var momentsBlock: some View {
+private struct AspirationRecentMoments: View {
+    let aspiration: Aspiration
+    @Binding var editingMoment: Moment?
+    @Binding var photoViewerRoute: MomentPhotoViewerRoute?
+    let onDelete: (Moment) -> Void
+
+    var body: some View {
         if recentMoments.isEmpty {
             Text("Nothing kept yet.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .padding(.vertical, 11)
-            cardDivider()
+            Divider()
         } else {
             ForEach(recentMoments) { moment in
-                momentRow(moment)
-                cardDivider()
+                MomentRowContent(
+                    moment: moment,
+                    onEdit: { editingMoment = moment },
+                    onPhotoTap: { photoViewerRoute = $0 }
+                )
+                .padding(.vertical, 11)
+                .contentShape(Rectangle())
+                .contextMenu {
+                    Button("Edit", systemImage: "pencil") { editingMoment = moment }
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        onDelete(moment)
+                    }
+                }
+                Divider()
             }
         }
     }
 
-    /// The doorway to the full timeline — always open once anything is kept,
-    /// and never carrying a count.
+    private var recentMoments: [Moment] {
+        Array(aspiration.moments.sorted { $0.occurredAt > $1.occurredAt }.prefix(2))
+    }
+}
+
+private struct AspirationStoryDoorways: View {
+    let aspiration: Aspiration
+
+    var body: some View {
+        allMomentsRow
+        periodHistoryRow
+    }
+
     @ViewBuilder
     private var allMomentsRow: some View {
         if !aspiration.moments.isEmpty {
-            cardDivider()
+            Divider()
             NavigationLink {
                 MomentListView(aspiration: aspiration)
             } label: {
@@ -92,45 +151,12 @@ extension AspirationDetailView {
     }
 }
 
-// MARK: - Rows
-
-extension AspirationDetailView {
-    /// Newest first — the detail and timeline read most-recent-down, only the
-    /// weekly review reads a week as a forward chronicle.
-    private var recentMoments: [Moment] {
-        Array(
-            aspiration.moments
-                .sorted { $0.occurredAt > $1.occurredAt }
-                .prefix(Self.recentMomentLimit)
-        )
-    }
-
-    /// The narrative tap edits while a thumbnail tap opens its photo. The
-    /// swipe of the old list rows becomes a context menu here (card rows don't
-    /// swipe), with the same photo-loss confirmation.
-    private func momentRow(_ moment: Moment) -> some View {
-        MomentRowContent(
-            moment: moment,
-            onEdit: { editingMoment = moment },
-            onPhotoTap: { photoViewerRoute = $0 }
-        )
-        .padding(.vertical, 11)
-        .contentShape(Rectangle())
-        .contextMenu {
-            Button("Edit", systemImage: "pencil") { editingMoment = moment }
-            Button("Delete", systemImage: "trash", role: .destructive) {
-                requestDelete(moment)
-            }
-        }
-    }
-}
-
 // MARK: - Effort ledger
 
-extension AspirationDetailView {
-    /// The card's closing figures — recomputed on every render, the
-    /// `AspirationRollup` doctrine — with the quiet zero states.
-    private var effortLedger: some View {
+private struct AspirationEffortLedger: View {
+    let aspiration: Aspiration
+
+    var body: some View {
         ledgerBody(AspirationRollup.compute(for: aspiration))
             .padding(.top, 12)
             .padding(.bottom, 14)
@@ -143,7 +169,9 @@ extension AspirationDetailView {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         } else if rollup.hasData {
-            AspirationRollupHeader(rollup: rollup)
+            AspirationRollupHeader(
+                lifetimeSummary: rollup.lifetimeSummary, recentParts: rollup.recentParts
+            )
         } else {
             Text("Nothing logged yet")
                 .font(.subheadline)
@@ -154,7 +182,7 @@ extension AspirationDetailView {
 
 // MARK: - Delete
 
-extension AspirationDetailView {
+extension AspirationStoryCard {
     /// A moment with photos routes through a confirmation (photos are lost with
     /// it); a text-only moment deletes straight away, the menu action already
     /// being a deliberate choice.
@@ -166,7 +194,7 @@ extension AspirationDetailView {
         }
     }
 
-    func deleteMoment(_ moment: Moment) {
+    private func deleteMoment(_ moment: Moment) {
         withAnimation {
             do {
                 try modelContext.deleteMomentAndPhotos(moment)
@@ -177,11 +205,12 @@ extension AspirationDetailView {
     }
 }
 
-extension AspirationDetailView {
-    /// How many moments the story card shows inline before the timeline takes
-    /// over. Never surfaced as a count anywhere.
-    static var recentMomentLimit: Int {
-        2
+extension AspirationStoryCard {
+    private var momentDeletePresented: Binding<Bool> {
+        Binding(
+            get: { momentPendingDelete != nil },
+            set: { presented in if !presented { momentPendingDelete = nil } }
+        )
     }
 }
 
@@ -198,33 +227,34 @@ struct MomentRowContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            editButton
+            MomentRowTestimony(moment: moment, onEdit: onEdit)
             if !moment.photos.isEmpty {
-                thumbs
+                MomentRowPhotos(moment: moment, onPhotoTap: onPhotoTap)
             }
         }
         .padding(.vertical, 2)
     }
+}
 
-    private var editButton: some View {
+private struct MomentRowTestimony: View {
+    let moment: Moment
+    let onEdit: () -> Void
+
+    var body: some View {
         Button(action: onEdit) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(moment.text)
                     .font(.subheadline)
                     .lineLimit(4)
-                meta
+                Text(metaText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private var meta: some View {
-        Text(metaText)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
     }
 
     private var metaText: String {
@@ -238,42 +268,64 @@ struct MomentRowContent: View {
     private var livesTag: String? {
         moment.principle.map { "lives “\($0.text)”" }
     }
+}
 
-    @ViewBuilder
-    private var thumbs: some View {
-        let photos = sortedPhotos
+private struct MomentRowPhotos: View {
+    private struct Source: Equatable {
+        let id: PersistentIdentifier
+        let data: Data
+    }
+
+    private struct Thumbnail: Identifiable {
+        let id: PersistentIdentifier
+        let index: Int
+        let image: UIImage
+    }
+
+    private struct PreparedPhotos {
+        let sources: [Source]
+        let thumbnails: [Thumbnail]
+    }
+
+    let moment: Moment
+    let onPhotoTap: (MomentPhotoViewerRoute) -> Void
+    @State private var prepared = PreparedPhotos(sources: [], thumbnails: [])
+
+    var body: some View {
+        let sources = moment.photos.sorted { $0.sortIndex < $1.sortIndex }
+            .map { Source(id: $0.id, data: $0.data) }
         HStack(spacing: 7) {
-            ForEach(photos.indices, id: \.self) { index in
-                thumb(photos, at: index)
+            if prepared.sources == sources {
+                ForEach(prepared.thumbnails) { thumbnail in
+                    Button {
+                        onPhotoTap(
+                            MomentPhotoViewerRoute(
+                                photos: sources.map(\.data),
+                                selectedIndex: thumbnail.index
+                            )
+                        )
+                    } label: {
+                        Image(uiImage: thumbnail.image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 48, height: 48)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("View photo \(thumbnail.index + 1) of \(sources.count)")
+                    .accessibilityHint("Opens the photo full screen")
+                }
             }
         }
         .padding(.top, 3)
-    }
-
-    private var sortedPhotos: [MomentPhoto] {
-        moment.photos.sorted { $0.sortIndex < $1.sortIndex }
-    }
-
-    @ViewBuilder
-    private func thumb(_ photos: [MomentPhoto], at index: Int) -> some View {
-        if let image = UIImage(data: photos[index].data) {
-            Button {
-                onPhotoTap(
-                    MomentPhotoViewerRoute(
-                        photos: photos.map(\.data),
-                        selectedIndex: index
-                    )
-                )
-            } label: {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 48, height: 48)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("View photo \(index + 1) of \(photos.count)")
-            .accessibilityHint("Opens the photo full screen")
+        .task(id: sources) {
+            prepared = PreparedPhotos(
+                sources: sources,
+                thumbnails: sources.enumerated().compactMap { index, source in
+                    guard let image = UIImage(data: source.data) else { return nil }
+                    return Thumbnail(id: source.id, index: index, image: image)
+                }
+            )
         }
     }
 }

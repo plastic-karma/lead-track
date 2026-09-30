@@ -7,7 +7,6 @@ import UIKit
 struct RecentMomentPhotoPicker: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @Environment(\.scenePhase) private var scenePhase
 
     let window: RecentPhotoWindow
     let prepare: (WeeklyMomentPhotoDraft) -> Void
@@ -28,9 +27,7 @@ struct RecentMomentPhotoPicker: View {
         }
         .interactiveDismissDisabled(isImporting)
         .task { library.refresh(in: window) }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { library.refresh(in: window) }
-        }
+        .modifier(RecentPhotoSceneRefresh(library: library, window: window))
         .onChange(of: library.photos) { _, photos in
             pruneSelection(to: photos)
         }
@@ -234,5 +231,17 @@ private extension RecentMomentPhotoPicker {
             occurredAt: min(result.occurredAt ?? .now, .now),
             failureCount: result.failureCount
         ))
+    }
+}
+
+private struct RecentPhotoSceneRefresh: ViewModifier {
+    let library: RecentMomentPhotoLibrary
+    let window: RecentPhotoWindow
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content.onChange(of: scenePhase) { _, phase in
+            if phase == .active { library.refresh(in: window) }
+        }
     }
 }

@@ -25,7 +25,7 @@ struct CountEntryView: View {
                     .keyboardType(.decimalPad)
                     .focused($isFocused)
                 } footer: {
-                    footer
+                    CountEntryFooter(unit: metric.unit, day: day)
                 }
             }
             .navigationTitle("Log \(metric.name)")
@@ -44,19 +44,6 @@ struct CountEntryView: View {
         }
     }
 
-    /// The unit reminder, joined — on a browsed earlier day — by which day
-    /// the log lands on, so backfilling never writes into today unnoticed.
-    private var footer: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            if let unit = metric.unit, !unit.isEmpty {
-                Text("Enter number of \(unit)")
-            }
-            if let day {
-                Text("Logs to \(day.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
-            }
-        }
-    }
-
     private var parsedValue: Double? {
         LocaleDoubleParser.parse(valueText).flatMap { $0 > 0 ? $0 : nil }
     }
@@ -72,5 +59,21 @@ struct CountEntryView: View {
         )
         saveTrigger.toggle()
         dismiss()
+    }
+}
+
+private struct CountEntryFooter: View {
+    let unit: String?
+    let day: Date?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let unit, !unit.isEmpty {
+                Text("Enter number of \(unit)")
+            }
+            if let day {
+                Text("Logs to \(day.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
+            }
+        }
     }
 }

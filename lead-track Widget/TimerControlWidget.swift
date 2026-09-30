@@ -12,7 +12,7 @@ struct TimerControlEntry: TimelineEntry {
 }
 
 /// A snapshot of the configured metric used to render the Timer Control widget.
-struct TimerMetricState {
+struct TimerMetricState: Equatable {
     let stableID: String
     let name: String
     let icon: String
@@ -125,40 +125,41 @@ extension TimerControlProvider {
 // MARK: - Widget View
 
 struct TimerControlWidgetView: View {
-    let entry: TimerControlEntry
+    let metric: TimerMetricState?
+    let loadFailed: Bool
 
     var body: some View {
-        if let metric = entry.metric {
-            timerControl(metric)
-        } else if entry.loadFailed {
-            loadFailedView
+        if let metric {
+            TimerControlContent(metric: metric)
+        } else if loadFailed {
+            TimerControlPlaceholder(
+                icon: "exclamationmark.triangle",
+                title: "Couldn't load data",
+                message: "Open LeadStone to refresh."
+            )
         } else {
-            unconfiguredView
+            TimerControlPlaceholder(
+                icon: "timer",
+                title: "Choose a metric",
+                message: "Touch and hold, then tap Edit Widget."
+            )
         }
     }
+}
 
-    private var loadFailedView: some View {
+private struct TimerControlPlaceholder: View {
+    let icon: String
+    let title: String
+    let message: String
+
+    var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "exclamationmark.triangle")
+            Image(systemName: icon)
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("Couldn't load data")
+            Text(title)
                 .font(.headline)
-            Text("Open LeadStone to refresh.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private var unconfiguredView: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "timer")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Choose a metric")
-                .font(.headline)
-            Text("Touch and hold, then tap Edit Widget.")
+            Text(message)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -166,47 +167,68 @@ struct TimerControlWidgetView: View {
     }
 }
 
-// MARK: - Configured Layout
+private struct TimerControlContent: View {
+    let metric: TimerMetricState
 
-extension TimerControlWidgetView {
-    private func timerControl(_ metric: TimerMetricState) -> some View {
+    var body: some View {
         VStack(spacing: 10) {
-            header(metric)
+            TimerControlHeader(name: metric.name, icon: metric.icon, tint: metric.displayColor)
             Spacer(minLength: 0)
-            timeDisplay(metric)
+            TimerControlTime(
+                runningSince: metric.runningSince,
+                countdownInterval: metric.countdownInterval,
+                todayTotal: metric.todayTotal,
+                tint: metric.displayColor
+            )
             Spacer(minLength: 0)
-            controlButton(metric)
+            TimerControlButton(
+                metricID: metric.stableID,
+                isRunning: metric.isRunning,
+                tint: metric.prominentColor
+            )
         }
     }
+}
 
-    private func header(_ metric: TimerMetricState) -> some View {
+private struct TimerControlHeader: View {
+    let name: String
+    let icon: String
+    let tint: Color
+
+    var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: metric.icon)
-                .foregroundStyle(metric.displayColor)
-            Text(metric.name)
+            Image(systemName: icon)
+                .foregroundStyle(tint)
+            Text(name)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 0)
         }
     }
+}
 
-    @ViewBuilder
-    private func timeDisplay(_ metric: TimerMetricState) -> some View {
-        if let since = metric.runningSince {
-            Text(liveTimer: metric.countdownInterval, countingUpFrom: since)
+private struct TimerControlTime: View {
+    let runningSince: Date?
+    let countdownInterval: ClosedRange<Date>?
+    let todayTotal: TimeInterval
+    let tint: Color
+
+    var body: some View {
+        if let since = runningSince {
+            Text(liveTimer: countdownInterval, countingUpFrom: since)
                 .roundedDigits(.title, weight: .semibold)
-                .foregroundStyle(metric.displayColor)
+                .foregroundStyle(tint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
         } else {
-            todayTotal(metric.todayTotal)
+            total
         }
     }
 
-    private func todayTotal(_ total: TimeInterval) -> some View {
+    private var total: some View {
         VStack(spacing: 2) {
-            Text(DurationFormatter.format(total))
+            Text(DurationFormatter.format(todayTotal))
                 .roundedDigits(.title2, weight: .semibold)
             Text("today")
                 .font(.caption2)
@@ -217,21 +239,24 @@ extension TimerControlWidgetView {
 
 // MARK: - Control Button
 
-extension TimerControlWidgetView {
-    @ViewBuilder
-    private func controlButton(_ metric: TimerMetricState) -> some View {
-        if metric.isRunning {
-            Button(intent: StopTimerIntent(metricID: metric.stableID)) {
+private struct TimerControlButton: View {
+    let metricID: String
+    let isRunning: Bool
+    let tint: Color
+
+    var body: some View {
+        if isRunning {
+            Button(intent: StopTimerIntent(metricID: metricID)) {
                 buttonLabel("Stop", icon: "stop.fill")
             }
-            .tint(metric.prominentColor)
+            .tint(tint)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else {
-            Button(intent: StartTimerIntent(metricID: metric.stableID)) {
+            Button(intent: StartTimerIntent(metricID: metricID)) {
                 buttonLabel("Start", icon: "play.fill")
             }
-            .tint(metric.prominentColor)
+            .tint(tint)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }
@@ -256,7 +281,7 @@ struct TimerControlWidget: Widget {
             intent: SelectMetricIntent.self,
             provider: TimerControlProvider()
         ) { entry in
-            TimerControlWidgetView(entry: entry)
+            TimerControlWidgetView(metric: entry.metric, loadFailed: entry.loadFailed)
                 .containerBackground(.fill, for: .widget)
         }
         .configurationDisplayName("Timer Control")

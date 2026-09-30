@@ -6,24 +6,23 @@ struct AppLockSettingsView: View {
         store: AppPrivacySettings.store
     )
     private var enabled = false
-    @AppStorage(
-        AppPrivacySettings.appLockGracePeriodKey,
-        store: AppPrivacySettings.store
-    )
-    private var gracePeriodRaw = AppLockGracePeriod.immediately.rawValue
 
     var body: some View {
         Form {
-            toggleSection
+            AppLockToggleSection(enabled: $enabled)
             if enabled {
-                graceSection
+                AppLockGraceSection()
             }
         }
         .navigationTitle("Privacy & Security")
         .navigationBarTitleDisplayMode(.inline)
     }
+}
 
-    private var toggleSection: some View {
+private struct AppLockToggleSection: View {
+    @Binding var enabled: Bool
+
+    var body: some View {
         Section {
             Toggle("Require Face ID", isOn: $enabled)
         } footer: {
@@ -36,8 +35,16 @@ struct AppLockSettingsView: View {
             )
         }
     }
+}
 
-    private var graceSection: some View {
+private struct AppLockGraceSection: View {
+    @AppStorage(
+        AppPrivacySettings.appLockGracePeriodKey,
+        store: AppPrivacySettings.store
+    )
+    private var gracePeriodRaw = AppLockGracePeriod.immediately.rawValue
+
+    var body: some View {
         Section("Lock") {
             Picker("Lock", selection: $gracePeriodRaw) {
                 ForEach(AppLockGracePeriod.allCases) { period in

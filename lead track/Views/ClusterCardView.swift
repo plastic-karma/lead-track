@@ -18,9 +18,17 @@ struct ClusterCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            ClusterCardHeader(
+                aspiration: cluster.aspiration,
+                soleMetric: cluster.metrics.count == 1 ? cluster.metrics.first : nil,
+                onCollapse: onCollapse
+            )
             Divider()
-            rows
+            ClusterCardRows(
+                metrics: cluster.metrics, intentions: cluster.intentions,
+                archivedOwner: cluster.aspiration?.isArchived == true ? cluster.aspiration : nil,
+                runningSessions: runningSessions, day: day, dividerAfterLast: insight != nil
+            )
             if let reading = insight {
                 ClusterInsightLine(reading: reading)
             }
@@ -42,11 +50,14 @@ struct ClusterCardView: View {
 
 // MARK: - Header
 
-extension ClusterCardView {
+private struct ClusterCardHeader: View {
+    let aspiration: Aspiration?
+    let soleMetric: Metric?
+    let onCollapse: () -> Void
     /// The full card's opening line: folds the cluster back to its stub (the
     /// rotated chevron says so). The aspiration itself is reached from the
     /// Aspirations tab, not from here.
-    private var header: some View {
+    var body: some View {
         Button(action: onCollapse) {
             headerLabel
         }
@@ -55,7 +66,7 @@ extension ClusterCardView {
     }
 
     private var headerLabel: some View {
-        ClusterHeaderLabel(cluster: cluster) {
+        ClusterHeaderLabel(aspiration: aspiration, soleMetric: soleMetric) {
             if let why {
                 Text(why)
                     .font(.caption2)
@@ -70,7 +81,7 @@ extension ClusterCardView {
     }
 
     private var why: String? {
-        guard let aspiration = cluster.aspiration else {
+        guard let aspiration else {
             return "Not serving any aspiration yet"
         }
         return aspiration.detail.isEmpty ? nil : aspiration.detail
@@ -79,19 +90,26 @@ extension ClusterCardView {
 
 // MARK: - Rows
 
-extension ClusterCardView {
+private struct ClusterCardRows: View {
+    let metrics: [Metric]
+    let intentions: [Intention]
+    let archivedOwner: Aspiration?
+    let runningSessions: [Session]
+    let day: Date
+    let dividerAfterLast: Bool
     /// Metric rows in their stored order — done rows fold in place, never
     /// re-sorted — then the intention rows, with an inset hairline between
     /// neighbors (and before the insight line when one closes the card).
-    @ViewBuilder
-    private var rows: some View {
-        if let owner = cluster.aspiration, owner.isArchived {
-            NavigationLink("View aspiration · Bring back", value: owner)
-                .font(.caption)
-                .padding(.vertical, 8)
-        }
-        DividedRows(items: rowItems, dividerAfterLast: insight != nil) { item in
-            rowView(item)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let owner = archivedOwner {
+                NavigationLink("View aspiration · Bring back", value: owner)
+                    .font(.caption)
+                    .padding(.vertical, 8)
+            }
+            DividedRows(items: rowItems, dividerAfterLast: dividerAfterLast) { item in
+                rowView(item)
+            }
         }
     }
 
@@ -99,18 +117,25 @@ extension ClusterCardView {
         case metric(Metric)
         case intention(Intention)
 
-        var id: String {
+        enum ID: Hashable {
+            case metric(UUID)
+            case intention(UUID)
+            case legacyMetric(String)
+            case legacyIntention(String)
+        }
+
+        var id: ID {
             switch self {
             case let .metric(metric):
-                "metric-\(metric.stableIdentity)"
+                metric.stableID.map(ID.metric) ?? .legacyMetric(metric.identityFallback)
             case let .intention(intention):
-                "intention-\(intention.stableIdentity)"
+                intention.stableID.map(ID.intention) ?? .legacyIntention(intention.identityFallback)
             }
         }
     }
 
     private var rowItems: [RowItem] {
-        cluster.metrics.map(RowItem.metric) + cluster.intentions.map(RowItem.intention)
+        metrics.map(RowItem.metric) + intentions.map(RowItem.intention)
     }
 
     @ViewBuilder
@@ -136,7 +161,8 @@ extension ClusterCardView {
 /// status reading, a chevron). The unaligned pseudo-cluster stays
 /// deliberately unhighlighted: its quietness is the whole nudge.
 struct ClusterHeaderLabel<Trailing: View>: View {
-    let cluster: TodayGrouping.Cluster
+    let aspiration: Aspiration?
+    let soleMetric: Metric?
     var bottomPadding: CGFloat = 10
     @ViewBuilder var trailing: Trailing
 
@@ -153,7 +179,7 @@ struct ClusterHeaderLabel<Trailing: View>: View {
                 .kerning(0.5)
                 .foregroundStyle(titleTint)
                 .lineLimit(1)
-            if cluster.aspiration?.isArchived == true {
+            if aspiration?.isArchived == true {
                 Text("Set aside")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -173,25 +199,21 @@ extension ClusterHeaderLabel {
     /// A lone unaligned metric titles its own card; several share the
     /// existing "Unaligned Effort" language.
     private var title: String {
-        if let aspiration = cluster.aspiration { return aspiration.title }
+        if let aspiration { return aspiration.title }
         guard let metric = soleMetric else { return "Unaligned Effort" }
         return metric.name
     }
 
     private var icon: String? {
-        cluster.aspiration?.displayIcon ?? soleMetric?.displayIcon
+        aspiration?.displayIcon ?? soleMetric?.displayIcon
     }
 
     private var iconTint: Color {
-        cluster.aspiration?.displayColor ?? soleMetric?.displayColor ?? .secondary
+        aspiration?.displayColor ?? soleMetric?.displayColor ?? .secondary
     }
 
     private var titleTint: Color {
-        cluster.aspiration == nil ? .secondary : iconTint
-    }
-
-    private var soleMetric: Metric? {
-        cluster.metrics.count == 1 ? cluster.metrics.first : nil
+        aspiration == nil ? .secondary : iconTint
     }
 }
 
@@ -201,6 +223,6 @@ extension View {
     /// The cluster card's shell: the standard elevated card surface without
     /// `cardSurface()`'s uniform padding — cluster rows manage their own.
     func clusterCardSurface() -> some View {
-        background(Theme.cardShape())
+        background { Theme.cardShape() }
     }
 }

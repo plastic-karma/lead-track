@@ -15,28 +15,24 @@ struct DayDialView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            navigationRow
-            heroRow
+            DayDialNavigation(daysBack: $daysBack)
+            DayDialHero(metrics: metrics, daysBack: daysBack)
         }
         .padding(.top, 6)
         .padding(.bottom, 2)
-    }
-
-    /// The instant every reading below describes — today when the chevrons
-    /// rest.
-    private var day: Date {
-        TodayGrouping.day(back: daysBack)
-    }
-
-    private var isToday: Bool {
-        daysBack == 0
     }
 }
 
 // MARK: - Day navigation
 
-extension DayDialView {
-    private var navigationRow: some View {
+private struct DayDialNavigation: View {
+    @Binding var daysBack: Int
+
+    private var isToday: Bool {
+        daysBack == 0
+    }
+
+    var body: some View {
         HStack(spacing: 10) {
             chevron("chevron.left", label: "Earlier day") {
                 daysBack += 1
@@ -73,15 +69,18 @@ extension DayDialView {
         switch daysBack {
         case 0: "Today"
         case 1: "Yesterday"
-        default: "\(daysBack) Days Ago"
+        default: "\(daysBack.formatted()) Days Ago"
         }
     }
 }
 
 // MARK: - Hero row
 
-extension DayDialView {
-    private var heroRow: some View {
+private struct DayDialHero: View {
+    let metrics: [Metric]
+    let daysBack: Int
+
+    var body: some View {
         HStack(alignment: .center, spacing: 18) {
             if !arcs.isEmpty {
                 SegmentedGoalDial(arcs: arcs)
@@ -93,6 +92,16 @@ extension DayDialView {
                 subtitleLine
             }
         }
+    }
+
+    /// The instant every reading below describes — today when the chevrons
+    /// rest.
+    private var day: Date {
+        TodayGrouping.day(back: daysBack)
+    }
+
+    private var isToday: Bool {
+        daysBack == 0
     }
 
     /// Today keeps its streak line; a browsed earlier day reads how its
@@ -109,7 +118,7 @@ extension DayDialView {
 
 // MARK: - Segments
 
-extension DayDialView {
+private extension DayDialHero {
     /// Metrics with an active daily target on the browsed day — one dial
     /// segment each.
     private var goalMetrics: [Metric] {
@@ -119,9 +128,9 @@ extension DayDialView {
     }
 
     private var arcs: [GoalDialArc] {
-        goalMetrics.enumerated().map { index, metric in
+        goalMetrics.map { metric in
             GoalDialArc(
-                id: index,
+                id: metric.stableIdentity,
                 tint: metric.displayColor,
                 fraction: TodayGrouping.completionFraction(metric, now: day)
             )
@@ -131,7 +140,7 @@ extension DayDialView {
 
 // MARK: - Past days
 
-extension DayDialView {
+private extension DayDialHero {
     /// The browsed day's quiet reading where today's streak line stands: how
     /// that day's goals closed. Days without an active goal stay bare — the
     /// date alone carries them.
@@ -148,7 +157,7 @@ extension DayDialView {
 
 // MARK: - Streak
 
-extension DayDialView {
+private extension DayDialHero {
     /// A warm one-line anchor under the date: lead with the best streak the
     /// user has going — noting when today already held — otherwise a gentle
     /// invitation to begin.

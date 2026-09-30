@@ -30,37 +30,15 @@ struct MomentRediscoverySection: View {
             // Group has no child to receive its task and cannot prepare one.
             VStack(alignment: .leading, spacing: 0) {
                 if let moment = rediscoveredMoment {
-                    card(moment)
+                    MomentRediscoveryCard(
+                        moment: moment,
+                        onHide: { updatePreferences { $0.dismiss(period: period) } },
+                        onExclude: { updatePreferences { $0.exclude(moment, period: period) } }
+                    )
                 }
             }
             .task(id: MomentRediscoveryPreferences.periodKey(period)) { prepare() }
         }
-    }
-
-    private func card(_ moment: Moment) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("From earlier").font(.headline)
-                Spacer()
-                Button("Hide for this period", systemImage: "xmark") {
-                    updatePreferences { $0.dismiss(period: period) }
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.plain)
-            }
-            Text("An older Moment you kept under an aspiration in this period.")
-                .font(.caption).foregroundStyle(.secondary)
-            RetrospectiveMomentRow(moment: moment)
-            Button("Don’t rediscover this Moment", systemImage: "eye.slash") {
-                updatePreferences { $0.exclude(moment, period: period) }
-            }
-            .font(.caption)
-            .buttonStyle(.plain)
-            Text("Hiding or excluding leaves your saved Moment and photos untouched.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        .padding(16)
-        .background(Theme.cardShape())
     }
 
     private func prepare() {
@@ -75,5 +53,33 @@ struct MomentRediscoverySection: View {
         update(&preferences)
         guard let data = preferences.encoded(), data != encodedPreferences else { return }
         encodedPreferences = data
+    }
+}
+
+private struct MomentRediscoveryCard: View {
+    let moment: Moment
+    let onHide: () -> Void
+    let onExclude: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("From earlier").font(.headline)
+                Spacer()
+                Button("Hide for this period", systemImage: "xmark", action: onHide)
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.plain)
+            }
+            Text("An older Moment you kept under an aspiration in this period.")
+                .font(.caption).foregroundStyle(.secondary)
+            RetrospectiveMomentRow(moment: moment)
+            Button("Don’t rediscover this Moment", systemImage: "eye.slash", action: onExclude)
+                .font(.caption)
+                .buttonStyle(.plain)
+            Text("Hiding or excluding leaves your saved Moment and photos untouched.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .background(Theme.cardShape())
     }
 }

@@ -11,25 +11,25 @@ enum ExportScope: Hashable {
 }
 #endif
 
-enum CSVExporter {
-    /// Writes the export to the temp file, or nil when the write fails. Any
-    /// previous export is removed first, so a failed write can never hand
-    /// the share sheet a stale file with a different scope or range.
-    static func exportFile(
-        from sessions: [Session]
-    ) -> URL? {
-        let csv = buildCSV(from: sessions)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("lead-track-export.csv")
+/// Immutable export contents let SwiftUI prepare a file only when its inputs
+/// change, rather than writing to disk during every body evaluation.
+struct ExportFile: Equatable {
+    let contents: String
+    let filename: String
+
+    func write() -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         try? FileManager.default.removeItem(at: url)
         do {
-            try csv.write(to: url, atomically: true, encoding: .utf8)
+            try contents.write(to: url, atomically: true, encoding: .utf8)
             return url
         } catch {
             return nil
         }
     }
+}
 
+enum CSVExporter {
     static func buildCSV(from sessions: [Session]) -> String {
         var lines = [CSVSchema.header]
         for session in sessions {

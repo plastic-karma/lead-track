@@ -23,16 +23,7 @@ extension WeeklyReviewView {
     private func oversubscriptionCard(_ checkIn: OversubscriptionInsight.CheckIn) -> some View {
         VStack(spacing: 16) {
             dismissibleSectionHeader("Check-In", dismiss: dismissOversubscription)
-            VStack(alignment: .leading, spacing: 8) {
-                Label(checkIn.headline, systemImage: checkIn.symbol)
-                    .font(.subheadline.weight(.medium))
-                Text(checkIn.detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface()
+            OversubscriptionDetail(headline: checkIn.headline, symbol: checkIn.symbol, detail: checkIn.detail)
         }
         .padding(.horizontal)
     }
@@ -43,5 +34,24 @@ extension WeeklyReviewView {
         withAnimation(.easeOut(duration: 0.2)) {
             dismissedOversubscriptionWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
+    }
+}
+
+private struct OversubscriptionDetail: View {
+    let headline: String
+    let symbol: String
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(headline, systemImage: symbol)
+                .font(.subheadline.weight(.medium))
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardSurface()
     }
 }

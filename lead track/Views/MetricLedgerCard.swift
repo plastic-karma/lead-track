@@ -41,11 +41,19 @@ struct MetricLedgerCard: View {
             }
             if !collapsed {
                 ForEach(weeks) { week in
-                    linkedRow(week.id) { activeRow(week) }
+                    linkedRow(week.id) {
+                        LedgerActiveMetricRow(
+                            name: week.name, icon: week.icon, colorName: week.colorName,
+                            total: ValueFormatter.format(week.total, type: week.measurementType, unit: week.unit),
+                            change: week.change
+                        )
+                    }
                     divider(after: week.id)
                 }
                 ForEach(quiet) { metric in
-                    linkedRow(metric.id) { quietRow(metric) }
+                    linkedRow(metric.id) {
+                        LedgerQuietMetricRow(name: metric.name, icon: metric.icon)
+                    }
                     divider(after: metric.id)
                 }
             }
@@ -53,7 +61,7 @@ struct MetricLedgerCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
-        .background(Theme.cardShape())
+        .background { Theme.cardShape() }
     }
 }
 
@@ -132,32 +140,45 @@ extension MetricLedgerCard {
             Divider()
         }
     }
+}
 
-    private func activeRow(_ week: WeeklyReview.MetricWeek) -> some View {
+private struct LedgerActiveMetricRow: View {
+    let name: String
+    let icon: String
+    let colorName: String?
+    let total: String
+    let change: WeeklyReview.WeekChange
+
+    var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: week.icon)
+            Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundStyle(MetricColor.color(named: week.colorName))
+                .foregroundStyle(MetricColor.color(named: colorName))
                 .frame(width: 24)
-            Text(week.name)
+            Text(name)
                 .font(.subheadline)
             Spacer(minLength: 8)
-            Text(ValueFormatter.format(week.total, type: week.measurementType, unit: week.unit))
+            Text(total)
                 .numeralStyle(.stat)
                 .lineLimit(1)
-            changeBadge(week)
+            LedgerChangeBadge(change: change, colorName: colorName)
         }
         .padding(.vertical, 11)
         .contentShape(Rectangle())
     }
+}
 
-    private func quietRow(_ metric: WeeklyReview.QuietMetric) -> some View {
+private struct LedgerQuietMetricRow: View {
+    let name: String
+    let icon: String
+
+    var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: metric.icon)
+            Image(systemName: icon)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
-            Text(metric.name)
+            Text(name)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -173,13 +194,16 @@ extension MetricLedgerCard {
 
 // MARK: - Week-over-week badge
 
-extension MetricLedgerCard {
-    private func changeBadge(_ week: WeeklyReview.MetricWeek) -> some View {
+private struct LedgerChangeBadge: View {
+    let change: WeeklyReview.WeekChange
+    let colorName: String?
+
+    var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: changeSymbol(week.change))
+            Image(systemName: changeSymbol(change))
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(changeTint(week))
-            if let text = changePercent(week.change) {
+                .foregroundStyle(changeTint)
+            if let text = changePercent(change) {
                 Text(text)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -187,7 +211,7 @@ extension MetricLedgerCard {
             }
         }
         .frame(minWidth: 44, alignment: .trailing)
-        .accessibilityLabel(changeDescription(week.change))
+        .accessibilityLabel(changeDescription(change))
     }
 
     private func changeSymbol(_ change: WeeklyReview.WeekChange) -> String {
@@ -201,9 +225,9 @@ extension MetricLedgerCard {
 
     /// A gain wears the metric's color; everything else stays gray — the
     /// ledger notes without ever scolding.
-    private func changeTint(_ week: WeeklyReview.MetricWeek) -> AnyShapeStyle {
-        if case .up = week.change {
-            return AnyShapeStyle(MetricColor.color(named: week.colorName))
+    private var changeTint: AnyShapeStyle {
+        if case .up = change {
+            return AnyShapeStyle(MetricColor.color(named: colorName))
         }
         return AnyShapeStyle(.secondary)
     }
@@ -211,7 +235,7 @@ extension MetricLedgerCard {
     private func changePercent(_ change: WeeklyReview.WeekChange) -> String? {
         switch change {
         case let .up(ratio), let .down(ratio):
-            "\(Int((abs(ratio) * 100).rounded()))%"
+            abs(ratio).formatted(.percent.precision(.fractionLength(0)).rounded(rule: .toNearestOrAwayFromZero))
         case .flat, .noBaseline:
             nil
         }
@@ -220,9 +244,9 @@ extension MetricLedgerCard {
     private func changeDescription(_ change: WeeklyReview.WeekChange) -> String {
         switch change {
         case let .up(ratio):
-            "up \(Int((abs(ratio) * 100).rounded())) percent vs last week"
+            "up \(Int((abs(ratio) * 100).rounded()).formatted()) percent vs last week"
         case let .down(ratio):
-            "down \(Int((abs(ratio) * 100).rounded())) percent vs last week"
+            "down \(Int((abs(ratio) * 100).rounded()).formatted()) percent vs last week"
         case .flat:
             "about level with last week"
         case .noBaseline:
