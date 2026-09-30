@@ -6,7 +6,6 @@ import SwiftUI
 /// screen), day-grouped, with the swipe actions the fold's preview rows
 /// trade away for compactness.
 struct MetricSessionsListView: View {
-    @Environment(\.modelContext) private var modelContext
     let metric: Metric
     @Query private var sessions: [Session]
     @State private var sessionToMove: Session?
@@ -30,7 +29,9 @@ struct MetricSessionsListView: View {
     var body: some View {
         List {
             ForEach(SessionDayGrouping.group(directSessions)) { group in
-                daySection(group)
+                MetricSessionDaySection(
+                    group: group, canMove: !metric.projects.isEmpty, sessionToMove: $sessionToMove
+                )
             }
         }
         .navigationTitle("History")
@@ -43,8 +44,13 @@ struct MetricSessionsListView: View {
 
 // MARK: - Sections
 
-extension MetricSessionsListView {
-    private func daySection(_ group: SessionDayGroup) -> some View {
+private struct MetricSessionDaySection: View {
+    @Environment(\.modelContext) private var modelContext
+    let group: SessionDayGroup
+    let canMove: Bool
+    @Binding var sessionToMove: Session?
+
+    var body: some View {
         Section(SessionDayGrouping.label(for: group.day)) {
             ForEach(group.sessions) { session in
                 sessionRow(session)
@@ -58,7 +64,7 @@ extension MetricSessionsListView {
     private func sessionRow(_ session: Session) -> some View {
         SessionRowView(session: session, showsDate: false)
             .swipeActions(edge: .leading) {
-                if !metric.projects.isEmpty {
+                if canMove {
                     Button { sessionToMove = session } label: {
                         Label("Move", systemImage: "folder")
                     }

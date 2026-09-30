@@ -16,27 +16,6 @@ struct MarkdownExportData {
 /// that is the entire integration, deliberately: the app itself never talks
 /// to a model.
 enum MarkdownExporter {
-    /// Writes the report to the temp file, or nil when the write fails. Any
-    /// previous export at the same path is removed first, so a failed write
-    /// can never hand the share sheet a stale artifact.
-    static func exportFile(
-        data: MarkdownExportData,
-        range: ExportRange,
-        now: Date = .now,
-        calendar: Calendar = .current
-    ) -> URL? {
-        let markdown = buildMarkdown(data: data, range: range, now: now, calendar: calendar)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(filename(range: range))
-        try? FileManager.default.removeItem(at: url)
-        do {
-            try markdown.write(to: url, atomically: true, encoding: .utf8)
-            return url
-        } catch {
-            return nil
-        }
-    }
-
     /// "lead-track-last-3-months.md" — the range names the artifact, so
     /// exports of different windows saved side by side stay apart.
     static func filename(range: ExportRange) -> String {
@@ -50,8 +29,18 @@ enum MarkdownExporter {
         calendar: Calendar = .current
     ) -> String {
         let window = MarkdownExportWindow(data: data, range: range, now: now, calendar: calendar)
+        return buildMarkdown(data: data, range: range, window: window, now: now)
+    }
+
+    /// Reuse a prepared window when the caller also needs its empty state.
+    static func buildMarkdown(
+        data: MarkdownExportData,
+        range: ExportRange,
+        window: MarkdownExportWindow,
+        now: Date
+    ) -> String {
         var lines: [String] = []
-        lines += header(range: range, now: now, calendar: calendar)
+        lines += header(range: range, now: now, calendar: window.calendar)
         lines += glossary
         lines += MarkdownExportProfiles.aspirations(data.aspirations)
         lines += MarkdownExportProfiles.metrics(data.metrics)

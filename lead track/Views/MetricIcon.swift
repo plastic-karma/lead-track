@@ -15,9 +15,9 @@ struct MetricIcon: View {
             .font(.system(size: size * 0.42, weight: .semibold))
             .foregroundStyle(tint)
             .frame(width: size, height: size)
-            .background(
+            .background {
                 RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
                     .fill(tint.opacity(0.18))
-            )
+            }
     }
 }

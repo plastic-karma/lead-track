@@ -24,7 +24,12 @@ extension WeeklyReviewView {
                 sectionBreak("Goal Seasons")
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(review.goalSeasonReviews) { row in
-                        seasonRow(row)
+                        GoalSeasonReviewRow(
+                            row: row,
+                            renew: { renewSeason(row) },
+                            adjust: { adjustSeason(row) },
+                            retire: { retiringSeasonMetric = metric(for: row.id) }
+                        )
                     }
                 }
                 .cardSurface()
@@ -49,8 +54,13 @@ extension WeeklyReviewView {
 
 // MARK: - Rows
 
-extension WeeklyReviewView {
-    private func seasonRow(_ row: GoalSeason.Review) -> some View {
+private struct GoalSeasonReviewRow: View {
+    let row: GoalSeason.Review
+    let renew: () -> Void
+    let adjust: () -> Void
+    let retire: () -> Void
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 Image(systemName: row.icon)
@@ -73,7 +83,7 @@ extension WeeklyReviewView {
             Text(servesLine(row))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            seasonDecisions(row)
+            seasonDecisions
         }
     }
 
@@ -97,11 +107,11 @@ extension WeeklyReviewView {
             : "Serves \(row.aspirationTitles.joined(separator: ", "))"
     }
 
-    private func seasonDecisions(_ row: GoalSeason.Review) -> some View {
+    private var seasonDecisions: some View {
         HStack(spacing: 8) {
-            seasonButton("Renew") { renewSeason(row) }
-            seasonButton("Adjust") { adjustSeason(row) }
-            seasonButton("Retire") { retiringSeasonMetric = metric(for: row.id) }
+            seasonButton("Renew", action: renew)
+            seasonButton("Adjust", action: adjust)
+            seasonButton("Retire", action: retire)
         }
         .padding(.top, 2)
     }

@@ -5,142 +5,113 @@ import SwiftUI
 /// Renders a set of sibling `Form` rows inside the reminder section.
 struct ReminderScheduleEditor: View {
     @Binding var schedule: ReminderSchedule
-    /// One stable identity per fixed-time row, kept parallel to
-    /// `schedule.fixedTimes` (which stores plain, possibly duplicated
-    /// `Date`s). Keying the rows by these means deleting a middle row removes
-    /// exactly that row, instead of every later `DatePicker` inheriting the
-    /// state of the row above it.
-    @State private var fixedTimeRowIDs: [UUID]
-
-    init(schedule: Binding<ReminderSchedule>) {
-        _schedule = schedule
-        _fixedTimeRowIDs = State(
-            initialValue: schedule.wrappedValue.fixedTimes.map { _ in UUID() }
-        )
-    }
 
     var body: some View {
-        modePicker
-        if schedule.mode == .fixed {
-            fixedTimesEditor
-        } else {
-            randomRangeEditor
-        }
-    }
-}
-
-// MARK: - Mode
-
-extension ReminderScheduleEditor {
-    private var modePicker: some View {
         Picker("Style", selection: $schedule.mode) {
             Text("Fixed times").tag(ReminderSchedule.Mode.fixed)
             Text("Random in range").tag(ReminderSchedule.Mode.random)
         }
         .pickerStyle(.segmented)
+        if schedule.mode == .fixed {
+            ReminderFixedTimesEditor(times: $schedule.fixedTimes)
+        } else {
+            ReminderRandomRangeEditor(
+                start: $schedule.rangeStart, end: $schedule.rangeEnd, count: $schedule.count
+            )
+        }
     }
 }
 
-// MARK: - Fixed Times
+private struct ReminderFixedTimesEditor: View {
+    @Binding var times: [Date]
+    /// Duplicate times still represent distinct rows. These IDs live for the
+    /// editor's lifetime and stay attached to the surviving rows on deletion.
+    @State private var rowIDs: [UUID]
+    @Environment(\.calendar) private var calendar
 
-extension ReminderScheduleEditor {
-    @ViewBuilder
-    private var fixedTimesEditor: some View {
-        ForEach(Array(zip(fixedTimeRowIDs, schedule.fixedTimes.indices)), id: \.0) { _, index in
-            fixedTimeRow(index)
+    init(times: Binding<[Date]>) {
+        _times = times
+        _rowIDs = State(initialValue: times.wrappedValue.map { _ in UUID() })
+    }
+
+    var body: some View {
+        ForEach(rowIDs.prefix(times.count).enumerated(), id: \.element) { index, id in
+            ReminderFixedTimeRow(
+                time: binding(for: id, fallback: times[index]), position: index + 1,
+                canRemove: times.count > 1, remove: { removeTime(id) }
+            )
         }
-        if schedule.fixedTimes.count < ReminderSchedule.maxPerDay {
-            Button(action: addFixedTime) {
+        if times.count < ReminderSchedule.maxPerDay {
+            Button(action: addTime) {
                 Label("Add a time", systemImage: "plus.circle")
             }
         }
     }
 
-    private func fixedTimeRow(_ index: Int) -> some View {
-        HStack {
-            DatePicker(
-                "Time \(index + 1)",
-                selection: fixedTimeBinding(index),
-                displayedComponents: .hourAndMinute
-            )
-            if schedule.fixedTimes.count > 1 {
-                removeButton(index)
-            }
-        }
-    }
-
-    /// A binding to one fixed time; the array-index subscript isn't reachable
-    /// through the projected `$schedule` binding, so build it by hand. Guards
-    /// the index so a row torn down mid-delete can't read out of bounds.
-    private func fixedTimeBinding(_ index: Int) -> Binding<Date> {
+    /// Resolve by identity on every access: a disappearing row must never
+    /// write into the row that moved into its former array position.
+    private func binding(for id: UUID, fallback: Date) -> Binding<Date> {
         Binding(
             get: {
-                guard schedule.fixedTimes.indices.contains(index) else {
-                    return ReminderSchedule.time(hour: 9)
+                guard let index = rowIDs.firstIndex(of: id), times.indices.contains(index) else {
+                    return fallback
                 }
-                return schedule.fixedTimes[index]
+                return times[index]
             },
-            set: { newValue in
-                guard schedule.fixedTimes.indices.contains(index) else { return }
-                schedule.fixedTimes[index] = newValue
+            set: { value in
+                guard let index = rowIDs.firstIndex(of: id), times.indices.contains(index) else { return }
+                times[index] = value
             }
         )
     }
 
-    private func removeButton(_ index: Int) -> some View {
-        Button(role: .destructive) {
-            removeFixedTime(at: index)
-        } label: {
-            Image(systemName: "minus.circle.fill")
-                .foregroundStyle(.red)
-        }
-        .buttonStyle(.borderless)
-        .accessibilityLabel("Remove time \(index + 1)")
+    private func addTime() {
+        guard times.count < ReminderSchedule.maxPerDay else { return }
+        let next = times.last.flatMap { calendar.date(byAdding: .hour, value: 1, to: $0) }
+            ?? ReminderSchedule.time(hour: 9, calendar: calendar)
+        rowIDs.append(UUID())
+        times.append(next)
+    }
+
+    private func removeTime(_ id: UUID) {
+        guard times.count > 1, let index = rowIDs.firstIndex(of: id), times.indices.contains(index) else { return }
+        rowIDs.remove(at: index)
+        times.remove(at: index)
     }
 }
 
-// MARK: - Random Range
+private struct ReminderFixedTimeRow: View {
+    @Binding var time: Date
+    let position: Int
+    let canRemove: Bool
+    let remove: () -> Void
 
-extension ReminderScheduleEditor {
-    @ViewBuilder
-    private var randomRangeEditor: some View {
-        DatePicker(
-            "From", selection: $schedule.rangeStart, displayedComponents: .hourAndMinute
-        )
-        DatePicker(
-            "To", selection: $schedule.rangeEnd, displayedComponents: .hourAndMinute
-        )
+    var body: some View {
+        HStack {
+            DatePicker("Time \(position)", selection: $time, displayedComponents: .hourAndMinute)
+            if canRemove {
+                Button(role: .destructive, action: remove) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Remove time \(position)")
+            }
+        }
+    }
+}
+
+private struct ReminderRandomRangeEditor: View {
+    @Binding var start: Date
+    @Binding var end: Date
+    @Binding var count: Int
+
+    var body: some View {
+        DatePicker("From", selection: $start, displayedComponents: .hourAndMinute)
+        DatePicker("To", selection: $end, displayedComponents: .hourAndMinute)
         Stepper(
-            "\(schedule.count) \(schedule.count == 1 ? "ping" : "pings") a day",
-            value: $schedule.count,
-            in: 1 ... ReminderSchedule.maxPerDay
+            "\(count) \(count == 1 ? "ping" : "pings") a day",
+            value: $count, in: 1 ... ReminderSchedule.maxPerDay
         )
-    }
-}
-
-// MARK: - Mutations
-
-extension ReminderScheduleEditor {
-    private func addFixedTime() {
-        guard schedule.fixedTimes.count < ReminderSchedule.maxPerDay else { return }
-        fixedTimeRowIDs.append(UUID())
-        schedule.fixedTimes.append(nextSuggestedTime())
-    }
-
-    private func removeFixedTime(at index: Int) {
-        guard schedule.fixedTimes.count > 1,
-              schedule.fixedTimes.indices.contains(index),
-              fixedTimeRowIDs.indices.contains(index)
-        else { return }
-        fixedTimeRowIDs.remove(at: index)
-        schedule.fixedTimes.remove(at: index)
-    }
-
-    /// An hour past the last time, so a freshly added row doesn't duplicate it.
-    private func nextSuggestedTime() -> Date {
-        guard let last = schedule.fixedTimes.last else {
-            return ReminderSchedule.time(hour: 9)
-        }
-        return Calendar.current.date(byAdding: .hour, value: 1, to: last) ?? last
     }
 }

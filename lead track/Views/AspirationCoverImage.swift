@@ -5,12 +5,10 @@ import UIKit
 // row and banner view files so the decode policy lives in one place.
 
 extension Aspiration {
-    /// The decoded cover photo at full resolution, if one was set — for the
-    /// detail banner, which shows the whole photo once per screen. Small
-    /// recurring surfaces (list rows) use `coverThumbnail(fitting:)` instead,
-    /// so scrolling never re-decodes the full bytes.
+    /// The cached full-resolution cover for the detail banner.
+    @MainActor
     var coverImage: Image? {
-        guard let data = imageData, let uiImage = UIImage(data: data) else {
+        guard let data = imageData, let uiImage = AspirationCoverImages.image(from: data) else {
             return nil
         }
         return Image(uiImage: uiImage)
@@ -24,6 +22,28 @@ extension Aspiration {
     func coverThumbnail(fitting side: CGFloat) -> UIImage? {
         guard let data = imageData else { return nil }
         return AspirationCoverThumbnails.thumbnail(from: data, fitting: side)
+    }
+}
+
+/// Full-resolution covers reuse UIKit image objects across the editor and banner.
+/// Exact bytes form the key, so replacing a cover cannot return stale pixels.
+@MainActor
+enum AspirationCoverImages {
+    private static let cache: NSCache<NSData, UIImage> = {
+        let cache = NSCache<NSData, UIImage>()
+        cache.countLimit = 4
+        cache.totalCostLimit = 64 * 1024 * 1024
+        return cache
+    }()
+
+    static func image(from data: Data) -> UIImage? {
+        let key = data as NSData
+        if let image = cache.object(forKey: key) { return image }
+        guard let image = UIImage(data: data) else { return nil }
+        let decodedBytes = image.cgImage.map { $0.bytesPerRow * $0.height }
+            ?? Int(image.size.width * image.scale) * Int(image.size.height * image.scale) * 4
+        cache.setObject(image, forKey: key, cost: data.count + decodedBytes)
+        return image
     }
 }
 

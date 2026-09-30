@@ -8,9 +8,10 @@ struct MetricQuietLines: View {
     let dailyTotals: [DailyTotal]
 
     var body: some View {
+        let line = statsLine
         VStack(spacing: 6) {
-            if !statsLine.isEmpty {
-                Text(statsLine)
+            if !line.isEmpty {
+                Text(line)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

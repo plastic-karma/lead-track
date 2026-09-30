@@ -7,7 +7,6 @@ struct DailyGoalItem: View {
     let goal: TimeInterval
     let excludedWeekdays: [Int]
     var measurementType: MeasurementType = .duration
-    var unit: String?
     var tint: Color = .accentColor
     var now: Date = .now
     var calendar: Calendar = .current
@@ -28,7 +27,6 @@ struct DailyGoalItem: View {
                 current: today,
                 goal: goal,
                 measurementType: measurementType,
-                unit: unit,
                 tint: tint
             )
         }

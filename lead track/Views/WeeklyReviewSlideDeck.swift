@@ -38,8 +38,11 @@ extension WeeklyReviewView {
     ) -> some View {
         TabView(selection: $slide) {
             ForEach(deck) { item in
-                slideBody(item, review: review, groups: groups)
-                    .tag(item)
+                Tab(value: item) {
+                    ZStack {
+                        slideBody(item, review: review, groups: groups)
+                    }
+                }
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
@@ -220,23 +223,20 @@ struct MetricGroupsSection: View {
             weeks: group.weeks,
             quiet: group.quiet,
             metric: metric,
-            collapse: collapseBinding(group.id)
+            collapse: $expandedGroups[collapsed: group.id]
         )
     }
+}
 
-    /// The transient fold flag for one group card, backed by the set above so
-    /// sibling cards fold independently. Cards start collapsed, so a card reads
-    /// as folded unless the user has expanded it.
-    private func collapseBinding(_ id: String) -> Binding<Bool> {
-        Binding(
-            get: { !expandedGroups.contains(id) },
-            set: { collapsed in
-                if collapsed {
-                    expandedGroups.remove(id)
-                } else {
-                    expandedGroups.insert(id)
-                }
+private extension Set where Element == String {
+    subscript(collapsed id: String) -> Bool {
+        get { !contains(id) }
+        set {
+            if newValue {
+                remove(id)
+            } else {
+                insert(id)
             }
-        )
+        }
     }
 }

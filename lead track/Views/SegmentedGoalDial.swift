@@ -3,7 +3,7 @@ import SwiftUI
 /// One goal's share of a segmented completion dial — its tint and how full it
 /// stands (0–1; 1 fills it whole).
 struct GoalDialArc: Identifiable {
-    let id: Int
+    let id: String
     let tint: Color
     let fraction: Double
 }
@@ -28,10 +28,10 @@ struct SegmentedGoalDial: View {
 
     var body: some View {
         ZStack {
-            ForEach(arcs) { arc in
-                segment(at: arc.id, fraction: 1, color: Theme.inactive)
+            ForEach(arcs.enumerated(), id: \.element.id) { index, arc in
+                segment(at: index, fraction: 1, color: Theme.inactive)
                 segment(
-                    at: arc.id,
+                    at: index,
                     fraction: arc.fraction,
                     color: isComplete ? .accentColor : arc.tint
                 )

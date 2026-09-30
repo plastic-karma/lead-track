@@ -16,11 +16,13 @@ struct DividedRows<Item: Identifiable, Row: View>: View {
     @ViewBuilder let row: (Item) -> Row
 
     var body: some View {
-        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-            row(item)
-            if index < items.count - 1 || dividerAfterLast {
-                Divider()
-                    .padding(.leading, ClusterRowStyle.dividerInset)
+        ForEach(items.enumerated(), id: \.element.id) { index, item in
+            VStack(spacing: 0) {
+                row(item)
+                if index < items.count - 1 || dividerAfterLast {
+                    Divider()
+                        .padding(.leading, ClusterRowStyle.dividerInset)
+                }
             }
         }
     }

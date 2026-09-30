@@ -1,27 +1,51 @@
 import SwiftUI
 import WatchKit
 
-/// Quick entry for count metrics: adjust the amount with the crown or the
-/// +/- buttons, then log it with one tap.
+/// Quick count entry using the crown or +/- buttons, then one tap to log.
 struct WatchLogView: View {
     @Environment(WatchSyncController.self) private var sync
     @Environment(\.dismiss) private var dismiss
-    let metric: WatchMetricSnapshot
+    let metricID: UUID
+    let name: String
+    let unit: String?
+    let tint: Color
     @State private var amount = 1.0
-
-    /// One set of bounds for the crown, the +/- buttons, and the
-    /// accessibility adjustable action, so they can't diverge.
-    private static let amountRange: ClosedRange<Double> = 1 ... 999
 
     var body: some View {
         VStack(spacing: 12) {
-            amountPicker
-            logButton
+            WatchAmountPicker(name: name, unit: unit, amount: $amount)
+            Button(action: log) {
+                Label("Log", systemImage: "checkmark")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(tint)
         }
-        .navigationTitle(metric.name)
+        .navigationTitle(name)
     }
 
-    private var amountPicker: some View {
+    private func log() {
+        let action = WatchAction(
+            kind: .logValue,
+            metricID: metricID,
+            value: Double(Int(amount))
+        )
+        sync.perform(action)
+        WKInterfaceDevice.current().play(.success)
+        dismiss()
+    }
+}
+
+private struct WatchAmountPicker: View {
+    let name: String
+    let unit: String?
+    @Binding var amount: Double
+
+    /// Shared bounds keep the crown, buttons and accessibility in agreement.
+    private static let amountRange: ClosedRange<Double> = 1 ... 999
+
+    var body: some View {
         HStack(spacing: 8) {
             adjustButton("minus", change: -1)
             amountDisplay
@@ -31,9 +55,9 @@ struct WatchLogView: View {
 
     private var amountDisplay: some View {
         VStack(spacing: 0) {
-            Text("\(Int(amount))")
+            Text(Int(amount), format: .number)
                 .roundedDigits(.title, weight: .semibold)
-            if let unit = metric.unit, !unit.isEmpty {
+            if let unit, !unit.isEmpty {
                 Text(unit)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -51,7 +75,7 @@ struct WatchLogView: View {
             isHapticFeedbackEnabled: true
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(metric.name)
+        .accessibilityLabel(name)
         .accessibilityValue(accessibilityAmount)
         .accessibilityAdjustableAction { direction in
             switch direction {
@@ -63,8 +87,9 @@ struct WatchLogView: View {
     }
 
     private var accessibilityAmount: String {
-        guard let unit = metric.unit, !unit.isEmpty else { return "\(Int(amount))" }
-        return "\(Int(amount)) \(unit)"
+        let value = Int(amount).formatted()
+        guard let unit, !unit.isEmpty else { return value }
+        return "\(value) \(unit)"
     }
 
     private func adjust(by change: Double) {
@@ -74,10 +99,7 @@ struct WatchLogView: View {
         )
     }
 
-    private func adjustButton(
-        _ icon: String,
-        change: Double
-    ) -> some View {
+    private func adjustButton(_ icon: String, change: Double) -> some View {
         Button {
             adjust(by: change)
         } label: {
@@ -87,26 +109,5 @@ struct WatchLogView: View {
         .buttonStyle(.bordered)
         .clipShape(Circle())
         .accessibilityLabel(change > 0 ? "Increase amount" : "Decrease amount")
-    }
-
-    private var logButton: some View {
-        Button(action: log) {
-            Label("Log", systemImage: "checkmark")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(metric.prominentColor)
-    }
-
-    private func log() {
-        let action = WatchAction(
-            kind: .logValue,
-            metricID: metric.id,
-            value: Double(Int(amount))
-        )
-        sync.perform(action)
-        WKInterfaceDevice.current().play(.success)
-        dismiss()
     }
 }

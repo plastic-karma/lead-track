@@ -17,16 +17,24 @@ struct ClusterStubView: View {
     @Binding var isExpanded: Bool
 
     var body: some View {
-        if isExpanded {
-            ClusterCardView(cluster: cluster, runningSessions: runningSessions, day: day) {
-                withAnimation(.snappy) { isExpanded = false }
+        ZStack {
+            if isExpanded {
+                ClusterCardView(cluster: cluster, runningSessions: runningSessions, day: day) {
+                    withAnimation(.snappy) { isExpanded = false }
+                }
+            } else {
+                ClusterCollapsedCard(cluster: cluster, day: day, isExpanded: $isExpanded)
             }
-        } else {
-            stub
         }
     }
+}
 
-    private var stub: some View {
+private struct ClusterCollapsedCard: View {
+    let cluster: TodayGrouping.Cluster
+    let day: Date
+    @Binding var isExpanded: Bool
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.snappy) { isExpanded = true }
@@ -61,10 +69,11 @@ struct ClusterStubView: View {
 
 // MARK: - Header
 
-extension ClusterStubView {
+extension ClusterCollapsedCard {
     private var header: some View {
         ClusterHeaderLabel(
-            cluster: cluster,
+            aspiration: cluster.aspiration,
+            soleMetric: cluster.metrics.count == 1 ? cluster.metrics.first : nil,
             bottomPadding: cluster.intentions.isEmpty ? 12 : 10
         ) {
             statusLine
@@ -77,7 +86,7 @@ extension ClusterStubView {
 
 // MARK: - Status Line
 
-extension ClusterStubView {
+extension ClusterCollapsedCard {
     /// The folded cluster's one-line reading of where the day stands.
     @ViewBuilder
     private var statusLine: some View {
@@ -129,7 +138,7 @@ extension ClusterStubView {
     private var selfFillingStatus: some View {
         let line = if let value = selfFillingValue {
             Text(value)
-                .font(.system(.caption2, design: .rounded).weight(.semibold))
+                .font(.system(.caption2, design: .rounded, weight: .semibold))
                 .foregroundStyle(.primary)
                 + Text(" · fills itself from Health")
                 .foregroundStyle(.secondary)

@@ -15,7 +15,9 @@ struct AspirationListView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(aspirations.unarchived.inDisplayOrder) { aspiration in
-                    card(aspiration)
+                    AspirationListCard(
+                        aspiration: aspiration, draggingID: $draggingID, move: move
+                    )
                 }
             }
             .padding(.horizontal)
@@ -25,8 +27,8 @@ struct AspirationListView: View {
         .background(Theme.washedScreen)
         .navigationTitle("Aspirations")
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                appMenu
+            ToolbarItem(placement: .topBarLeading) {
+                AspirationLibraryMenu()
             }
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
@@ -37,42 +39,17 @@ struct AspirationListView: View {
         .sheet(isPresented: $showingAddSheet) {
             AspirationFormView()
         }
-        .overlay { emptyState }
+        .overlay {
+            if aspirations.unarchived.isEmpty {
+                AspirationListEmptyState(showingAddSheet: $showingAddSheet)
+            }
+        }
     }
 }
 
 // MARK: - Pieces
 
 extension AspirationListView {
-    private var appMenu: some View {
-        Menu {
-            NavigationLink(value: AllMetricsRoute()) {
-                Label("All Metrics", systemImage: "list.bullet")
-            }
-            NavigationLink {
-                SetAsideAspirationsView()
-            } label: {
-                Label("Set-aside aspirations", systemImage: "archivebox")
-            }
-        } label: {
-            Label("More", systemImage: "ellipsis.circle")
-        }
-    }
-
-    /// One aspiration card: tap navigates, long-press lifts it for reorder —
-    /// deliberately nothing else on long-press. Deleting lives on the detail
-    /// screen alone, so the cascade is never one hold-and-tap away from the
-    /// list and the drag never competes with a context menu.
-    private func card(_ aspiration: Aspiration) -> some View {
-        NavigationLink(value: aspiration) {
-            AspirationCardView(aspiration: aspiration)
-        }
-        .buttonStyle(.plain)
-        .aspirationReorderable(
-            id: aspiration.stableIdentity, draggingID: $draggingID, move: move
-        )
-    }
-
     /// One hover step of a drag: rewrite the ranks and save, so the order
     /// survives however the drag session ends.
     private func move(_ draggedID: String, over targetID: String) {
@@ -84,19 +61,6 @@ extension AspirationListView {
                 targetID: targetID
             )
             try? modelContext.save()
-        }
-    }
-
-    @ViewBuilder
-    private var emptyState: some View {
-        if aspirations.unarchived.isEmpty {
-            ContentUnavailableView {
-                Label("No Aspirations", systemImage: "mountain.2")
-            } description: {
-                Text("Create an aspiration to see how much you've poured into what matters.")
-            } actions: {
-                Button("Add Aspiration") { showingAddSheet = true }
-            }
         }
     }
 }
@@ -116,6 +80,53 @@ extension ModelContext {
             try deleteAspirationAndDependents(aspiration)
         } catch {
             StoreLog.error("Aspiration delete failed: \(error)")
+        }
+    }
+}
+
+private struct AspirationLibraryMenu: View {
+    var body: some View {
+        Menu {
+            NavigationLink(value: AllMetricsRoute()) {
+                Label("All Metrics", systemImage: "list.bullet")
+            }
+            NavigationLink {
+                SetAsideAspirationsView()
+            } label: {
+                Label("Set-aside aspirations", systemImage: "archivebox")
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
+        }
+    }
+}
+
+private struct AspirationListCard: View {
+    let aspiration: Aspiration
+    @Binding var draggingID: String?
+    let move: (_ draggedID: String, _ targetID: String) -> Void
+
+    var body: some View {
+        NavigationLink(value: aspiration) {
+            AspirationCardView(aspiration: aspiration)
+        }
+        .buttonStyle(.plain)
+        .aspirationReorderable(
+            id: aspiration.stableIdentity, draggingID: $draggingID, move: move
+        )
+    }
+}
+
+private struct AspirationListEmptyState: View {
+    @Binding var showingAddSheet: Bool
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("No Aspirations", systemImage: "mountain.2")
+        } description: {
+            Text("Create an aspiration to see how much you've poured into what matters.")
+        } actions: {
+            Button("Add Aspiration") { showingAddSheet = true }
         }
     }
 }

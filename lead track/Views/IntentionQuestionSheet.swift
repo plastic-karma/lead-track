@@ -22,7 +22,7 @@ struct IntentionQuestionSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                questionSection
+                IntentionDailyQuestionSection(asksDaily: $asksDaily, question: $question)
                 if let owner = intention.aspiration, owner.isArchived {
                     Section {
                         Text("Questions are paused while this aspiration is set aside.")
@@ -35,19 +35,6 @@ struct IntentionQuestionSheet: View {
             .toolbar { toolbarButtons }
         }
         .presentationDetents([.medium])
-    }
-
-    private var questionSection: some View {
-        Section {
-            Toggle("Daily Question", isOn: $asksDaily)
-            if asksDaily {
-                IntentionQuestionEditor(question: $question)
-            }
-        } footer: {
-            if asksDaily {
-                Text("Asks once a day, at a random time inside your window, through the end of the week.")
-            }
-        }
     }
 
     @ToolbarContentBuilder

@@ -13,3 +13,22 @@ struct IntentionQuestionEditor: View {
         DatePicker("To", selection: $question.windowEnd, displayedComponents: .hourAndMinute)
     }
 }
+
+/// Shared section chrome for the creation form and the saved-question editor.
+struct IntentionDailyQuestionSection: View {
+    @Binding var asksDaily: Bool
+    @Binding var question: IntentionQuestion
+
+    var body: some View {
+        Section {
+            Toggle("Daily Question", isOn: $asksDaily)
+            if asksDaily {
+                IntentionQuestionEditor(question: $question)
+            }
+        } footer: {
+            if asksDaily {
+                Text("Asks once a day, at a random time inside your window, through the end of the week.")
+            }
+        }
+    }
+}

@@ -50,9 +50,11 @@ extension GoalCalendarDayPanel {
                 .padding(.vertical, 8)
         }
         ForEach(rows) { row in
-            rowView(row)
-            if row.id != rows.last?.id {
-                Divider().padding(.leading, 40)
+            VStack(spacing: 0) {
+                rowView(row)
+                if row.id != rows.last?.id {
+                    Divider().padding(.leading, 40)
+                }
             }
         }
     }
@@ -95,7 +97,7 @@ extension GoalCalendarDayPanel {
         )
         guard outcome.verdict != .free || outcome.value > 0 else { return nil }
         return PanelRow(
-            id: metric.stableID?.uuidString ?? metric.name,
+            id: metric.stableIdentity,
             icon: metric.displayIcon,
             name: metric.name,
             tint: metric.displayColor,

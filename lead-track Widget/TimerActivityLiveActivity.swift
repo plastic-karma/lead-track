@@ -10,7 +10,10 @@ struct TimerActivityLiveActivity: Widget {
         ActivityConfiguration(
             for: TimerActivityAttributes.self
         ) { context in
-            lockScreenView(context)
+            TimerActivityLockScreen(
+                attributes: context.attributes,
+                startedAt: context.state.startedAt
+            )
         } dynamicIsland: { context in
             dynamicIsland(context)
         }
@@ -22,13 +25,17 @@ struct TimerActivityLiveActivity: Widget {
                 metricIcon(context)
             }
             DynamicIslandExpandedRegion(.center) {
-                expandedCenter(context)
+                TimerActivityNames(
+                    metricName: context.attributes.metricName,
+                    projectName: context.attributes.projectName,
+                    projectFont: .caption
+                )
             }
             DynamicIslandExpandedRegion(.trailing) {
                 expandedTimer(context)
             }
             DynamicIslandExpandedRegion(.bottom) {
-                stopButton(context)
+                TimerActivityStopButton(tint: context.attributes.displayColor)
             }
         } compactLeading: {
             metricIcon(context)
@@ -48,14 +55,6 @@ extension TimerActivityLiveActivity {
             .foregroundStyle(context.attributes.displayColor)
     }
 
-    private func expandedCenter(_ context: ActivityContext) -> some View {
-        TimerActivityNames(
-            metricName: context.attributes.metricName,
-            projectName: context.attributes.projectName,
-            projectFont: .caption
-        )
-    }
-
     private func expandedTimer(_ context: ActivityContext) -> some View {
         Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
             .roundedDigits(.title3)
@@ -72,41 +71,61 @@ extension TimerActivityLiveActivity {
     private func countdown(_ context: ActivityContext) -> ClosedRange<Date>? {
         context.attributes.countdownInterval(startedAt: context.state.startedAt)
     }
-
-    private func stopButton(_ context: ActivityContext) -> some View {
-        Button(intent: StopTimerIntent()) {
-            Label("Stop", systemImage: "stop.fill")
-                .frame(maxWidth: .infinity)
-        }
-        .tint(context.attributes.displayColor)
-    }
 }
 
 // MARK: - Lock Screen
 
-extension TimerActivityLiveActivity {
-    private func lockScreenView(_ context: ActivityContext) -> some View {
+private struct TimerActivityLockScreen: View {
+    let metricName: String
+    let projectName: String?
+    let icon: String
+    let tint: Color
+    let startedAt: Date
+    let countdownInterval: ClosedRange<Date>?
+
+    init(attributes: TimerActivityAttributes, startedAt: Date) {
+        metricName = attributes.metricName
+        projectName = attributes.projectName
+        icon = attributes.icon
+        tint = attributes.displayColor
+        self.startedAt = startedAt
+        countdownInterval = attributes.countdownInterval(startedAt: startedAt)
+    }
+
+    var body: some View {
         HStack {
-            Image(systemName: context.attributes.icon)
+            Image(systemName: icon)
                 .font(.title2)
-                .foregroundStyle(context.attributes.displayColor)
+                .foregroundStyle(tint)
             TimerActivityNames(
-                metricName: context.attributes.metricName,
-                projectName: context.attributes.projectName,
+                metricName: metricName,
+                projectName: projectName,
                 projectFont: .subheadline
             )
             Spacer()
-            Text(liveTimer: countdown(context), countingUpFrom: context.state.startedAt)
+            Text(liveTimer: countdownInterval, countingUpFrom: startedAt)
                 .roundedDigits(.title)
-                .foregroundStyle(context.attributes.displayColor)
+                .foregroundStyle(tint)
             Button(intent: StopTimerIntent()) {
                 Label("Stop", systemImage: "stop.fill")
                     .labelStyle(.iconOnly)
                     .font(.title2)
             }
-            .tint(context.attributes.displayColor)
+            .tint(tint)
         }
         .padding()
+    }
+}
+
+private struct TimerActivityStopButton: View {
+    let tint: Color
+
+    var body: some View {
+        Button(intent: StopTimerIntent()) {
+            Label("Stop", systemImage: "stop.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .tint(tint)
     }
 }
 

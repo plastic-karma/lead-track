@@ -32,27 +32,39 @@ struct MetricDetailView: View {
     }
 
     var body: some View {
-        page
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbar }
-            .safeAreaInset(edge: .bottom) { dock }
-            .sheet(isPresented: $showingProjectForm) { ProjectFormView(metric: metric) }
-            .sheet(isPresented: $showingDetailedStats) { detailedStats }
-            .sheet(isPresented: $showingGoalSettings) { GoalSettingsView(metric: metric) }
-            .sheet(isPresented: $showingCalendar) { GoalCalendarView(filter: .metric(metric)) }
-            .sheet(isPresented: $showingEdit) { editSheet }
-            .sheet(isPresented: $showingCountEntry) { CountEntryView(metric: metric, project: nil) }
-            .sheet(isPresented: $showingDurationEntry) { DurationEntryView(metric: metric, project: nil) }
-            .sheet(item: $sessionToMove) { MoveSessionView(session: $0) }
-            .recordingFeedback(isActive: activeSession != nil)
-            .task(id: metric.stableID) {
-                await refreshHealth()
-            }
+        MetricDetailPage(
+            metric: metric, sessions: sessions, allAspirations: allAspirations,
+            sessionToMove: $sessionToMove, onUnarchive: toggleArchive
+        )
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbar }
+        .safeAreaInset(edge: .bottom) { dock }
+        .sheet(isPresented: $showingProjectForm) { ProjectFormView(metric: metric) }
+        .sheet(isPresented: $showingDetailedStats) { detailedStats }
+        .sheet(isPresented: $showingGoalSettings) { GoalSettingsView(metric: metric) }
+        .sheet(isPresented: $showingCalendar) { GoalCalendarView(filter: .metric(metric)) }
+        .sheet(isPresented: $showingEdit) { editSheet }
+        .sheet(isPresented: $showingCountEntry) { CountEntryView(metric: metric, project: nil) }
+        .sheet(isPresented: $showingDurationEntry) { DurationEntryView(metric: metric, project: nil) }
+        .sheet(item: $sessionToMove) { MoveSessionView(session: $0) }
+        .recordingFeedback(isActive: activeSession != nil)
+        .task(id: metric.stableID) {
+            await refreshHealth()
+        }
     }
+}
 
-    private var tint: Color {
-        metric.displayColor
+extension MetricDetailView {
+    @ViewBuilder
+    private var dock: some View {
+        if !metric.isHealthLinked, !metric.isArchived {
+            MetricRecordDock(
+                metric: metric,
+                activeSession: activeSession,
+                onLogManually: showManualEntry
+            )
+        }
     }
 }
 
@@ -63,43 +75,43 @@ extension MetricDetailView {
         sessions.first(where: \.isRunning)
     }
 
-    private var directSessions: [Session] {
-        sessions
-            .filter { $0.project == nil && !$0.isRunning }
-            .sorted { $0.startedAt > $1.startedAt }
+    private var dailyTotals: [DailyTotal] {
+        SessionStatistics.dailyTotals(from: sessions)
+    }
+}
+
+// MARK: - Page
+
+private struct MetricDetailPage: View {
+    let metric: Metric
+    let sessions: [Session]
+    let allAspirations: [Aspiration]
+    @Binding var sessionToMove: Session?
+    let onUnarchive: () -> Void
+
+    private var tint: Color {
+        metric.displayColor
+    }
+
+    private var activeSession: Session? {
+        sessions.first(where: \.isRunning)
     }
 
     private var dailyTotals: [DailyTotal] {
         SessionStatistics.dailyTotals(from: sessions)
     }
 
-    /// The aspirations this metric is poured into. Read from the forward
-    /// relationship (`Aspiration.metrics`) rather than the `metric.aspirations`
-    /// back-array: SwiftData doesn't reliably populate the many-to-many inverse
-    /// when only the aspiration side is ever written, so the back-array reads
-    /// empty. Mirrors how the Today footer and `AspirationRollup` read effort,
-    /// and stays reactive as links change.
-    private var connectedAspirations: [Aspiration] {
-        allAspirations.filter { aspiration in
-            aspiration.metrics.contains(where: { $0 === metric })
-        }
-    }
-}
-
-// MARK: - Page
-
-extension MetricDetailView {
-    private var page: some View {
+    var body: some View {
         ScrollView {
             column
         }
-        .background(washBackground)
+        .background { washBackground }
     }
 
     private var column: some View {
         let totals = dailyTotals
         return VStack(alignment: .leading, spacing: 14) {
-            titleBlock
+            MetricDetailTitle(metric: metric, aspirations: connectedAspirations)
             archivedBanner
             ringCard(totals)
             MetricQuietLines(metric: metric, dailyTotals: totals)
@@ -139,17 +151,6 @@ extension MetricDetailView {
             .ignoresSafeArea()
     }
 
-    @ViewBuilder
-    private var dock: some View {
-        if !metric.isHealthLinked, !metric.isArchived {
-            MetricRecordDock(
-                metric: metric,
-                activeSession: activeSession,
-                onLogManually: showManualEntry
-            )
-        }
-    }
-
     /// The quiet notice an archived metric wears in place of its record
     /// dock: where it went, and the way back.
     @ViewBuilder
@@ -159,7 +160,7 @@ extension MetricDetailView {
                 Image(systemName: "archivebox")
                 Text("Archived — resting off Today and Week.")
                 Spacer(minLength: 8)
-                Button("Unarchive") { toggleArchive() }
+                Button("Unarchive", action: onUnarchive)
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
             }
@@ -168,26 +169,47 @@ extension MetricDetailView {
             .padding(.horizontal, 4)
         }
     }
+
+    private var directSessions: [Session] {
+        sessions
+            .filter { $0.project == nil && !$0.isRunning }
+            .sorted { $0.startedAt > $1.startedAt }
+    }
+
+    /// The aspirations this metric is poured into. Read from the forward
+    /// relationship (`Aspiration.metrics`) rather than the `metric.aspirations`
+    /// back-array: SwiftData doesn't reliably populate the many-to-many inverse
+    /// when only the aspiration side is ever written, so the back-array reads
+    /// empty. Mirrors how the Today footer and `AspirationRollup` read effort,
+    /// and stays reactive as links change.
+    private var connectedAspirations: [Aspiration] {
+        allAspirations.filter { aspiration in
+            aspiration.metrics.contains(where: { $0 === metric })
+        }
+    }
 }
 
 // MARK: - Title Block
 
-extension MetricDetailView {
-    private var titleBlock: some View {
+private struct MetricDetailTitle: View {
+    let metric: Metric
+    let aspirations: [Aspiration]
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                MetricIcon(systemName: metric.displayIcon, tint: tint, size: 40)
+                MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 40)
                 Text(metric.name)
                     .font(.title2.weight(.bold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
                 Spacer(minLength: 8)
-                if let aspiration = connectedAspirations.first, connectedAspirations.count == 1 {
+                if let aspiration = aspirations.first, aspirations.count == 1 {
                     chipLink(aspiration)
                 }
             }
-            if connectedAspirations.count > 1 {
-                AspirationChipsRow(aspirations: connectedAspirations)
+            if aspirations.count > 1 {
+                AspirationChipsRow(aspirations: aspirations)
             }
             description
         }

@@ -28,7 +28,7 @@ struct AspirationChipsRow: View {
 
     var body: some View {
         if !aspirations.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     ForEach(aspirations) { aspiration in
                         NavigationLink(value: aspiration) {
@@ -39,6 +39,7 @@ struct AspirationChipsRow: View {
                 }
                 .padding(.vertical, 2)
             }
+            .scrollIndicators(.hidden)
         }
     }
 }

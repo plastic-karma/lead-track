@@ -11,7 +11,7 @@ struct MoveSessionView: View {
                 if session.project != nil {
                     topLevelSection
                 }
-                projectsSection
+                MoveDestinationsSection(destinations: destinations, onMove: move)
             }
             .navigationTitle("Move Session")
             .navigationBarTitleDisplayMode(.inline)
@@ -53,22 +53,36 @@ extension MoveSessionView {
         }
     }
 
-    private var projectsSection: some View {
+    private func move(to project: Project?) {
+        SessionService.move(session, to: project)
+        dismiss()
+    }
+}
+
+private struct MoveDestinationsSection: View {
+    let destinations: [Project]
+    let onMove: (Project?) -> Void
+
+    var body: some View {
         Section("Projects") {
             if destinations.isEmpty {
                 Text("No other projects")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(destinations) { project in
-                    Button { move(to: project) } label: {
-                        projectLabel(project)
+                    Button { onMove(project) } label: {
+                        MoveProjectLabel(project: project)
                     }
                 }
             }
         }
     }
+}
 
-    private func projectLabel(_ project: Project) -> some View {
+private struct MoveProjectLabel: View {
+    let project: Project
+
+    var body: some View {
         HStack {
             Text(project.name)
             Spacer()
@@ -78,10 +92,5 @@ extension MoveSessionView {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func move(to project: Project?) {
-        SessionService.move(session, to: project)
-        dismiss()
     }
 }

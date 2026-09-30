@@ -6,6 +6,7 @@ import WidgetKit
 /// Bridges the watch UI to the phone over WatchConnectivity. Keeps the last
 /// snapshot cached locally, applies actions optimistically, and falls back to
 /// queued delivery when the phone is unreachable.
+@MainActor
 @Observable
 final class WatchSyncController: NSObject {
     /// One instance shared by the SwiftUI scene and the app delegate, so the

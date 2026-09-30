@@ -5,8 +5,8 @@ struct GoalProgressView: View {
     let current: TimeInterval
     let goal: TimeInterval
     var measurementType: MeasurementType = .duration
-    var unit: String?
     var tint: Color = .accentColor
+    @Environment(\.locale) private var locale
 
     private var fraction: Double {
         goal > 0 ? min(current / goal, 1.0) : 0
@@ -40,6 +40,6 @@ struct GoalProgressView: View {
     }
 
     private var percentText: String {
-        "\(Int(fraction * 100))%"
+        fraction.formatted(.percent.precision(.fractionLength(0)).rounded(rule: .towardZero).locale(locale))
     }
 }

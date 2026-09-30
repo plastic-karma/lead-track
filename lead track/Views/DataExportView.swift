@@ -7,11 +7,6 @@ import SwiftUI
 /// (deliberately instead of wiring a model into the app). CSV stays for
 /// spreadsheets and re-import.
 struct DataExportView: View {
-    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
-    @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
-    @Query(sort: \Intention.createdAt) private var intentions: [Intention]
-    @Query(sort: \AspirationCheckIn.createdAt) private var checkIns: [AspirationCheckIn]
-    @Query(sort: \Moment.occurredAt) private var moments: [Moment]
     @Environment(\.dismiss) private var dismiss
     @State private var format: ExportFormat = .markdown
     @State private var rangeKind: ExportRange.Kind = .last7Days
@@ -22,12 +17,19 @@ struct DataExportView: View {
     var body: some View {
         NavigationStack {
             Form {
-                formatSection
-                timeRangeSection
+                ExportFormatSection(format: $format)
+                ExportRangeSection(kind: $rangeKind, months: $monthCount, years: $yearCount)
                 if format == .csv {
-                    scopeSection
+                    ExportScopeSection(scope: $scope)
                 }
-                exportSection
+                Section {
+                    switch format {
+                    case .markdown:
+                        MarkdownExportLink(range: range)
+                    case .csv:
+                        CSVExportLink(range: range, scope: scope)
+                    }
+                }
             }
             .navigationTitle("Export Data")
             .navigationBarTitleDisplayMode(.inline)
@@ -38,12 +40,16 @@ struct DataExportView: View {
             }
         }
     }
+
+    private var range: ExportRange {
+        .make(rangeKind, months: monthCount, years: yearCount)
+    }
 }
 
-// MARK: - Format & Range Sections
+private struct ExportFormatSection: View {
+    @Binding var format: ExportFormat
 
-extension DataExportView {
-    private var formatSection: some View {
+    var body: some View {
         Section {
             Picker("Format", selection: $format) {
                 ForEach(ExportFormat.allCases, id: \.self) { format in
@@ -55,11 +61,11 @@ extension DataExportView {
         } header: {
             Text("Format")
         } footer: {
-            Text(formatFooter)
+            Text(footer)
         }
     }
 
-    private var formatFooter: String {
+    private var footer: String {
         switch format {
         case .markdown:
             "One self-describing file with every metric, moment, intention, and check-in, "
@@ -68,26 +74,37 @@ extension DataExportView {
             "Raw session rows for spreadsheets, or for importing back into LeadStone."
         }
     }
+}
 
-    private var timeRangeSection: some View {
+private struct ExportRangeSection: View {
+    @Binding var kind: ExportRange.Kind
+    @Binding var months: Int
+    @Binding var years: Int
+
+    var body: some View {
         Section("Time Range") {
-            Picker("Range", selection: $rangeKind) {
+            Picker("Range", selection: $kind) {
                 ForEach(ExportRange.Kind.allCases, id: \.self) { kind in
-                    Text(range(for: kind).label).tag(kind)
+                    Text(ExportRange.make(kind, months: months, years: years).label).tag(kind)
                 }
             }
             .pickerStyle(.inline)
             .labelsHidden()
-            if rangeKind == .lastMonths {
-                Stepper("Months: \(monthCount)", value: $monthCount, in: 1 ... 24)
+            if kind == .lastMonths {
+                Stepper("Months: \(months)", value: $months, in: 1 ... 24)
             }
-            if rangeKind == .lastYears {
-                Stepper("Years: \(yearCount)", value: $yearCount, in: 1 ... 20)
+            if kind == .lastYears {
+                Stepper("Years: \(years)", value: $years, in: 1 ... 20)
             }
         }
     }
+}
 
-    private var scopeSection: some View {
+private struct ExportScopeSection: View {
+    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Binding var scope: ExportScope
+
+    var body: some View {
         Section("Scope") {
             Picker("Scope", selection: $scope) {
                 Text("All Metrics").tag(ExportScope.all)
@@ -95,7 +112,7 @@ extension DataExportView {
                     Text(metric.name)
                         .tag(ExportScope.metric(metric.persistentModelID))
                 }
-                ForEach(allProjects) { project in
+                ForEach(projects) { project in
                     Text("\(project.metric?.name ?? "") / \(project.name)")
                         .tag(ExportScope.project(project.persistentModelID))
                 }
@@ -104,99 +121,105 @@ extension DataExportView {
             .labelsHidden()
         }
     }
-}
 
-// MARK: - Export Section
-
-extension DataExportView {
-    private var exportSection: some View {
-        Section {
-            switch format {
-            case .markdown: markdownLink
-            case .csv: csvLink
-            }
-        }
-    }
-
-    @ViewBuilder private var markdownLink: some View {
-        if markdownWindow.isEmpty {
-            emptyNote("No recorded data in this range.")
-        } else if let url = MarkdownExporter.exportFile(data: exportData, range: range) {
-            ShareLink(
-                item: url,
-                preview: SharePreview(MarkdownExporter.filename(range: range))
-            ) {
-                Label("Export Markdown Report", systemImage: "square.and.arrow.up")
-            }
-        } else {
-            emptyNote("Couldn't write the export file. Free up space and try again.")
-        }
-    }
-
-    @ViewBuilder private var csvLink: some View {
-        if filteredSessions.isEmpty {
-            emptyNote("No sessions in this range.")
-        } else if let url = CSVExporter.exportFile(from: filteredSessions) {
-            ShareLink(
-                item: url,
-                preview: SharePreview("lead-track-export.csv")
-            ) {
-                Label(
-                    "Export \(filteredSessions.count) sessions",
-                    systemImage: "square.and.arrow.up"
-                )
-            }
-        } else {
-            emptyNote("Couldn't write the export file. Free up space and try again.")
-        }
-    }
-
-    private func emptyNote(_ text: String) -> some View {
-        Text(text)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+    private var projects: [Project] {
+        metrics.flatMap(\.projects).sorted { $0.name < $1.name }
     }
 }
 
-// MARK: - Data
+private struct MarkdownExportLink: View {
+    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
+    @Query(sort: \Intention.createdAt) private var intentions: [Intention]
+    @Query(sort: \AspirationCheckIn.createdAt) private var checkIns: [AspirationCheckIn]
+    @Query(sort: \Moment.occurredAt) private var moments: [Moment]
+    @Environment(\.calendar) private var calendar
+    @State private var generatedAt = Date.now
+    let range: ExportRange
 
-extension DataExportView {
-    private var range: ExportRange {
-        range(for: rangeKind)
-    }
-
-    private func range(for kind: ExportRange.Kind) -> ExportRange {
-        .make(kind, months: monthCount, years: yearCount)
-    }
-
-    private var exportData: MarkdownExportData {
-        MarkdownExportData(
-            metrics: metrics,
-            aspirations: aspirations,
-            intentions: intentions,
-            checkIns: checkIns,
-            moments: moments
+    var body: some View {
+        ExportFileLink(
+            file: file,
+            title: "Export Markdown Report",
+            emptyMessage: "No recorded data in this range."
         )
     }
 
-    private var markdownWindow: MarkdownExportWindow {
-        MarkdownExportWindow(data: exportData, range: range)
+    private var file: ExportFile? {
+        let data = MarkdownExportData(
+            metrics: metrics, aspirations: aspirations, intentions: intentions,
+            checkIns: checkIns, moments: moments
+        )
+        let window = MarkdownExportWindow(data: data, range: range, now: generatedAt, calendar: calendar)
+        guard !window.isEmpty else { return nil }
+        return ExportFile(
+            contents: MarkdownExporter.buildMarkdown(
+                data: data, range: range, window: window, now: generatedAt
+            ),
+            filename: MarkdownExporter.filename(range: range)
+        )
     }
+}
 
-    private var allProjects: [Project] {
-        metrics.flatMap(\.projects)
-            .sorted { $0.name < $1.name }
+private struct CSVExportLink: View {
+    @Query(sort: \Metric.createdAt) private var metrics: [Metric]
+    @Environment(\.calendar) private var calendar
+    let range: ExportRange
+    let scope: ExportScope
+
+    var body: some View {
+        let sessions = filteredSessions
+        ExportFileLink(
+            file: sessions.isEmpty ? nil : ExportFile(
+                contents: CSVExporter.buildCSV(from: sessions), filename: "lead-track-export.csv"
+            ),
+            title: "Export \(sessions.count) sessions",
+            emptyMessage: "No sessions in this range."
+        )
     }
 
     private var filteredSessions: [Session] {
-        let all = metrics.flatMap(\.sessions)
-            .filter { !$0.isRunning }
-        let scoped = CSVExporter.filterByScope(
-            all, scope: scope
-        )
-        return CSVExporter.filterByTime(
-            scoped, cutoff: range.cutoff()
-        )
-        .sorted { $0.startedAt < $1.startedAt }
+        let completed = metrics.flatMap(\.sessions).filter { !$0.isRunning }
+        let scoped = CSVExporter.filterByScope(completed, scope: scope)
+        return CSVExporter.filterByTime(scoped, cutoff: range.cutoff(calendar: calendar))
+            .sorted { $0.startedAt < $1.startedAt }
+    }
+}
+
+/// File preparation is an effect keyed to immutable contents. A changed input
+/// hides the old link immediately, so a pending/failed write cannot share it.
+private struct ExportFileLink: View {
+    let file: ExportFile?
+    let title: String
+    let emptyMessage: String
+    @State private var preparedFile: ExportFile?
+    @State private var url: URL?
+
+    var body: some View {
+        Group {
+            if file == nil {
+                note(emptyMessage)
+            } else if preparedFile == file {
+                if let url, let file {
+                    ShareLink(item: url, preview: SharePreview(file.filename)) {
+                        Label(title, systemImage: "square.and.arrow.up")
+                    }
+                } else {
+                    note("Couldn't write the export file. Free up space and try again.")
+                }
+            } else {
+                ProgressView()
+            }
+        }
+        .task(id: file) {
+            url = file?.write()
+            preparedFile = file
+        }
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 }

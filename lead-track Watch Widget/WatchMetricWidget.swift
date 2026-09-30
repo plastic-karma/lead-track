@@ -5,8 +5,42 @@ struct WatchMetricEntry: TimelineEntry {
     let date: Date
     /// The configured metric resolved against the cached snapshot, or nil
     /// when the complication is unconfigured or the metric was deleted.
-    let progress: ComplicationMetricProgress?
-    let style: MetricComplicationStyle
+    let display: WatchMetricDisplayState?
+
+    init(date: Date, progress: ComplicationMetricProgress?, style: MetricComplicationStyle) {
+        self.date = date
+        display = progress.map { WatchMetricDisplayState(progress: $0, style: style) }
+    }
+}
+
+/// Presentation is prepared per entry, not formatted during view initialization.
+struct WatchMetricDisplayState: Equatable {
+    enum Value: Equatable {
+        case text(String)
+        case symbol(String)
+    }
+
+    let metricID: UUID
+    let icon: String
+    let colorName: String?
+    let fraction: Double?
+    let value: Value
+
+    init(progress: ComplicationMetricProgress, style: MetricComplicationStyle) {
+        metricID = progress.id
+        icon = progress.icon
+        colorName = progress.colorName
+        fraction = style.showsRing ? progress.fraction : nil
+        if style.showsPercent, let percent = progress.percent {
+            value = .text("\(percent.formatted())%")
+        } else if progress.measurementType == .binary {
+            value = .symbol(progress.todayTotal > 0 ? "checkmark" : "minus")
+        } else if progress.measurementType == .duration {
+            value = .text(DurationFormatter.compact(progress.todayTotal))
+        } else {
+            value = .text(Int(progress.todayTotal).formatted())
+        }
+    }
 }
 
 /// Renders one configured metric from the cached snapshot.
@@ -76,99 +110,92 @@ struct WatchMetricProvider: AppIntentTimelineProvider {
 // MARK: - Widget View
 
 struct WatchMetricWidgetView: View {
-    let entry: WatchMetricEntry
+    let display: WatchMetricDisplayState?
 
     var body: some View {
         content
             .containerBackground(.clear, for: .widget)
-            // A configured complication opens the watch app on its metric;
-            // an unconfigured one (nil) keeps the default root launch.
-            .widgetURL(entry.progress.flatMap { WatchMetricDeepLink.url(metricID: $0.id) })
+            // Nil leaves the default launch; a configured face opens its metric.
+            .widgetURL(display.flatMap { WatchMetricDeepLink.url(metricID: $0.metricID) })
     }
 
     @ViewBuilder
     private var content: some View {
-        if let progress = entry.progress {
-            configuredView(progress)
+        if let display {
+            if let fraction = display.fraction {
+                WatchMetricRing(
+                    fraction: fraction,
+                    icon: display.icon,
+                    tint: MetricColor.color(named: display.colorName),
+                    value: display.value
+                )
+            } else {
+                WatchMetricPlainValue(
+                    icon: display.icon,
+                    tint: MetricColor.color(named: display.colorName),
+                    value: display.value
+                )
+            }
         } else {
-            unconfiguredView
-        }
-    }
-
-    /// Ring styles need a fillable fraction; without an active target (no
-    /// goal, or a rest day) they degrade to the plain value, the most
-    /// informative fallback.
-    @ViewBuilder
-    private func configuredView(_ progress: ComplicationMetricProgress) -> some View {
-        if entry.style.showsRing, let fraction = progress.fraction {
-            ringView(progress, fraction: fraction)
-        } else {
-            plainView(progress)
-        }
-    }
-
-    private func ringView(
-        _ progress: ComplicationMetricProgress,
-        fraction: Double
-    ) -> some View {
-        Gauge(value: fraction, in: 0 ... 1) {
-            Image(systemName: progress.icon)
-        } currentValueLabel: {
-            label(for: progress)
-        }
-        .gaugeStyle(.accessoryCircularCapacity)
-        .tint(progress.displayColor)
-        .widgetAccentable()
-    }
-
-    private func plainView(_ progress: ComplicationMetricProgress) -> some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            VStack(spacing: 0) {
-                Image(systemName: progress.icon)
-                    .font(.caption2)
-                    .foregroundStyle(progress.displayColor)
-                    .widgetAccentable()
-                label(for: progress)
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "chart.bar")
+                    .foregroundStyle(.secondary)
             }
         }
     }
+}
 
-    /// Percent styles print goal progress while a target applies and fall
-    /// back to the value otherwise; binary values read as a checkmark.
-    @ViewBuilder
-    private func label(for progress: ComplicationMetricProgress) -> some View {
-        if entry.style.showsPercent, let percent = progress.percent {
-            valueLabel("\(percent)%")
-        } else if progress.measurementType == .binary {
-            Image(systemName: progress.todayTotal > 0 ? "checkmark" : "minus")
-                .font(.body.weight(.semibold))
-        } else {
-            valueLabel(valueText(for: progress))
+private struct WatchMetricRing: View {
+    let fraction: Double
+    let icon: String
+    let tint: Color
+    let value: WatchMetricDisplayState.Value
+
+    var body: some View {
+        Gauge(value: fraction, in: 0 ... 1) {
+            Image(systemName: icon)
+        } currentValueLabel: {
+            WatchMetricValueLabel(value: value)
         }
+        .gaugeStyle(.accessoryCircularCapacity)
+        .tint(tint)
+        .widgetAccentable()
     }
+}
 
-    private func valueLabel(_ text: String) -> some View {
-        Text(text)
-            .roundedDigits(.body, weight: .semibold)
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-    }
+private struct WatchMetricPlainValue: View {
+    let icon: String
+    let tint: Color
+    let value: WatchMetricDisplayState.Value
 
-    private func valueText(for progress: ComplicationMetricProgress) -> String {
-        switch progress.measurementType {
-        case .duration:
-            DurationFormatter.compact(progress.todayTotal)
-        case .count, .binary, nil:
-            "\(Int(progress.todayTotal))"
-        }
-    }
-
-    private var unconfiguredView: some View {
+    var body: some View {
         ZStack {
             AccessoryWidgetBackground()
-            Image(systemName: "chart.bar")
-                .foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundStyle(tint)
+                    .widgetAccentable()
+                WatchMetricValueLabel(value: value)
+            }
+        }
+    }
+}
+
+private struct WatchMetricValueLabel: View {
+    let value: WatchMetricDisplayState.Value
+
+    var body: some View {
+        switch value {
+        case let .symbol(icon):
+            Image(systemName: icon)
+                .font(.body.weight(.semibold))
+        case let .text(text):
+            Text(text)
+                .roundedDigits(.body, weight: .semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
     }
 }
@@ -184,7 +211,7 @@ struct WatchMetricWidget: Widget {
             intent: SelectWatchMetricIntent.self,
             provider: WatchMetricProvider()
         ) { entry in
-            WatchMetricWidgetView(entry: entry)
+            WatchMetricWidgetView(display: entry.display)
         }
         .configurationDisplayName("Metric Progress")
         .description("One metric's value or goal progress.")

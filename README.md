@@ -52,6 +52,39 @@ successful build does not prove device behavior.
 - `scripts/` — local xtool release launcher and app-icon generation
 - `xtool-release.yml` — native release configuration; imports `lead track.xcodeproj`
 
+## SwiftUI maintenance conventions
+
+- Give meaningful screen sections and lazy-list rows concrete `View` types with
+  narrow inputs. Keep small repeated fragments inline when they have no separate
+  update boundary; avoid caches that can go stale when SwiftData relationships
+  change.
+- Own view-local state privately. UI-facing observable controllers use
+  `@MainActor` and `@Observable`; non-UI bookkeeping does not participate in
+  observation. Create provider/location readers in lifecycle or explicit action
+  handlers, not during parent view construction.
+- Identify movable rows by the model or calendar date. Photo presentations
+  snapshot distinct occurrences once, so duplicate image bytes still have
+  different identities. Fixed weekday/bar slots may retain positional identity.
+- Prepare thumbnail availability in lifecycle work and omit malformed photos
+  before building the tappable strip. Full-resolution covers cache by exact
+  bytes with four-entry and 64 MiB cost budgets, including stored bytes and
+  estimated decoded pixels; never retain an unbudgeted history of cover edits.
+- Use key-path bindings for direct state projections. Keep guarded/actionful
+  closure bindings where deletion, uniqueness, or a transformation requires
+  them. Reminder edits resolve a row by its durable ID, not its former index.
+- Keep disk writes outside `body`. Export links prepare an immutable `ExportFile`
+  with `.task(id:)` and hide the previous link as soon as its contents change;
+  failed preparation must never offer a stale artifact.
+- Prefer current APIs available at the deployment target and direct
+  `.enumerated()` collections with Swift 6.4 rather than eager `Array` copies.
+  Preserve privacy/authentication boundaries, countdown/recording semantics,
+  and the English-only policy; format user-facing numbers and dates with format
+  styles.
+
+These boundaries are not a measured performance result. Native compilation and
+portable tests do not exercise SwiftUI state retention, photo paging, extension
+completion, or Watch delivery on devices; verify those workflows separately.
+
 ## Linting
 
 Use SwiftLint 0.63.3 and SwiftFormat 0.61.1 locally. Native xtool builds skip the validation-only Xcode linter phases, so run these explicitly:

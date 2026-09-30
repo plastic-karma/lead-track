@@ -26,11 +26,12 @@ struct AdditionalReviewsView: View {
     }
 
     private var content: some View {
-        Group {
-            if reviews.isEmpty {
+        let decoded = reviews
+        return Group {
+            if decoded.isEmpty {
                 emptyState
             } else {
-                reviewList
+                reviewList(decoded)
             }
         }
         .navigationTitle("More Reviews")
@@ -49,7 +50,7 @@ struct AdditionalReviewsView: View {
         }
     }
 
-    private var reviewList: some View {
+    private func reviewList(_ reviews: [AdditionalReview]) -> some View {
         List {
             ForEach(reviews) { review in
                 reviewLink(review)
@@ -62,7 +63,7 @@ struct AdditionalReviewsView: View {
         NavigationLink {
             AdditionalReviewDetailView(reviewID: review.id)
         } label: {
-            reviewRow(review)
+            AdditionalReviewListRow(review: review)
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
@@ -90,7 +91,36 @@ struct AdditionalReviewsView: View {
         }
     }
 
-    private func reviewRow(_ review: AdditionalReview) -> some View {
+    private func save(_ review: AdditionalReview) {
+        let updated = AdditionalReviewStore.upserting(review, in: reviews)
+        encodedReviews = AdditionalReviewStore.encode(updated)
+        NotificationService.rescheduleAdditionalReviews()
+    }
+
+    private func remove(_ review: AdditionalReview) {
+        encodedReviews = AdditionalReviewStore.encode(
+            AdditionalReviewStore.removing(id: review.id, from: reviews)
+        )
+        NotificationService.rescheduleAdditionalReviews()
+    }
+
+    private func loadMigratedReviews() {
+        guard encodedReviews.isEmpty else { return }
+        encodedReviews = AdditionalReviewStore.encode(AdditionalReviewStore.reviews())
+    }
+
+    private func remove(at offsets: IndexSet) {
+        var updated = reviews
+        updated.remove(atOffsets: offsets)
+        encodedReviews = AdditionalReviewStore.encode(updated)
+        NotificationService.rescheduleAdditionalReviews()
+    }
+}
+
+private struct AdditionalReviewListRow: View {
+    let review: AdditionalReview
+    @Environment(\.locale) private var locale
+    var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(review.name)
                 .font(.headline)
@@ -115,38 +145,14 @@ struct AdditionalReviewsView: View {
     }
 
     private func customCadenceDescription(_ review: AdditionalReview) -> String {
-        let unit = review.customUnit == .days ? "day" : "month"
-        let suffix = review.boundedInterval == 1 ? "" : "s"
-        return "Every \(review.boundedInterval) \(unit)\(suffix)"
+        let unit = review.customUnit == .days
+            ? (review.boundedInterval == 1 ? "day" : "days")
+            : (review.boundedInterval == 1 ? "month" : "months")
+        return "Every \(review.boundedInterval.formatted(.number.locale(locale))) \(unit)"
     }
 
     private func nextDescription(_ review: AdditionalReview) -> String {
         let date = AdditionalReviewSchedule.nextReviewDate(for: review)
-        return "Next: \(date.formatted(date: .abbreviated, time: .shortened))"
-    }
-
-    private func save(_ review: AdditionalReview) {
-        let updated = AdditionalReviewStore.upserting(review, in: reviews)
-        encodedReviews = AdditionalReviewStore.encode(updated)
-        NotificationService.rescheduleAdditionalReviews()
-    }
-
-    private func remove(_ review: AdditionalReview) {
-        encodedReviews = AdditionalReviewStore.encode(
-            AdditionalReviewStore.removing(id: review.id, from: reviews)
-        )
-        NotificationService.rescheduleAdditionalReviews()
-    }
-
-    private func loadMigratedReviews() {
-        guard encodedReviews.isEmpty else { return }
-        encodedReviews = AdditionalReviewStore.encode(AdditionalReviewStore.reviews())
-    }
-
-    private func remove(at offsets: IndexSet) {
-        var updated = reviews
-        updated.remove(atOffsets: offsets)
-        encodedReviews = AdditionalReviewStore.encode(updated)
-        NotificationService.rescheduleAdditionalReviews()
+        return "Next: \(date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale)))"
     }
 }

@@ -21,7 +21,7 @@ struct CalendarHeatmapView: View {
                 weekdayLabels
                 grid(scale)
             }
-            legend
+            HeatmapLegend(tint: tint)
         }
         .padding(.vertical, 4)
     }
@@ -73,8 +73,10 @@ extension CalendarHeatmapView {
 
 // MARK: - Legend
 
-extension CalendarHeatmapView {
-    private var legend: some View {
+private struct HeatmapLegend: View {
+    let tint: Color
+
+    var body: some View {
         HStack(spacing: 4) {
             Text("Less")
                 .font(.caption2)
@@ -95,7 +97,7 @@ extension CalendarHeatmapView {
     }
 
     private func legendFill(_ opacity: Double) -> Color {
-        opacity == 0 ? emptyCellColor : rampColor(opacity)
+        tint.opacity(opacity == 0 ? 0.12 : 0.32 + 0.68 * opacity)
     }
 }
 

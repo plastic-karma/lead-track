@@ -50,7 +50,7 @@ extension MomentListView {
 
     @ViewBuilder
     private var emptyState: some View {
-        if sortedMoments.isEmpty {
+        if aspiration.moments.isEmpty {
             ContentUnavailableView("Nothing kept yet", systemImage: "sparkles")
         }
     }

@@ -8,25 +8,36 @@ import SwiftUI
 /// dones, ever; the narrative history waits behind the detail's "Past
 /// intentions" disclosure row (see `AspirationPastIntentionsView`), and the
 /// weekly alignment pulse lives at the weekly review.
-extension AspirationDetailView {
-    var thisWeekCard: some View {
+struct AspirationIntentionsCard: View {
+    let aspiration: Aspiration
+    @State private var isExpanded = true
+    @State private var showingSetIntention = false
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            collapsibleCardHeader("This week", isExpanded: $thisWeekExpanded)
-            if thisWeekExpanded {
+            AspirationCardHeader(title: "This week", isExpanded: $isExpanded)
+            if isExpanded {
                 ForEach(currentWeekIntentions) { intention in
                     IntentionRowView(intention: intention, showsPrinciple: true)
                         .padding(.vertical, 11)
-                    cardDivider()
+                    Divider()
                 }
                 if !aspiration.isArchived {
-                    plusRow("Set an intention") { showingSetIntention = true }
+                    AspirationPlusRow(title: "Set an intention", tint: aspiration.displayColor) {
+                        showingSetIntention = true
+                    }
                 }
             }
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, thisWeekExpanded ? 0 : 12)
+        .padding(.bottom, isExpanded ? 0 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardShape())
+        .background { Theme.cardShape() }
+        .sheet(isPresented: $showingSetIntention) {
+            IntentionFormView(aspiration: aspiration)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var currentWeekIntentions: [Intention] {

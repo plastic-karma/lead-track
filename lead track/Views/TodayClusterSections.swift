@@ -10,9 +10,17 @@ import SwiftUI
 /// header chevrons browse an earlier day, the same arrangement replays that
 /// day with no live timers and no send-off — but its rows still record,
 /// onto the browsed day, so a forgotten log can be added after the fact.
-extension MetricListView {
-    @ViewBuilder
-    var clusterSections: some View {
+struct TodayClusterSections: View {
+    @Environment(\.modelContext) private var modelContext
+    let metrics: [Metric]
+    let aspirations: [Aspiration]
+    let intentions: [Intention]
+    let runningSessions: [Session]
+    let daysBack: Int
+    @Binding var expansionOverrides: [String: Bool]
+    @Binding var draggingClusterID: String?
+
+    var body: some View {
         let day = TodayGrouping.day(back: daysBack)
         let clusters = TodayGrouping.clusters(
             metrics: metrics, aspirations: aspirations, intentions: intentions, now: day

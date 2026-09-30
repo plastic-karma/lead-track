@@ -1,48 +1,62 @@
 import SwiftUI
-import UIKit
 
 /// Full saved testimony, without the timeline row's edit action or truncation.
-/// Photos use the same full-screen route as the existing Moment timeline.
 struct RetrospectiveMomentRow: View {
     let moment: Moment
     @State private var photoRoute: MomentPhotoViewerRoute?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(moment.text)
-                .font(.subheadline)
-                .textSelection(.enabled)
-            Text(moment.occurredAt.formatted(date: .abbreviated, time: .omitted))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            provenance
-            if !moment.photos.isEmpty { photos }
+            Text(moment.text).font(.subheadline).textSelection(.enabled)
+            Text(moment.occurredAt, format: Date.FormatStyle(date: .abbreviated, time: .omitted))
+                .font(.caption).foregroundStyle(.secondary)
+            RetrospectiveMomentProvenance(
+                aspirationTitle: moment.aspiration?.title,
+                principleText: moment.principle?.text,
+                projectName: moment.project?.name,
+                placeLabel: moment.placeLabel
+            )
+            if !moment.photos.isEmpty {
+                RetrospectiveMomentPhotos(moment: moment, route: $photoRoute)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
         .fullScreenCover(item: $photoRoute) { MomentPhotoViewer(route: $0) }
     }
+}
 
-    private var provenance: some View {
+private struct RetrospectiveMomentProvenance: View {
+    let aspirationTitle: String?
+    let principleText: String?
+    let projectName: String?
+    let placeLabel: String?
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            if let aspiration = moment.aspiration { Text(aspiration.title) }
-            if let principle = moment.principle { Text("lives “\(principle.text)”") }
-            if let project = moment.project { Text(project.name) }
-            if let place = moment.placeLabel { Text(place) }
+            if let aspirationTitle { Text(aspirationTitle) }
+            if let principleText { Text("lives “\(principleText)”") }
+            if let projectName { Text(projectName) }
+            if let placeLabel { Text(placeLabel) }
         }
         .font(.caption)
         .foregroundStyle(.secondary)
     }
+}
 
-    private var photos: some View {
+private struct RetrospectiveMomentPhotos: View {
+    let moment: Moment
+    @Binding var route: MomentPhotoViewerRoute?
+
+    var body: some View {
         let photos = moment.photos.sorted { $0.sortIndex < $1.sortIndex }
-        return ScrollView(.horizontal) {
+        ScrollView(.horizontal) {
             HStack(spacing: 7) {
-                ForEach(photos.indices, id: \.self) { index in
+                ForEach(photos.enumerated(), id: \.element.id) { index, photo in
                     Button {
-                        photoRoute = MomentPhotoViewerRoute(photos: photos.map(\.data), selectedIndex: index)
+                        route = MomentPhotoViewerRoute(photos: photos.map(\.data), selectedIndex: index)
                     } label: {
-                        thumbnail(photos[index])
+                        MomentPhotoThumbnail(data: photo.data, size: 64)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("View photo \(index + 1) of \(photos.count)")
@@ -51,17 +65,5 @@ struct RetrospectiveMomentRow: View {
             }
         }
         .scrollIndicators(.hidden)
-    }
-
-    private func thumbnail(_ photo: MomentPhoto) -> some View {
-        Group {
-            if let image = UIImage(data: photo.data) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                Image(systemName: "photo").frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .frame(width: 64, height: 64)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

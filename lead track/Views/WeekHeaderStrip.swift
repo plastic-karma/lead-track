@@ -15,16 +15,27 @@ struct WeekHeaderStrip: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            navigationRow
-            heroRow
+            WeekHeaderNavigation(
+                weeksBack: $weeksBack,
+                reviewedWeeksBack: review.weeksBack,
+                formattedRange: review.formattedRange
+            )
+            WeekHeaderHero(
+                goalArcs: goalArcs, heroText: review.heroText,
+                heroCaption: review.heroCaption(includeBusiestDay: true), sessionSeries: review.sessionSeries
+            )
         }
     }
 }
 
 // MARK: - Week navigation
 
-extension WeekHeaderStrip {
-    private var navigationRow: some View {
+private struct WeekHeaderNavigation: View {
+    @Binding var weeksBack: Int
+    let reviewedWeeksBack: Int
+    let formattedRange: String
+
+    var body: some View {
         HStack(spacing: 10) {
             chevron("chevron.left", label: "Earlier week") {
                 weeksBack += 1
@@ -41,12 +52,9 @@ extension WeekHeaderStrip {
     }
 
     private var titleLine: some View {
-        (
-            Text(weekTitle).fontWeight(.semibold)
-                + Text(" · \(formattedRange)").foregroundStyle(.secondary)
-        )
-        .font(.subheadline)
-        .lineLimit(1)
+        Text("\(Text(weekTitle).fontWeight(.semibold))\(Text(" · \(formattedRange)").foregroundStyle(.secondary))")
+            .font(.subheadline)
+            .lineLimit(1)
     }
 
     private func chevron(
@@ -65,25 +73,25 @@ extension WeekHeaderStrip {
     }
 
     private var weekTitle: String {
-        switch review.weeksBack {
+        switch reviewedWeeksBack {
         case 0: "This Week"
         case 1: "Last Week"
-        default: "\(review.weeksBack) Weeks Ago"
+        default: "\(reviewedWeeksBack.formatted()) Weeks Ago"
         }
-    }
-
-    private var formattedRange: String {
-        review.formattedRange
     }
 }
 
 // MARK: - Hero line
 
-extension WeekHeaderStrip {
+private struct WeekHeaderHero: View {
+    let goalArcs: [GoalDialArc]
+    let heroText: String
+    let heroCaption: String
+    let sessionSeries: [Double]
     /// The weekly-goal dial (when any weekly goal is set) leads the row, then
     /// the headline number, then the day-by-day pulse — the same circle · number
     /// · flame-graph shape the Today header wears.
-    private var heroRow: some View {
+    var body: some View {
         HStack(alignment: .center, spacing: 16) {
             if !goalArcs.isEmpty {
                 SegmentedGoalDial(arcs: goalArcs)
@@ -99,31 +107,11 @@ extension WeekHeaderStrip {
             miniBars
         }
     }
-
-    /// The weekly-goal segments mapped to the shared dial's arcs, each wearing
-    /// its metric's color.
-    private var goalArcs: [GoalDialArc] {
-        goalSegments.enumerated().map { index, segment in
-            GoalDialArc(
-                id: index,
-                tint: MetricColor.color(named: segment.colorName),
-                fraction: segment.fraction
-            )
-        }
-    }
-
-    private var heroText: String {
-        review.heroText
-    }
-
-    private var heroCaption: String {
-        review.heroCaption(includeBusiestDay: true)
-    }
 }
 
 // MARK: - Mini bars
 
-extension WeekHeaderStrip {
+private extension WeekHeaderHero {
     private static let miniBarWidth: CGFloat = 6
     private static let miniBarSpacing: CGFloat = 3
 
@@ -133,7 +121,7 @@ extension WeekHeaderStrip {
     /// which is exactly `review.busiestDayOffset`.
     private var miniBars: some View {
         WeekBarsView(
-            values: review.sessionSeries,
+            values: sessionSeries,
             barWidth: Self.miniBarWidth,
             spacing: Self.miniBarSpacing
         )
@@ -144,8 +132,20 @@ extension WeekHeaderStrip {
     /// The strip's intrinsic width — bars plus gaps — since `WeekBarsView`
     /// measures itself with a greedy `GeometryReader`.
     private var miniBarsWidth: CGFloat {
-        let count = review.sessionSeries.count
+        let count = sessionSeries.count
         return CGFloat(count) * Self.miniBarWidth
             + CGFloat(max(count - 1, 0)) * Self.miniBarSpacing
+    }
+}
+
+private extension WeekHeaderStrip {
+    var goalArcs: [GoalDialArc] {
+        goalSegments.map { segment in
+            GoalDialArc(
+                id: segment.id,
+                tint: MetricColor.color(named: segment.colorName),
+                fraction: segment.fraction
+            )
+        }
     }
 }

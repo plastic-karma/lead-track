@@ -165,43 +165,18 @@ extension MetricRecordDock {
 
 // MARK: - Button Styles
 
-private struct ProminentCapsuleStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        #if compiler(>=6.2)
-        content.buttonStyle(.glassProminent)
-        #else
-        content.buttonStyle(.borderedProminent)
-        #endif
-    }
-}
-
-private struct GlassCircleStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        #if compiler(>=6.2)
-        content
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-        #else
-        content
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-        #endif
-    }
-}
-
 extension View {
-    /// Liquid-glass prominent capsule on iOS 26 toolchains, falling back to
-    /// bordered prominent where the SDK predates glass (CI's Xcode 16).
+    /// The prominent liquid-glass capsule used by recording actions.
     func prominentCapsuleButtonStyle() -> some View {
-        modifier(ProminentCapsuleStyle())
+        buttonStyle(.glassProminent)
             .buttonBorderShape(.capsule)
             .controlSize(.large)
     }
 
-    /// A round liquid-glass button for the dock's secondary record actions,
-    /// with the same pre-glass fallback as the capsule.
+    /// A round liquid-glass button for the dock's secondary record actions.
     fileprivate func glassCircleButtonStyle() -> some View {
-        modifier(GlassCircleStyle())
+        buttonStyle(.glass)
+            .buttonBorderShape(.circle)
             .controlSize(.large)
     }
 }

@@ -27,7 +27,7 @@ struct ActionChip<Content: View>: View {
             .padding(.vertical, 7)
             .padding(.horizontal, 12)
             .background(fill, in: Capsule())
-            .overlay(border)
+            .overlay { border }
     }
 }
 

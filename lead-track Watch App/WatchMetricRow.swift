@@ -1,58 +1,65 @@
 import SwiftUI
 import WatchKit
 
-/// One list row per metric: duration metrics toggle their timer on tap, count
-/// metrics log one or open a quick-log screen per their log style, binary
-/// metrics check today off, and health-linked metrics just show today's
-/// figure.
+/// One list row per metric. Goal and sync metadata do not invalidate the row.
 struct WatchMetricRow: View {
-    let metric: WatchMetricSnapshot
+    private let metricID: UUID
+    private let content: WatchMetricLabelContent
+    private let isHealthLinked: Bool
+    private let countLogStyle: CountLogStyle
+
+    init(metric: WatchMetricSnapshot) {
+        metricID = metric.id
+        content = WatchMetricLabelContent(metric: metric)
+        isHealthLinked = metric.isHealthLinked
+        countLogStyle = metric.countLogStyle
+    }
 
     var body: some View {
-        if metric.isHealthLinked {
-            WatchHealthRow(metric: metric)
-        } else {
-            actionRow
+        // Keep one root for List identity even when the action kind changes.
+        VStack {
+            if isHealthLinked {
+                WatchMetricLabel(content: content, accessory: "heart.fill", accessoryColor: .pink)
+            } else {
+                actionRow
+            }
         }
     }
 
     @ViewBuilder
     private var actionRow: some View {
-        switch metric.measurementType {
+        switch content.measurementType {
         case .duration:
-            WatchTimerRow(metric: metric)
+            WatchTimerRow(metricID: metricID, content: content)
         case .count:
-            WatchCountRow(metric: metric)
+            WatchCountRow(metricID: metricID, content: content, logStyle: countLogStyle)
         case .binary:
-            WatchBinaryRow(metric: metric)
+            WatchBinaryRow(metricID: metricID, content: content)
         case nil:
-            // A snapshot from a newer phone can carry a measurement type
-            // this build doesn't know. Render it read-only rather than
-            // guessing what a tap should record.
-            WatchMetricLabel(
-                metric: metric,
-                accessory: "circle.dashed",
-                accessoryColor: .secondary
-            )
+            // A newer phone's unknown type remains read-only.
+            WatchMetricLabel(content: content, accessory: "circle.dashed", accessoryColor: .secondary)
         }
     }
 }
 
-/// A count row follows the metric's log style: +1 metrics log a single unit
-/// right on the tap, ask-amount metrics push the crown-driven quick-log
-/// screen.
-struct WatchCountRow: View {
+/// +1 metrics act immediately; ask-amount metrics push crown-driven entry.
+private struct WatchCountRow: View {
     @Environment(WatchSyncController.self) private var sync
-    let metric: WatchMetricSnapshot
+    let metricID: UUID
+    let content: WatchMetricLabelContent
+    let logStyle: CountLogStyle
 
     var body: some View {
-        if metric.countLogStyle == .incrementByOne {
-            Button(action: logOne) {
-                label
-            }
+        if logStyle == .incrementByOne {
+            Button(action: logOne) { label }
         } else {
             NavigationLink {
-                WatchLogView(metric: metric)
+                WatchLogView(
+                    metricID: metricID,
+                    name: content.name,
+                    unit: content.unit,
+                    tint: content.prominentColor
+                )
             } label: {
                 label
             }
@@ -61,53 +68,36 @@ struct WatchCountRow: View {
 
     private var label: some View {
         WatchMetricLabel(
-            metric: metric,
+            content: content,
             accessory: "plus.circle.fill",
-            accessoryColor: metric.displayColor
+            accessoryColor: content.displayColor
         )
     }
 
     private func logOne() {
-        sync.perform(WatchAction(kind: .logValue, metricID: metric.id, value: 1))
+        sync.perform(WatchAction(kind: .logValue, metricID: metricID, value: 1))
         WKInterfaceDevice.current().play(.success)
     }
 }
 
-/// A health-linked metric is filled by the phone from Apple Health; the
-/// watch renders it read-only — sensors record it, not taps.
-struct WatchHealthRow: View {
-    let metric: WatchMetricSnapshot
-
-    var body: some View {
-        WatchMetricLabel(
-            metric: metric,
-            accessory: "heart.fill",
-            accessoryColor: .pink
-        )
-    }
-}
-
-/// Tapping the row marks today done, or clears it when it was already done.
-struct WatchBinaryRow: View {
+/// Tapping marks today done, or clears it when it was already done.
+private struct WatchBinaryRow: View {
     @Environment(WatchSyncController.self) private var sync
-    let metric: WatchMetricSnapshot
-
-    private var isDone: Bool {
-        metric.todayTotal > 0
-    }
+    let metricID: UUID
+    let content: WatchMetricLabelContent
 
     var body: some View {
         Button(action: toggle) {
             WatchMetricLabel(
-                metric: metric,
-                accessory: isDone ? "checkmark.circle.fill" : "circle",
-                accessoryColor: metric.displayColor
+                content: content,
+                accessory: content.todayTotal > 0 ? "checkmark.circle.fill" : "circle",
+                accessoryColor: content.displayColor
             )
         }
     }
 
     private func toggle() {
-        sync.perform(WatchAction(kind: .toggleDay, metricID: metric.id))
+        sync.perform(WatchAction(kind: .toggleDay, metricID: metricID))
         WKInterfaceDevice.current().play(.success)
     }
 }

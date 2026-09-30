@@ -4,7 +4,7 @@ import SwiftUI
 import WidgetKit
 
 /// Plain data copied out of SwiftData while its owning context is alive.
-struct FavoriteMetricControlState {
+struct FavoriteMetricControlState: Equatable {
     let stableID: String
     let name: String
     let icon: String
@@ -12,7 +12,7 @@ struct FavoriteMetricControlState {
     let action: FavoriteMetricControlAction
 }
 
-enum FavoriteMetricControlAction {
+enum FavoriteMetricControlAction: Equatable {
     case start
     case stop
     case logOne

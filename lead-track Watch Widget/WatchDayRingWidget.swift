@@ -45,7 +45,8 @@ struct WatchDayRingProvider: TimelineProvider {
 // MARK: - Widget View
 
 struct WatchDayRingWidgetView: View {
-    let entry: WatchDayRingEntry
+    let met: Int
+    let total: Int
 
     var body: some View {
         content
@@ -54,7 +55,7 @@ struct WatchDayRingWidgetView: View {
 
     @ViewBuilder
     private var content: some View {
-        if entry.summary.hasGoals {
+        if total > 0 {
             ringView
         } else {
             emptyView
@@ -63,12 +64,12 @@ struct WatchDayRingWidgetView: View {
 
     private var ringView: some View {
         Gauge(
-            value: Double(entry.summary.met),
-            in: 0 ... Double(max(entry.summary.total, 1))
+            value: Double(met),
+            in: 0 ... Double(max(total, 1))
         ) {
             Image(systemName: "target")
         } currentValueLabel: {
-            Text("\(entry.summary.met)/\(entry.summary.total)")
+            Text("\(met.formatted())/\(total.formatted())")
                 .roundedDigits(.body, weight: .semibold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -97,7 +98,7 @@ struct WatchDayRingWidget: Widget {
             kind: kind,
             provider: WatchDayRingProvider()
         ) { entry in
-            WatchDayRingWidgetView(entry: entry)
+            WatchDayRingWidgetView(met: entry.summary.met, total: entry.summary.total)
         }
         .configurationDisplayName("Day Ring")
         .description("How many of today's goals are met.")

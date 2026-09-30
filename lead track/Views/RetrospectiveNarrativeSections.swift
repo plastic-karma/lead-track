@@ -1,56 +1,72 @@
 import SwiftUI
 
 struct RetrospectiveNarrativeSections: View {
-    let snapshot: RetrospectiveSnapshot
+    let moments: [Moment]
+    let intentions: [Intention]
+    let checkIns: [AspirationCheckIn]
     let period: DateInterval
 
     var body: some View {
-        if !snapshot.moments.isEmpty {
+        if !moments.isEmpty {
             Section("Moments") {
-                ForEach(snapshot.moments) { RetrospectiveMomentRow(moment: $0) }
+                ForEach(moments) { RetrospectiveMomentRow(moment: $0) }
             }
         }
-        if !snapshot.intentions.isEmpty {
+        if !intentions.isEmpty {
             Section("Intentions held") {
-                ForEach(snapshot.intentions) { intentionRow($0) }
+                ForEach(intentions) { RetrospectiveIntentionRow(intention: $0, period: period) }
             }
         }
-        if !snapshot.checkIns.isEmpty {
+        if !checkIns.isEmpty {
             Section("Check-in notes") {
-                ForEach(snapshot.checkIns) { checkInRow($0) }
+                ForEach(checkIns) { RetrospectiveCheckInRow(checkIn: $0) }
             }
         }
     }
+}
 
-    private func intentionRow(_ intention: Intention) -> some View {
+private struct RetrospectiveIntentionRow: View {
+    let intention: Intention
+    let period: DateInterval
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(intention.title).font(.subheadline).textSelection(.enabled)
-            weekLabel(intention.weekStart, aspiration: intention.aspiration)
+            RetrospectiveWeekLabel(date: intention.weekStart, aspirationTitle: intention.aspiration?.title)
             if let principle = intention.principle {
                 Text("serves “\(principle.text)”").font(.caption).foregroundStyle(.secondary)
             }
             if let closedAt = intention.closedAt, RetrospectiveReader.contains(closedAt, in: period) {
-                Text("\(intention.outcome?.label ?? "closed") · "
-                    + closedAt.formatted(date: .abbreviated, time: .omitted))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "\(intention.outcome?.label ?? "closed") · \(closedAt, format: Date.FormatStyle(date: .abbreviated, time: .omitted))"
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 4)
     }
+}
 
-    private func checkInRow(_ checkIn: AspirationCheckIn) -> some View {
+private struct RetrospectiveCheckInRow: View {
+    let checkIn: AspirationCheckIn
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(checkIn.note).font(.subheadline).textSelection(.enabled)
-            weekLabel(checkIn.weekStart, aspiration: checkIn.aspiration)
+            RetrospectiveWeekLabel(date: checkIn.weekStart, aspirationTitle: checkIn.aspiration?.title)
         }
         .padding(.vertical, 4)
     }
+}
 
-    private func weekLabel(_ date: Date, aspiration: Aspiration?) -> some View {
+private struct RetrospectiveWeekLabel: View {
+    let date: Date
+    let aspirationTitle: String?
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("Week of \(date.formatted(date: .abbreviated, time: .omitted))")
-            if let aspiration { Text(aspiration.title) }
+            Text("Week of \(date, format: Date.FormatStyle(date: .abbreviated, time: .omitted))")
+            if let aspirationTitle { Text(aspirationTitle) }
         }
         .font(.caption)
         .foregroundStyle(.secondary)

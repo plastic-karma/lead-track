@@ -15,20 +15,29 @@ struct HealthHistoryRows: View {
 
     var body: some View {
         ForEach(Self.days(from: dailyTotals)) { day in
-            row(day)
+            HealthHistoryRow(
+                date: day.date, total: day.duration, measurementType: metric.measurementType, unit: metric.unit
+            )
         }
     }
+}
 
-    private func row(_ day: DailyTotal) -> some View {
+private struct HealthHistoryRow: View {
+    let date: Date
+    let total: TimeInterval
+    let measurementType: MeasurementType
+    let unit: String?
+
+    var body: some View {
         HStack {
-            Text(SessionDayGrouping.label(for: day.date))
+            Text(SessionDayGrouping.label(for: date))
                 .font(.subheadline)
             Spacer()
             Text(
                 ValueFormatter.format(
-                    day.duration,
-                    type: metric.measurementType,
-                    unit: metric.unit
+                    total,
+                    type: measurementType,
+                    unit: unit
                 )
             )
             .numeralStyle(.stat)

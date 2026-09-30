@@ -33,20 +33,25 @@ struct ArchivedMetricsView: View {
 
     @ViewBuilder
     private var content: some View {
-        if archived.isEmpty {
+        let metrics = archived
+        if metrics.isEmpty {
             ContentUnavailableView(
                 "Nothing Archived",
                 systemImage: "archivebox",
                 description: Text("Metrics you archive rest here, ready to return.")
             )
         } else {
-            List(archived) { metric in
-                row(metric)
+            List(metrics) { metric in
+                ArchivedMetricRow(metric: metric)
             }
         }
     }
+}
 
-    private func row(_ metric: Metric) -> some View {
+private struct ArchivedMetricRow: View {
+    let metric: Metric
+
+    var body: some View {
         HStack(spacing: 12) {
             MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 34)
             VStack(alignment: .leading, spacing: 2) {
@@ -59,7 +64,7 @@ struct ArchivedMetricsView: View {
                 }
             }
             Spacer(minLength: 8)
-            Button("Unarchive") { unarchive(metric) }
+            Button("Unarchive", action: unarchive)
                 .font(.callout.weight(.medium))
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
@@ -69,7 +74,7 @@ struct ArchivedMetricsView: View {
 
     /// Returns the metric to the day and week surfaces and re-arms its
     /// reminders; the row leaves this list on its own as the query updates.
-    private func unarchive(_ metric: Metric) {
+    private func unarchive() {
         withAnimation(.snappy) {
             metric.unarchive()
         }

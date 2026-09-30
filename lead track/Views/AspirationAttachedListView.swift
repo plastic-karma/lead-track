@@ -12,11 +12,11 @@ struct AspirationAttachedListView: View {
     var body: some View {
         List {
             ForEach(sortedMetrics) { metric in
-                metricRow(metric)
+                AspirationAttachedMetricRow(metric: metric)
             }
             .onDelete(perform: detachMetrics)
             ForEach(sortedProjects) { project in
-                projectRow(project)
+                AspirationAttachedProjectRow(project: project, attachedMetrics: aspiration.metrics)
             }
             .onDelete(perform: detachProjects)
             Button { showingAttach = true } label: {
@@ -41,55 +41,6 @@ extension AspirationAttachedListView {
     private var sortedProjects: [Project] {
         aspiration.projects.inDisplayOrder
     }
-
-    private func metricRow(_ metric: Metric) -> some View {
-        NavigationLink(value: metric) {
-            attachmentRow(
-                name: metric.name,
-                icon: metric.displayIcon,
-                tint: metric.displayColor,
-                detail: AspirationRollup.itemSummary(for: metric) ?? "Nothing logged yet"
-            )
-        }
-    }
-
-    private func projectRow(_ project: Project) -> some View {
-        NavigationLink(value: project) {
-            attachmentRow(
-                name: project.name,
-                icon: "folder",
-                tint: MetricColor.color(named: project.metric?.colorName),
-                detail: projectDetail(project)
-            )
-        }
-    }
-
-    private func attachmentRow(
-        name: String,
-        icon: String,
-        tint: Color,
-        detail: String
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(tint)
-                .frame(width: 24)
-            Text(name)
-            Spacer()
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    /// A project whose parent metric is also attached is folded into that metric
-    /// for totals, so its row says so instead of repeating the effort.
-    private func projectDetail(_ project: Project) -> String {
-        if let metric = project.metric, aspiration.metrics.contains(where: { $0 === metric }) {
-            return "Included in \(metric.name)"
-        }
-        return AspirationRollup.itemSummary(for: project) ?? "Nothing logged yet"
-    }
 }
 
 // MARK: - Detach
@@ -110,6 +61,60 @@ extension AspirationAttachedListView {
             for project in targets {
                 aspiration.projects.removeAll { $0 === project }
             }
+        }
+    }
+}
+
+private struct AspirationAttachedMetricRow: View {
+    let metric: Metric
+
+    var body: some View {
+        NavigationLink(value: metric) {
+            AspirationAttachmentLabel(
+                name: metric.name, icon: metric.displayIcon, tint: metric.displayColor,
+                detail: AspirationRollup.itemSummary(for: metric) ?? "Nothing logged yet"
+            )
+        }
+    }
+}
+
+private struct AspirationAttachedProjectRow: View {
+    let project: Project
+    let attachedMetrics: [Metric]
+
+    var body: some View {
+        NavigationLink(value: project) {
+            AspirationAttachmentLabel(
+                name: project.name, icon: "folder",
+                tint: MetricColor.color(named: project.metric?.colorName), detail: detail
+            )
+        }
+    }
+
+    private var detail: String {
+        if let metric = project.metric, attachedMetrics.contains(where: { $0 === metric }) {
+            return "Included in \(metric.name)"
+        }
+        return AspirationRollup.itemSummary(for: project) ?? "Nothing logged yet"
+    }
+}
+
+private struct AspirationAttachmentLabel: View {
+    let name: String
+    let icon: String
+    let tint: Color
+    let detail: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(tint)
+                .frame(width: 24)
+            Text(name)
+            Spacer()
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }

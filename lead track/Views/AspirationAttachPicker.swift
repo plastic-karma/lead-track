@@ -21,51 +21,32 @@ struct AspirationAttachPicker: View {
             }
         } else {
             ForEach(metrics) { metric in
-                section(for: metric)
+                AspirationAttachMetricSection(
+                    metric: metric,
+                    selectedMetrics: $selectedMetrics,
+                    selectedProjects: $selectedProjects
+                )
             }
         }
     }
 }
 
-// MARK: - Rows
+private struct AspirationAttachMetricSection: View {
+    let metric: Metric
+    @Binding var selectedMetrics: Set<Metric>
+    @Binding var selectedProjects: Set<Project>
 
-extension AspirationAttachPicker {
-    private func section(for metric: Metric) -> some View {
+    var body: some View {
+        let metricSelected = selectedMetrics.contains(metric)
         Section(metric.name) {
-            Toggle("Whole metric", isOn: metricBinding(metric))
-            ForEach(sortedProjects(of: metric)) { project in
-                projectToggle(project, metricSelected: selectedMetrics.contains(metric))
+            Toggle("Whole metric", isOn: $selectedMetrics[selected: metric])
+            ForEach(metric.projects.inDisplayOrder) { project in
+                Toggle(isOn: $selectedProjects[selected: project]) {
+                    Text(project.name)
+                        .foregroundStyle(metricSelected ? .secondary : .primary)
+                }
+                .disabled(metricSelected)
             }
         }
-    }
-
-    private func projectToggle(_ project: Project, metricSelected: Bool) -> some View {
-        Toggle(isOn: projectBinding(project)) {
-            Text(project.name)
-                .foregroundStyle(metricSelected ? .secondary : .primary)
-        }
-        .disabled(metricSelected)
-    }
-
-    private func sortedProjects(of metric: Metric) -> [Project] {
-        metric.projects.inDisplayOrder
-    }
-
-    private func metricBinding(_ metric: Metric) -> Binding<Bool> {
-        Binding(
-            get: { selectedMetrics.contains(metric) },
-            set: { isOn in
-                if isOn { selectedMetrics.insert(metric) } else { selectedMetrics.remove(metric) }
-            }
-        )
-    }
-
-    private func projectBinding(_ project: Project) -> Binding<Bool> {
-        Binding(
-            get: { selectedProjects.contains(project) },
-            set: { isOn in
-                if isOn { selectedProjects.insert(project) } else { selectedProjects.remove(project) }
-            }
-        )
     }
 }

@@ -2,86 +2,103 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// One full-screen photo presentation. The route snapshots the moment's
-/// ordered photo bytes so paging remains stable even if the presenting row is
-/// redrawn while the cover is open.
+/// One full-screen photo presentation. Each occurrence gets its own identity
+/// when the route snapshots the ordered bytes, including duplicate images.
 struct MomentPhotoViewerRoute: Identifiable {
     let id = UUID()
-    let photos: [Data]
-    let selectedIndex: Int
+    let photos: [MomentPhotoSnapshot]
+    let selectedPhotoID: UUID?
 
     init(photos: [Data], selectedIndex: Int) {
-        self.photos = photos
-        self.selectedIndex = min(max(selectedIndex, 0), max(photos.count - 1, 0))
+        let snapshots = photos.map { MomentPhotoSnapshot(data: $0) }
+        self.photos = snapshots
+        let index = min(max(selectedIndex, 0), max(snapshots.count - 1, 0))
+        selectedPhotoID = snapshots.isEmpty ? nil : snapshots[index].id
     }
 }
 
-/// An uncropped, edge-to-edge view of a moment's photos. Swiping moves through
-/// the rest of the moment without returning to the thumbnail strip.
-struct MomentPhotoViewer: View {
-    @Environment(\.dismiss) private var dismiss
+struct MomentPhotoSnapshot: Identifiable {
+    let id = UUID()
+    let data: Data
+}
 
-    let photos: [Data]
-    @State private var selection: Int
+/// An uncropped, edge-to-edge view of a moment's photos. The cover owns an
+/// immutable snapshot, so edits to the presenting moment cannot shift selection.
+struct MomentPhotoViewer: View {
+    let photos: [MomentPhotoSnapshot]
+    @State private var selection: UUID?
 
     init(route: MomentPhotoViewerRoute) {
         photos = route.photos
-        _selection = State(initialValue: route.selectedIndex)
+        _selection = State(initialValue: route.selectedPhotoID)
     }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            photoPages
+            if photos.isEmpty {
+                MomentUnavailablePhoto()
+            } else {
+                TabView(selection: $selection) {
+                    ForEach(photos.enumerated(), id: \.element.id) { index, photo in
+                        Tab(value: Optional(photo.id)) {
+                            MomentPhotoPage(data: photo.data, number: index + 1, count: photos.count)
+                        }
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .automatic : .never))
+            }
         }
-        .overlay(alignment: .top) { controls }
+        .overlay(alignment: .top) {
+            MomentPhotoControls(
+                number: photos.firstIndex { $0.id == selection }.map { $0 + 1 } ?? 1,
+                count: photos.count
+            )
+        }
         .statusBarHidden()
         .accessibilityIdentifier("MomentPhotoViewer")
     }
+}
 
-    @ViewBuilder
-    private var photoPages: some View {
-        if photos.isEmpty {
-            unavailablePhoto
-        } else {
-            TabView(selection: $selection) {
-                ForEach(photos.indices, id: \.self) { index in
-                    photo(at: index)
-                        .tag(index)
-                }
+private struct MomentPhotoPage: View {
+    let data: Data
+    let number: Int
+    let count: Int
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.vertical, 56)
+                    .accessibilityLabel(count == 1 ? "Moment photo" : "Moment photo \(number) of \(count)")
+            } else {
+                MomentUnavailablePhoto()
             }
-            .tabViewStyle(
-                .page(indexDisplayMode: photos.count > 1 ? .automatic : .never)
-            )
         }
+        .task(id: data) { image = UIImage(data: data) }
     }
+}
 
-    @ViewBuilder
-    private func photo(at index: Int) -> some View {
-        if let image = UIImage(data: photos[index]) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.vertical, 56)
-                .accessibilityLabel(photoLabel(at: index))
-        } else {
-            unavailablePhoto
-        }
+private struct MomentUnavailablePhoto: View {
+    var body: some View {
+        ContentUnavailableView("Photo unavailable", systemImage: "photo.badge.exclamationmark")
+            .foregroundStyle(.white)
     }
+}
 
-    private var unavailablePhoto: some View {
-        ContentUnavailableView(
-            "Photo unavailable",
-            systemImage: "photo.badge.exclamationmark"
-        )
-        .foregroundStyle(.white)
-    }
+private struct MomentPhotoControls: View {
+    @Environment(\.dismiss) private var dismiss
+    let number: Int
+    let count: Int
 
-    private var controls: some View {
+    var body: some View {
         HStack {
-            if photos.count > 1 {
-                Text("\(selection + 1) of \(photos.count)")
+            if count > 1 {
+                Text("\(number) of \(count)")
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .padding(.horizontal, 13)
@@ -105,10 +122,25 @@ struct MomentPhotoViewer: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
     }
+}
 
-    private func photoLabel(at index: Int) -> String {
-        photos.count == 1
-            ? "Moment photo"
-            : "Moment photo \(index + 1) of \(photos.count)"
+/// Review thumbnails decode once per photo change and preserve the unavailable placeholder.
+struct MomentPhotoThumbnail: View {
+    let data: Data
+    let size: CGFloat
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Image(systemName: "photo")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .task(id: data) { image = UIImage(data: data) }
     }
 }

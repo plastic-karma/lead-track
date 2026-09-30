@@ -2,15 +2,12 @@ import SwiftUI
 
 struct AppSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(CompletionAlertSettings.soundKey, store: CompletionAlertSettings.store) private var timerSound = true
-    @AppStorage(CompletionAlertSettings.hapticKey, store: CompletionAlertSettings.store) private var timerHaptic = true
-    @AppStorage(MomentRediscoveryPreferences.enabledKey) private var momentRediscovery = false
 
     var body: some View {
         NavigationStack {
             List {
-                timerCompletionSection
-                rediscoverySection
+                TimerCompletionSettingsSection()
+                MomentRediscoverySettingsSection()
                 Section {
                     NavigationLink {
                         AppLockSettingsView()
@@ -27,21 +24,30 @@ struct AppSettingsView: View {
             }
         }
     }
+}
 
-    private var timerCompletionSection: some View {
+private struct TimerCompletionSettingsSection: View {
+    @AppStorage(CompletionAlertSettings.soundKey, store: CompletionAlertSettings.store) private var sound = true
+    @AppStorage(CompletionAlertSettings.hapticKey, store: CompletionAlertSettings.store) private var haptic = true
+
+    var body: some View {
         Section {
-            Toggle("Sound", isOn: $timerSound)
-            Toggle("Vibration", isOn: $timerHaptic)
+            Toggle("Sound", isOn: $sound)
+            Toggle("Vibration", isOn: $haptic)
         } header: {
             Text("Timer Completion")
         } footer: {
             Text("Plays a sound and vibrates when a countdown reaches zero.")
         }
     }
+}
 
-    private var rediscoverySection: some View {
+private struct MomentRediscoverySettingsSection: View {
+    @AppStorage(MomentRediscoveryPreferences.enabledKey) private var enabled = false
+
+    var body: some View {
         Section {
-            Toggle("Rediscover older Moments", isOn: $momentRediscovery)
+            Toggle("Rediscover older Moments", isOn: $enabled)
         } header: {
             Text("Moment Rediscovery")
         } footer: {

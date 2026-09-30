@@ -6,7 +6,6 @@ import SwiftUI
 /// Apple Health link for mirrored metrics, and Projects. Each row expands in
 /// place, so the page stays a single calm column until asked for more.
 struct MetricFoldsCard: View {
-    @Environment(\.modelContext) private var modelContext
     let metric: Metric
     let dailyTotals: [DailyTotal]
     /// Completed sessions without a project, newest first.
@@ -16,8 +15,6 @@ struct MetricFoldsCard: View {
     @State private var historyOpen = false
     @State private var healthOpen = false
     @State private var projectsOpen = false
-
-    private static let historyPreviewLimit = 5
 
     var body: some View {
         if !visibleFolds.isEmpty {
@@ -30,7 +27,7 @@ struct MetricFoldsCard: View {
                 }
             }
             .padding(.vertical, 4)
-            .background(Theme.cardShape())
+            .background { Theme.cardShape() }
         }
     }
 
@@ -61,24 +58,32 @@ extension MetricFoldsCard {
     @ViewBuilder
     private func foldView(_ fold: Fold) -> some View {
         switch fold {
-        case .activity: activityFold
-        case .history: historyFold
-        case .health: healthFold
-        case .projects: projectsFold
+        case .activity:
+            MetricActivityFold(dailyTotals: dailyTotals, tint: tint, activityOpen: $activityOpen)
+        case .history:
+            MetricHistoryFold(
+                metric: metric, dailyTotals: dailyTotals,
+                directSessions: directSessions, onMoveSession: onMoveSession, historyOpen: $historyOpen
+            )
+        case .health:
+            MetricHealthFold(metric: metric, dailyTotals: dailyTotals, healthOpen: $healthOpen)
+        case .projects: MetricProjectsFold(metric: metric, projectsOpen: $projectsOpen)
         }
     }
+}
 
-    private func foldRow(
-        title: String,
-        detail: String,
-        isOpen: Binding<Bool>,
-        @ViewBuilder icon: () -> some View
-    ) -> some View {
+private struct MetricFoldHeader<Icon: View>: View {
+    let title: String
+    let detail: String
+    @Binding var isOpen: Bool
+    @ViewBuilder var icon: Icon
+
+    var body: some View {
         Button {
-            withAnimation(.snappy) { isOpen.wrappedValue.toggle() }
+            withAnimation(.snappy) { isOpen.toggle() }
         } label: {
             HStack(spacing: 12) {
-                icon()
+                icon
                     .frame(width: 22)
                 Text(title)
                     .font(.callout.weight(.semibold))
@@ -90,17 +95,21 @@ extension MetricFoldsCard {
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isOpen.wrappedValue ? 180 : 0))
+                    .rotationEffect(.degrees(isOpen ? 180 : 0))
             }
             .padding(.horizontal, 16)
             .frame(minHeight: 52)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint(isOpen.wrappedValue ? "Collapse" : "Expand")
+        .accessibilityHint(isOpen ? "Collapse" : "Expand")
     }
+}
 
-    private func sfIcon(_ name: String) -> some View {
+private struct MetricFoldSymbol: View {
+    let name: String
+
+    var body: some View {
         Image(systemName: name)
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -109,10 +118,14 @@ extension MetricFoldsCard {
 
 // MARK: - Activity
 
-extension MetricFoldsCard {
-    private var activityFold: some View {
+private struct MetricActivityFold: View {
+    let dailyTotals: [DailyTotal]
+    let tint: Color
+    @Binding var activityOpen: Bool
+
+    var body: some View {
         VStack(spacing: 0) {
-            foldRow(
+            MetricFoldHeader(
                 title: "Activity",
                 detail: "\(CalendarHeatmapView.weekCount) weeks",
                 isOpen: $activityOpen
@@ -150,15 +163,27 @@ extension MetricFoldsCard {
 
 // MARK: - History
 
-extension MetricFoldsCard {
-    private var historyFold: some View {
+private struct MetricHistoryFold: View {
+    @Environment(\.modelContext) private var modelContext
+    let metric: Metric
+    let dailyTotals: [DailyTotal]
+    let directSessions: [Session]
+    let onMoveSession: (Session) -> Void
+    @Binding var historyOpen: Bool
+
+    private static let historyPreviewLimit = 5
+    private var tint: Color {
+        metric.displayColor
+    }
+
+    var body: some View {
         VStack(spacing: 0) {
-            foldRow(
+            MetricFoldHeader(
                 title: "History",
                 detail: historyDetail,
                 isOpen: $historyOpen
             ) {
-                sfIcon("clock")
+                MetricFoldSymbol(name: "clock")
             }
             if historyOpen {
                 VStack(spacing: 0) {
@@ -171,7 +196,7 @@ extension MetricFoldsCard {
 
     private var historyDetail: String {
         metric.isHealthLinked
-            ? "\(HealthHistoryRows.days(from: dailyTotals).count) days"
+            ? "\(min(dailyTotals.count, 14)) days"
             : ValueFormatter.sessions(directSessions.count)
     }
 
@@ -227,7 +252,9 @@ extension MetricFoldsCard {
     }
 
     private var showAllLink: some View {
-        NavigationLink(destination: MetricSessionsListView(metric: metric)) {
+        NavigationLink {
+            MetricSessionsListView(metric: metric)
+        } label: {
             Text("Show all \(directSessions.count) →")
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(tint)
@@ -241,15 +268,19 @@ extension MetricFoldsCard {
 
 // MARK: - Apple Health
 
-extension MetricFoldsCard {
-    private var healthFold: some View {
+private struct MetricHealthFold: View {
+    let metric: Metric
+    let dailyTotals: [DailyTotal]
+    @Binding var healthOpen: Bool
+
+    var body: some View {
         VStack(spacing: 0) {
-            foldRow(
+            MetricFoldHeader(
                 title: "Apple Health",
                 detail: metric.healthSource?.displayName ?? "Apple Health",
                 isOpen: $healthOpen
             ) {
-                sfIcon("heart")
+                MetricFoldSymbol(name: "heart")
             }
             if healthOpen {
                 HealthFoldContent(
@@ -265,20 +296,23 @@ extension MetricFoldsCard {
 
 // MARK: - Projects
 
-extension MetricFoldsCard {
-    private var projectsFold: some View {
+private struct MetricProjectsFold: View {
+    let metric: Metric
+    @Binding var projectsOpen: Bool
+
+    var body: some View {
         VStack(spacing: 0) {
-            foldRow(
+            MetricFoldHeader(
                 title: "Projects",
                 detail: projectsDetail,
                 isOpen: $projectsOpen
             ) {
-                sfIcon("folder")
+                MetricFoldSymbol(name: "folder")
             }
             if projectsOpen {
                 VStack(spacing: 0) {
                     ForEach(metric.activeProjects + metric.finishedProjects) { project in
-                        MetricProjectRow(project: project, tint: tint)
+                        MetricProjectRow(project: project, tint: metric.displayColor)
                     }
                 }
                 .padding(.bottom, 8)
@@ -288,8 +322,8 @@ extension MetricFoldsCard {
 
     private var projectsDetail: String {
         var parts: [String] = []
-        let active = metric.activeProjects.count
-        let finished = metric.finishedProjects.count
+        let active = metric.projects.count { $0.status == .active }
+        let finished = metric.projects.count { $0.status == .finished }
         if active > 0 { parts.append("\(active) active") }
         if finished > 0 { parts.append("\(finished) finished") }
         return parts.joined(separator: " · ")

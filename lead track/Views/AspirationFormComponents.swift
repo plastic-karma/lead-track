@@ -74,3 +74,13 @@ struct ColorSwatchRow: View {
         .accessibilityAddTraits(selection == option ? .isSelected : [])
     }
 }
+
+extension Set {
+    /// A key-path projection for selection controls backed by membership.
+    subscript(selected element: Element) -> Bool {
+        get { contains(element) }
+        set {
+            if newValue { insert(element) } else { remove(element) }
+        }
+    }
+}

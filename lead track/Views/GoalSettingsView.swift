@@ -59,16 +59,28 @@ struct GoalSettingsView: View {
         NavigationStack {
             Form {
                 if metric.measurementType.tracksQuantity {
-                    dailyGoalSection
-                    weeklyGoalSection
-                    seasonSection
+                    GoalDailySettingsSection(
+                        hasDailyGoal: $hasDailyGoal, value: $dailyGoalValue,
+                        excludedWeekdays: $excludedWeekdays,
+                        isCount: metric.measurementType == .count, unit: metric.unit
+                    )
+                    GoalWeeklySettingsSection(
+                        hasWeeklyGoal: $hasWeeklyGoal, value: $weeklyGoalValue,
+                        isCount: metric.measurementType == .count, unit: metric.unit
+                    )
                 } else {
-                    binaryExpectationSection
-                    restDaysSection
-                    seasonSection
+                    GoalBinaryExpectationSection(expectsDaily: $expectsDaily)
+                    Section {
+                        GoalRestDaysRow(excludedWeekdays: $excludedWeekdays)
+                    } footer: {
+                        Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
+                    }
                 }
-                reminderSection
-                streakAlertSection
+                if hasSeasonTarget {
+                    GoalSeasonSettingsSection(weeks: $seasonWeeks, note: $seasonNote)
+                }
+                GoalReminderSettingsSection(hasReminder: $hasReminder, schedule: $reminderSchedule)
+                GoalStreakAlertSettingsSection(hasAlert: $hasStreakAlert, time: $streakAlertTime)
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -89,90 +101,6 @@ struct GoalSettingsView: View {
 // MARK: - Goal Sections
 
 extension GoalSettingsView {
-    private var dailyGoalSection: some View {
-        Section(footer: restDaysFooter) {
-            Toggle("Daily Goal", isOn: $hasDailyGoal)
-            if hasDailyGoal {
-                dailyGoalPicker
-                restDaysRow
-            }
-        }
-    }
-
-    private var restDaysRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Rest Days")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            WeekdaySelector(excludedWeekdays: $excludedWeekdays)
-        }
-        .padding(.vertical, 4)
-    }
-
-    @ViewBuilder
-    private var restDaysFooter: some View {
-        if hasDailyGoal {
-            Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
-        }
-    }
-
-    /// The binary habit's target made explicit and releasable: on, showing
-    /// up counts toward the day's rings; off, the habit keeps its card and
-    /// history but carries no daily expectation — the binary form of a
-    /// retired goal.
-    private var binaryExpectationSection: some View {
-        Section {
-            Toggle("Expect It Daily", isOn: $expectsDaily)
-        } footer: {
-            Text("When off, the habit keeps its card and history but no longer counts toward the day's rings.")
-        }
-    }
-
-    /// Binary metrics have no amount to set, so their "goal" is simply showing
-    /// up each non-rest day — this section configures just that. Rest days
-    /// stay editable even when the expectation is off: they keep protecting
-    /// the logged-day streak.
-    private var restDaysSection: some View {
-        Section {
-            restDaysRow
-        } footer: {
-            Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
-        }
-    }
-
-    private var dailyGoalPicker: some View {
-        let unit = metric.measurementType == .count
-            ? (metric.unit ?? "count") : "min"
-        let step: Double = metric.measurementType == .count ? 1 : 5
-        return goalField(
-            value: $dailyGoalValue,
-            unit: unit,
-            suffix: "/ day",
-            step: step
-        )
-    }
-
-    private var weeklyGoalSection: some View {
-        Section {
-            Toggle("Weekly Goal", isOn: $hasWeeklyGoal)
-            if hasWeeklyGoal {
-                weeklyGoalPicker
-            }
-        }
-    }
-
-    private var weeklyGoalPicker: some View {
-        let isCount = metric.measurementType == .count
-        let unit = isCount ? (metric.unit ?? "count") : "h"
-        let step: Double = isCount ? 5 : 0.5
-        return goalField(
-            value: $weeklyGoalValue,
-            unit: unit,
-            suffix: "/ week",
-            step: step
-        )
-    }
-
     /// Whether a season applies to what's currently configured: an amount
     /// goal for quantity metrics, the live show-up expectation for binary.
     private var hasSeasonTarget: Bool {
@@ -180,106 +108,11 @@ extension GoalSettingsView {
             ? hasDailyGoal || hasWeeklyGoal
             : expectsDaily
     }
-
-    /// Every goal is an experiment with an end date: the season's length and
-    /// what it is for. Shown only while a target is on — no target, no
-    /// season.
-    @ViewBuilder
-    private var seasonSection: some View {
-        if hasSeasonTarget {
-            Section {
-                Picker("Length", selection: $seasonWeeks) {
-                    ForEach(GoalSeason.lengthChoices, id: \.self) { weeks in
-                        Text("\(weeks) weeks").tag(weeks)
-                    }
-                }
-                TextField(
-                    "What is this season for?",
-                    text: $seasonNote,
-                    axis: .vertical
-                )
-            } header: {
-                Text("Season")
-            } footer: {
-                Text(
-                    "Goals are experiments with an end date. When the season "
-                        + "ends, the weekly review asks whether to renew, "
-                        + "adjust, or retire the target."
-                )
-            }
-        }
-    }
-}
-
-// MARK: - Reminder Sections
-
-extension GoalSettingsView {
-    private var reminderSection: some View {
-        Section(footer: reminderFooter) {
-            Toggle("Daily Reminder", isOn: $hasReminder)
-            if hasReminder {
-                ReminderScheduleEditor(schedule: $reminderSchedule)
-            }
-        }
-    }
-
-    private var reminderFooter: some View {
-        Text(reminderFooterText)
-    }
-
-    private var reminderFooterText: String {
-        let base = "Only notifies if you haven't logged yet."
-        guard hasReminder, reminderSchedule.mode == .random else { return base }
-        return "Pings land at random times inside your window. " + base
-    }
-
-    private var streakAlertSection: some View {
-        Section(footer: Text(
-            "Warns you before your streak breaks."
-        )) {
-            Toggle("Streak at Risk Alert", isOn: $hasStreakAlert)
-            if hasStreakAlert {
-                DatePicker(
-                    "Time",
-                    selection: $streakAlertTime,
-                    displayedComponents: .hourAndMinute
-                )
-            }
-        }
-    }
 }
 
 // MARK: - Helpers
 
 extension GoalSettingsView {
-    private func goalField(
-        value: Binding<Double>,
-        unit: String,
-        suffix: String,
-        step: Double
-    ) -> some View {
-        HStack {
-            TextField(
-                unit,
-                value: value,
-                format: .number
-            )
-            .keyboardType(.decimalPad)
-            .textFieldStyle(.roundedBorder)
-            .frame(width: 80)
-            Text("\(unit) \(suffix)")
-                .foregroundStyle(.secondary)
-            Spacer()
-            Stepper(
-                "",
-                value: value,
-                in: step ... .infinity,
-                step: step
-            )
-            .labelsHidden()
-        }
-    }
-
     /// An enabled amount goal must be a positive number before Save unlocks:
     /// the field's `.number` format accepts zero and negatives, and a
     /// The form's state as the shared draft whose `apply(to:)` owns the
@@ -315,5 +148,158 @@ extension GoalSettingsView {
         Calendar.current.date(
             from: DateComponents(hour: hour, minute: 0)
         ) ?? .now
+    }
+}
+
+private struct GoalRestDaysRow: View {
+    @Binding var excludedWeekdays: Set<Int>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Rest Days")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            WeekdaySelector(excludedWeekdays: $excludedWeekdays)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct GoalDailySettingsSection: View {
+    @Binding var hasDailyGoal: Bool
+    @Binding var value: Double
+    @Binding var excludedWeekdays: Set<Int>
+    let isCount: Bool
+    let unit: String?
+
+    var body: some View {
+        Section {
+            Toggle("Daily Goal", isOn: $hasDailyGoal)
+            if hasDailyGoal {
+                GoalAmountField(
+                    value: $value,
+                    unit: isCount ? (unit ?? "count") : "min",
+                    suffix: "/ day",
+                    step: isCount ? 1 : 5
+                )
+                GoalRestDaysRow(excludedWeekdays: $excludedWeekdays)
+            }
+        } footer: {
+            if hasDailyGoal {
+                Text("Tap a day to make it a rest day. Rest days don't break your streak or send reminders.")
+            }
+        }
+    }
+}
+
+private struct GoalWeeklySettingsSection: View {
+    @Binding var hasWeeklyGoal: Bool
+    @Binding var value: Double
+    let isCount: Bool
+    let unit: String?
+
+    var body: some View {
+        Section {
+            Toggle("Weekly Goal", isOn: $hasWeeklyGoal)
+            if hasWeeklyGoal {
+                GoalAmountField(
+                    value: $value,
+                    unit: isCount ? (unit ?? "count") : "h",
+                    suffix: "/ week",
+                    step: isCount ? 5 : 0.5
+                )
+            }
+        }
+    }
+}
+
+private struct GoalBinaryExpectationSection: View {
+    @Binding var expectsDaily: Bool
+
+    var body: some View {
+        Section {
+            Toggle("Expect It Daily", isOn: $expectsDaily)
+        } footer: {
+            Text("When off, the habit keeps its card and history but no longer counts toward the day's rings.")
+        }
+    }
+}
+
+private struct GoalSeasonSettingsSection: View {
+    @Binding var weeks: Int
+    @Binding var note: String
+
+    var body: some View {
+        Section {
+            Picker("Length", selection: $weeks) {
+                ForEach(GoalSeason.lengthChoices, id: \.self) { length in
+                    Text("\(length) weeks").tag(length)
+                }
+            }
+            TextField("What is this season for?", text: $note, axis: .vertical)
+        } header: {
+            Text("Season")
+        } footer: {
+            Text(
+                "Goals are experiments with an end date. When the season "
+                    + "ends, the weekly review asks whether to renew, "
+                    + "adjust, or retire the target."
+            )
+        }
+    }
+}
+
+private struct GoalReminderSettingsSection: View {
+    @Binding var hasReminder: Bool
+    @Binding var schedule: ReminderSchedule
+
+    var body: some View {
+        Section {
+            Toggle("Daily Reminder", isOn: $hasReminder)
+            if hasReminder {
+                ReminderScheduleEditor(schedule: $schedule)
+            }
+        } footer: {
+            Text(hasReminder && schedule.mode == .random
+                ? "Pings land at random times inside your window. Only notifies if you haven't logged yet."
+                : "Only notifies if you haven't logged yet.")
+        }
+    }
+}
+
+private struct GoalStreakAlertSettingsSection: View {
+    @Binding var hasAlert: Bool
+    @Binding var time: Date
+
+    var body: some View {
+        Section {
+            Toggle("Streak at Risk Alert", isOn: $hasAlert)
+            if hasAlert {
+                DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
+            }
+        } footer: {
+            Text("Warns you before your streak breaks.")
+        }
+    }
+}
+
+private struct GoalAmountField: View {
+    @Binding var value: Double
+    let unit: String
+    let suffix: String
+    let step: Double
+
+    var body: some View {
+        HStack {
+            TextField(unit, value: $value, format: .number)
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 80)
+            Text("\(unit) \(suffix)")
+                .foregroundStyle(.secondary)
+            Spacer()
+            Stepper("", value: $value, in: step ... .infinity, step: step)
+                .labelsHidden()
+        }
     }
 }

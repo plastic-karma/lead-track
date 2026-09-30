@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct WatchRootView: View {
-    @Environment(WatchSyncController.self) private var sync
     /// Metric IDs pushed onto the stack — a Metric Progress complication tap
     /// drives this so the app opens on the metric it shows.
     @State private var path: [UUID] = []
@@ -13,7 +12,7 @@ struct WatchRootView: View {
             // agree when the app opens after midnight with the phone
             // unreachable (yesterday's "Done today" must not carry over).
             TimelineView(.everyMinute) { timeline in
-                content(at: timeline.date)
+                WatchMetricsContent(date: timeline.date)
             }
             .navigationTitle("LeadStone")
             .navigationDestination(for: UUID.self) { metricID in
@@ -29,24 +28,26 @@ struct WatchRootView: View {
         guard let metricID = WatchMetricDeepLink.metricID(from: url) else { return }
         path = [metricID]
     }
+}
 
-    @ViewBuilder
-    private func content(at date: Date) -> some View {
-        let snapshot = WatchSnapshotReducer.rolledForward(sync.snapshot, to: date)
-        if snapshot.metrics.isEmpty {
-            emptyState
+private struct WatchMetricsContent: View {
+    @Environment(WatchSyncController.self) private var sync
+    let date: Date
+
+    var body: some View {
+        let metrics = WatchSnapshotReducer.rolledForward(sync.snapshot, to: date).metrics
+        if metrics.isEmpty {
+            WatchMetricsEmptyState()
         } else {
-            metricList(snapshot.metrics)
+            List(metrics) { metric in
+                WatchMetricRow(metric: metric)
+            }
         }
     }
+}
 
-    private func metricList(_ metrics: [WatchMetricSnapshot]) -> some View {
-        List(metrics) { metric in
-            WatchMetricRow(metric: metric)
-        }
-    }
-
-    private var emptyState: some View {
+private struct WatchMetricsEmptyState: View {
+    var body: some View {
         ScrollView {
             VStack(spacing: 8) {
                 Image(systemName: "applewatch.radiowaves.left.and.right")

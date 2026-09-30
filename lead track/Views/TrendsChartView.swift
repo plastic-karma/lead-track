@@ -20,7 +20,10 @@ struct TrendsChartView: View {
                 }
             }
             .pickerStyle(.segmented)
-            chart
+            TrendsPlot(
+                dailyTotals: dailyTotals, measurementType: measurementType, unit: unit,
+                dailyGoal: dailyGoal, weeklyGoal: weeklyGoal, tint: tint, range: range
+            )
         }
         .padding(.vertical, 4)
     }
@@ -28,8 +31,16 @@ struct TrendsChartView: View {
 
 // MARK: - Chart
 
-extension TrendsChartView {
-    private var chart: some View {
+private struct TrendsPlot: View {
+    let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+    let unit: String?
+    let dailyGoal: TimeInterval?
+    let weeklyGoal: TimeInterval?
+    let tint: Color
+    let range: TrendsRange
+
+    var body: some View {
         Chart {
             barMarks
             averageMarks
@@ -88,7 +99,7 @@ extension TrendsChartView {
 
 // MARK: - Data
 
-extension TrendsChartView {
+private extension TrendsPlot {
     private var bars: [DailyTotal] {
         range.isWeekly
             ? SessionStatistics.weeklyTotals(from: dailyTotals, since: cutoff)

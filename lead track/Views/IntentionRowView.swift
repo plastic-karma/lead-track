@@ -67,9 +67,9 @@ struct IntentionRowView: View {
 /// on Today, the review, and the aspiration detail.
 enum IntentionVoice {
     /// The commitment itself.
-    static let title = Font.system(.subheadline, design: .serif).italic()
+    static let title = Font.system(.subheadline, design: .serif, weight: .regular).italic()
     /// The quieter lines threaded beneath it.
-    static let detail = Font.system(size: 12.5, design: .serif).italic()
+    static let detail = Font.system(size: 12.5, weight: .regular, design: .serif).italic()
 }
 
 /// The "serves …" line — the principle threaded through an intention row,

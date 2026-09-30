@@ -37,21 +37,29 @@ struct AdditionalReviewDetailView: View {
         )
         return ScrollView {
             VStack(spacing: 18) {
-                periodNavigator(summary.period)
+                AdditionalReviewPeriodNavigator(period: summary.period, periodsBack: $periodsBack)
                 NavigationLink {
                     RetrospectiveView(period: summary.period)
                 } label: {
                     Label("Explore this period", systemImage: "book")
                 }
                 MomentRediscoverySection(period: summary.period)
-                stats(summary)
-                metricTotals(summary)
+                AdditionalReviewStats(
+                    totalDuration: summary.totalDuration, sessionCount: summary.sessionCount,
+                    activeDays: summary.activeDays
+                )
+                AdditionalReviewMetricTotals(metrics: summary.metrics)
             }
             .padding()
         }
     }
+}
 
-    private func periodNavigator(_ period: DateInterval) -> some View {
+private struct AdditionalReviewPeriodNavigator: View {
+    let period: DateInterval
+    @Binding var periodsBack: Int
+
+    var body: some View {
         HStack {
             Button { periodsBack += 1 } label: {
                 Image(systemName: "chevron.left")
@@ -75,14 +83,27 @@ struct AdditionalReviewDetailView: View {
         }
     }
 
-    private func stats(_ summary: AdditionalReviewSummary) -> some View {
+    private func periodDescription(_ period: DateInterval) -> String {
+        let calendar = Calendar.current
+        let finalDay = calendar.date(byAdding: .day, value: -1, to: period.end) ?? period.end
+        return "\(period.start.formatted(date: .abbreviated, time: .omitted)) – "
+            + finalDay.formatted(date: .abbreviated, time: .omitted)
+    }
+}
+
+private struct AdditionalReviewStats: View {
+    let totalDuration: TimeInterval
+    let sessionCount: Int
+    let activeDays: Int
+
+    var body: some View {
         HStack(spacing: 10) {
             stat(
                 title: "Tracked",
-                value: DurationFormatter.format(summary.totalDuration)
+                value: DurationFormatter.format(totalDuration)
             )
-            stat(title: "Sessions", value: summary.sessionCount.formatted())
-            stat(title: "Active Days", value: summary.activeDays.formatted())
+            stat(title: "Sessions", value: sessionCount.formatted())
+            stat(title: "Active Days", value: activeDays.formatted())
         }
     }
 
@@ -99,10 +120,13 @@ struct AdditionalReviewDetailView: View {
         .padding(.vertical, 12)
         .background(Theme.cardShape())
     }
+}
 
-    @ViewBuilder
-    private func metricTotals(_ summary: AdditionalReviewSummary) -> some View {
-        if summary.metrics.isEmpty {
+private struct AdditionalReviewMetricTotals: View {
+    let metrics: [AdditionalReviewSummary.MetricTotal]
+
+    var body: some View {
+        if metrics.isEmpty {
             ContentUnavailableView {
                 Label("No Sessions", systemImage: "chart.bar")
             } description: {
@@ -111,10 +135,12 @@ struct AdditionalReviewDetailView: View {
             .padding(.top, 24)
         } else {
             VStack(spacing: 0) {
-                ForEach(summary.metrics) { metric in
-                    metricRow(metric)
-                    if metric.id != summary.metrics.last?.id {
-                        Divider()
+                ForEach(metrics) { metric in
+                    VStack(spacing: 0) {
+                        AdditionalReviewMetricRow(metric: metric)
+                        if metric.id != metrics.last?.id {
+                            Divider()
+                        }
                     }
                 }
             }
@@ -123,8 +149,12 @@ struct AdditionalReviewDetailView: View {
             .background(Theme.cardShape())
         }
     }
+}
 
-    private func metricRow(_ metric: AdditionalReviewSummary.MetricTotal) -> some View {
+private struct AdditionalReviewMetricRow: View {
+    let metric: AdditionalReviewSummary.MetricTotal
+
+    var body: some View {
         HStack(spacing: 10) {
             Image(systemName: metric.icon)
                 .foregroundStyle(MetricColor.color(named: metric.colorName))
@@ -146,12 +176,5 @@ struct AdditionalReviewDetailView: View {
             .lineLimit(1)
         }
         .padding(.vertical, 11)
-    }
-
-    private func periodDescription(_ period: DateInterval) -> String {
-        let calendar = Calendar.current
-        let finalDay = calendar.date(byAdding: .day, value: -1, to: period.end) ?? period.end
-        return "\(period.start.formatted(date: .abbreviated, time: .omitted)) – "
-            + finalDay.formatted(date: .abbreviated, time: .omitted)
     }
 }
