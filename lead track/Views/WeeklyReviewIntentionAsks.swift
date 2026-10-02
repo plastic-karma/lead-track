@@ -59,7 +59,7 @@ extension WeeklyReviewView {
     /// Hides the asks for the rest of the current calendar week; they return
     /// on their own once the week rolls over (see `WeeklyCheckInDismissal`).
     private func dismissIntentionAsks() {
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
             dismissedIntentionAskWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
     }
@@ -100,11 +100,15 @@ extension WeeklyReviewView {
 /// One metric's ask: identity, the week as fact, and the single opening —
 /// no counts of debt, no judgment copy.
 struct IntentionAskRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let ask: GoalShortfall.Ask
     let open: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 10))
+        layout {
             Image(systemName: ask.icon)
                 .foregroundStyle(MetricColor.color(named: ask.colorName))
                 .frame(width: 24)
@@ -115,7 +119,10 @@ struct IntentionAskRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
+            .fixedSize(horizontal: false, vertical: true)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
             Button(action: open) {
                 ActionChip(voice: .opening(.accentColor)) {
                     Text("Set Intention")
@@ -123,6 +130,6 @@ struct IntentionAskRow: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, 2)
+        .cardSurface()
     }
 }

@@ -24,14 +24,12 @@ struct ClusterMetricRow: View {
     @State private var quickLogTrigger = false
 
     var body: some View {
-        NavigationLink(value: metric) {
-            ClusterMetricContent(
-                metric: metric, runningSession: runningSession, day: day,
-                showingCountEntry: $showingCountEntry,
-                showingCountdownPicker: $showingCountdownPicker,
-                showingDurationEntry: $showingDurationEntry, quickLogTrigger: $quickLogTrigger
-            )
-        }
+        ClusterMetricContent(
+            metric: metric, runningSession: runningSession, day: day,
+            showingCountEntry: $showingCountEntry,
+            showingCountdownPicker: $showingCountdownPicker,
+            showingDurationEntry: $showingDurationEntry, quickLogTrigger: $quickLogTrigger
+        )
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
@@ -123,14 +121,21 @@ private struct ClusterMetricContent: View {
 extension ClusterMetricContent {
     private func activeRow(_ total: TimeInterval) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 30)
-            VStack(alignment: .leading, spacing: 5) {
-                valueLine(total)
-                if let fraction = goalFraction(total) {
-                    ProgressTrack(fraction: fraction, tint: metric.displayColor)
-                        .frame(height: 4)
+            NavigationLink(value: metric) {
+                HStack(spacing: 12) {
+                    MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 30)
+                    VStack(alignment: .leading, spacing: 5) {
+                        valueLine(total)
+                        if let fraction = goalFraction(total) {
+                            ProgressTrack(fraction: fraction, tint: metric.displayColor)
+                                .frame(height: 4)
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             if !metric.isHealthLinked {
                 actionButton(total)
             }
@@ -139,11 +144,26 @@ extension ClusterMetricContent {
     }
 
     private func valueLine(_ total: TimeInterval) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(metric.name)
+                    .font(.headline)
+                    .fixedSize()
+                Spacer(minLength: 6)
+                valueSummary(total)
+                    .fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(metric.name)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                valueSummary(total)
+            }
+        }
+    }
+
+    private func valueSummary(_ total: TimeInterval) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(metric.name)
-                .font(.headline)
-                .lineLimit(1)
-            Spacer(minLength: 6)
             todayValue(total)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .monospacedDigit()
@@ -200,23 +220,26 @@ extension ClusterMetricContent {
 
 extension ClusterMetricContent {
     private func doneRow(_ total: TimeInterval) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title3)
-                .foregroundStyle(metric.displayColor)
-                .frame(width: 30)
-            Text(metric.name)
-                .font(.callout.weight(.semibold))
-                .lineLimit(1)
-            Spacer(minLength: 6)
-            Text(ValueFormatter.format(total, type: metric.measurementType, unit: metric.unit))
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .padding(.trailing, 8)
+        NavigationLink(value: metric) {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(metric.displayColor)
+                    .frame(width: 30)
+                Text(metric.name)
+                    .font(.callout.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 6)
+                Text(ValueFormatter.format(total, type: metric.measurementType, unit: metric.unit))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.vertical, 11)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .opacity(0.65)
-        .padding(.vertical, 11)
+        .buttonStyle(.plain)
     }
 }
 
@@ -323,13 +346,11 @@ extension ClusterMetricContent {
         return isToday ? "\(base) today" : base
     }
 
-    /// The quiet action: the metric's glyph-on-wash circle, pulsing gently
-    /// while its timer runs.
+    /// Static glyph-on-wash feedback: a running timer wears a stop symbol.
     private func actionCircle(_ systemName: String) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 16, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .foregroundStyle(metric.displayColor)
-            .symbolEffect(.pulse, isActive: runningSession != nil)
             .frame(width: 44, height: 44)
             .background { Circle().fill(metric.displayColor.opacity(0.15)) }
     }

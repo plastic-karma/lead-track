@@ -53,6 +53,8 @@ struct RetrospectiveView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: 680)
+        .frame(maxWidth: .infinity)
         .navigationTitle("Explore this period")
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.hidden)
@@ -186,6 +188,7 @@ private struct RetrospectiveEffortGroup: View {
             }
         } label: {
             LabeledContent(name, value: text)
+                .monospacedDigit()
         }
     }
 }
@@ -200,6 +203,7 @@ private struct RetrospectiveSessionRow: View {
                 session.startedAt.formatted(date: .abbreviated, time: .shortened),
                 value: session.displayValue(unit: unit)
             )
+            .monospacedDigit()
             if let project = session.project {
                 Text(project.name).font(.caption).foregroundStyle(.secondary)
             }

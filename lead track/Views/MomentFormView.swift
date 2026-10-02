@@ -82,7 +82,7 @@ struct MomentFormView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Keep", action: save)
+                    Button(editing == nil ? "Keep" : "Save", action: save)
                         .disabled(trimmedText.isEmpty || !hasAvailableOwner || !didInitializePhotos)
                 }
             }
@@ -189,12 +189,6 @@ struct MomentFormView: View {
     }
 }
 
-/// Identity belongs to the imported occurrence, never its bytes or array slot.
-private struct PickedPhoto: Identifiable {
-    let id = UUID()
-    let data: Data
-}
-
 /// Exactly one optional source for the composer's picker.
 enum MomentProvenance: Hashable {
     case none
@@ -270,6 +264,7 @@ private struct MomentTextSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             TextField(prompt == nil ? "What grew out of this?" : "Your reflection", text: $text, axis: .vertical)
+                .accessibilityLabel(prompt == nil ? "Moment" : "Your reflection")
                 .lineLimit(3 ... 8)
         } header: {
             Text("Moment")
@@ -313,8 +308,13 @@ private struct MomentLocationSection: View {
                     let trimmed = placeName.trimmingCharacters(in: .whitespacesAndNewlines)
                     Label(trimmed.isEmpty ? "Location" : trimmed, systemImage: "mappin.and.ellipse")
                     Spacer()
-                    Button("Remove", role: .destructive, action: onRemove)
-                        .font(.caption).buttonStyle(.borderless)
+                    Button(role: .destructive, action: onRemove) {
+                        Text("Remove")
+                            .font(.caption)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
                 }
             } else {
                 Button(action: onResolve) {
@@ -330,7 +330,12 @@ private struct MomentLocationSection: View {
             if status == .denied {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Location access is off. It's used only to label a moment you choose to keep.")
-                    Button("Open Settings", action: onSettings).font(.caption)
+                    Button(action: onSettings) {
+                        Text("Open Settings")
+                            .font(.caption)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
                 }
             }
         }
@@ -385,43 +390,6 @@ private struct MomentPhotosSection: View {
                 items = []
             }
         }
-    }
-}
-
-private struct MomentPickedPhotoCell: View {
-    let photo: PickedPhoto
-    let number: Int
-    let count: Int
-    let onRemove: (PickedPhoto) -> Void
-    let onView: (PickedPhoto) -> Void
-    @State private var image: UIImage?
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            if let image {
-                Button { onView(photo) } label: {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("View photo \(number) of \(count)")
-                .accessibilityHint("Opens the photo full screen")
-                Button { onRemove(photo) } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.white, .black.opacity(0.5))
-                        .padding(4)
-                        .frame(width: 44, height: 44, alignment: .topTrailing)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Remove photo \(number) of \(count)")
-                .accessibilityHint("Removes this photo from the moment")
-            }
-        }
-        .task(id: photo.data) { image = UIImage(data: photo.data) }
     }
 }
 

@@ -65,6 +65,8 @@ struct AspirationFormView: View {
                                 prominentTint: color.prominentColor
                             )
                         }
+                        .frame(maxWidth: 680, alignment: .leading)
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                         .padding(.bottom, 40)
@@ -210,6 +212,7 @@ private struct AspirationEditorHeading: View {
                 FormEyebrow(text: "Aspiration", tint: color.color)
                 TextField("Name your aspiration", text: $title, axis: .vertical)
                     .font(.largeTitle.weight(.bold))
+                    .accessibilityLabel("Aspiration name")
                     .foregroundStyle(.primary)
                     .lineLimit(1 ... 3)
             }
@@ -226,6 +229,8 @@ private struct AspirationEditorWhy: View {
             FormEyebrow(text: "Why this matters", tint: tint)
             TextField("What makes this matter to you?", text: $detail, axis: .vertical)
                 .font(.body)
+                .fontDesign(.serif)
+                .accessibilityLabel("Why this matters")
                 .foregroundStyle(.primary)
                 .lineLimit(2 ... 8)
         }

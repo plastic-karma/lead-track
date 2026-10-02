@@ -26,6 +26,7 @@ struct ActionChip<Content: View>: View {
             .frame(maxWidth: stretched ? .infinity : nil)
             .padding(.vertical, 7)
             .padding(.horizontal, 12)
+            .frame(minHeight: 44)
             .background(fill, in: Capsule())
             .overlay { border }
     }
@@ -44,10 +45,10 @@ extension ActionChip {
         return .medium
     }
 
-    private var foreground: AnyShapeStyle {
+    private var foreground: HierarchicalShapeStyle {
         switch voice {
-        case .quiet: AnyShapeStyle(.secondary)
-        case let .decision(tint), let .opening(tint): AnyShapeStyle(tint)
+        case .quiet: .secondary
+        case .decision, .opening: .primary
         }
     }
 

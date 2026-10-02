@@ -9,6 +9,7 @@ import SwiftUI
 /// new vow, and the eyebrow collapses the card like its siblings.
 struct AspirationPrinciplesCard: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let aspiration: Aspiration
     @State private var isExpanded = true
     @State private var showingHoldPrinciple = false
@@ -51,7 +52,7 @@ struct AspirationPrinciplesCard: View {
         let text = principleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         principleDraft = ""
         guard !text.isEmpty else { return }
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             modelContext.insert(Principle(text: text, aspiration: aspiration))
         }
     }
@@ -67,10 +68,11 @@ private struct AspirationPrincipleRow: View {
     var body: some View {
         let record = PrincipleLiving.record(for: principle, in: intentions)
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(principle.text)
-                    .font(.system(size: 20, design: .serif))
-                Spacer(minLength: 8)
+                    .font(.title3)
+                    .fontDesign(.serif)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("\(record.livedCount) of \(PrincipleLiving.historyWeeks)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -131,6 +133,7 @@ private struct AspirationPrincipleRow: View {
 /// only the vow and its lived record go.
 private struct PrincipleRowActions: ViewModifier {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let principle: Principle
     @State private var showingReword = false
     @State private var rewordText = ""
@@ -152,7 +155,7 @@ private struct PrincipleRowActions: ViewModifier {
             showingReword = true
         }
         Button("Delete", systemImage: "trash", role: .destructive) {
-            withAnimation { modelContext.delete(principle) }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { modelContext.delete(principle) }
         }
     }
 

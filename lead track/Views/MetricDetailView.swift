@@ -120,6 +120,8 @@ private struct MetricDetailPage: View {
         .padding(.horizontal)
         .padding(.top, 8)
         .padding(.bottom, 24)
+        .frame(maxWidth: 680)
+        .frame(maxWidth: .infinity)
     }
 
     private func ringCard(_ totals: [DailyTotal]) -> some View {
@@ -201,26 +203,15 @@ private struct MetricDetailTitle: View {
                 MetricIcon(systemName: metric.displayIcon, tint: metric.displayColor, size: 40)
                 Text(metric.name)
                     .font(.title2.weight(.bold))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                if let aspiration = aspirations.first, aspirations.count == 1 {
-                    chipLink(aspiration)
-                }
             }
-            if aspirations.count > 1 {
+            if !aspirations.isEmpty {
                 AspirationChipsRow(aspirations: aspirations)
             }
             description
         }
         .padding(.horizontal, 4)
-    }
-
-    private func chipLink(_ aspiration: Aspiration) -> some View {
-        NavigationLink(value: aspiration) {
-            AspirationChip(aspiration: aspiration)
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder

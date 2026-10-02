@@ -4,6 +4,7 @@ import SwiftUI
 /// project (grouped under its metric), or one aspiration. The active choice
 /// wears a checkmark and fills the toolbar glyph.
 struct GoalCalendarFilterMenu: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let metrics: [Metric]
     let aspirations: [Aspiration]
     @Binding var filter: GoalCalendarFilter?
@@ -30,7 +31,7 @@ struct GoalCalendarFilterMenu: View {
 extension GoalCalendarFilterMenu {
     private func row(_ title: String, candidate: GoalCalendarFilter?) -> some View {
         Button {
-            withAnimation(.snappy(duration: 0.2)) {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
                 filter = candidate
             }
         } label: {
@@ -79,5 +80,32 @@ extension GoalCalendarFilterMenu {
                 }
             }
         }
+    }
+}
+
+struct GoalCalendarFilterChip: View {
+    let title: String
+    let icon: String
+    let tint: Color
+    let clear: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(title)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(.primary)
+            Button(action: clear) {
+                Image(systemName: "xmark.circle.fill")
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Clear filter")
+        }
+        .font(.footnote.weight(.medium))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .background(Capsule().fill(tint.opacity(0.14)))
     }
 }

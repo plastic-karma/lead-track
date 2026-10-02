@@ -9,12 +9,13 @@ struct AppTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            tabButton(.today, label: "Today", systemImage: "square.stack.3d.up.fill")
+            tabButton(.today, label: "Today", systemImage: "square.stack.3d.up")
             tabButton(.week, label: "Week", systemImage: "calendar")
             tabButton(.aspirations, label: "Aspirations", systemImage: "mountain.2")
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
+        .sensoryFeedback(.selection, trigger: selectedTab)
         .padding(.top, 8)
         .background(alignment: .top) {
             Divider()
@@ -29,18 +30,21 @@ private extension AppTabBar {
         return Button {
             selectedTab = tab
         } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 21))
-                    .frame(maxWidth: .infinity)
+                    .symbolVariant(isSelected ? .fill : .none)
+                    .font(.title3.weight(.medium))
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .frame(width: 44, height: 32)
+                    .background(isSelected ? Theme.chipFill : .clear, in: Capsule())
                 Text(label)
-                    .font(.caption2.weight(isSelected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .font(.caption.weight(isSelected ? .semibold : .regular))
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
         }
         .buttonStyle(.plain)

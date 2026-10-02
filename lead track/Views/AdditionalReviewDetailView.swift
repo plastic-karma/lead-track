@@ -51,6 +51,8 @@ struct AdditionalReviewDetailView: View {
                 AdditionalReviewMetricTotals(metrics: summary.metrics)
             }
             .padding()
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -63,6 +65,8 @@ private struct AdditionalReviewPeriodNavigator: View {
         HStack {
             Button { periodsBack += 1 } label: {
                 Image(systemName: "chevron.left")
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel("Earlier period")
             Spacer()
@@ -77,6 +81,8 @@ private struct AdditionalReviewPeriodNavigator: View {
             Spacer()
             Button { periodsBack = max(0, periodsBack - 1) } label: {
                 Image(systemName: "chevron.right")
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .disabled(periodsBack == 0)
             .accessibilityLabel("Later period")

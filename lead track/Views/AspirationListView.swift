@@ -6,6 +6,7 @@ import SwiftUI
 /// Today dashboard; an app with no aspirations shows a friendly empty state.
 struct AspirationListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @State private var showingAddSheet = false
     /// The card lifted by a long-press drag, dimmed in place until the drop.
@@ -20,6 +21,8 @@ struct AspirationListView: View {
                     )
                 }
             }
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
@@ -53,7 +56,7 @@ extension AspirationListView {
     /// One hover step of a drag: rewrite the ranks and save, so the order
     /// survives however the drag session ends.
     private func move(_ draggedID: String, over targetID: String) {
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             AspirationReorder.applyMove(
                 all: aspirations,
                 visibleIDs: aspirations.unarchived.inDisplayOrder.map(\.stableIdentity),
@@ -127,6 +130,8 @@ private struct AspirationListEmptyState: View {
             Text("Create an aspiration to see how much you've poured into what matters.")
         } actions: {
             Button("Add Aspiration") { showingAddSheet = true }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
         }
     }
 }

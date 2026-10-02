@@ -62,6 +62,7 @@ extension WeeklyReviewView {
         NavigationLink(value: owner) {
             Text("\(owner.title) · Set aside · Bring back")
                 .font(.caption)
+                .frame(minHeight: 44, alignment: .leading)
         }
     }
 
@@ -104,7 +105,7 @@ extension WeeklyReviewView {
     /// back on its own once the week rolls over (see `WeeklyCheckInDismissal`).
     /// Animated so the deck can slide the vanished slide's neighbor in.
     private func dismissCheckIn() {
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
             dismissedCheckInWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
     }
@@ -136,12 +137,12 @@ extension WeeklyReviewView {
         else { return }
         switch action {
         case let .outcome(outcome):
-            withAnimation { intention.close(outcome: outcome) }
+            withAnimation(reduceMotion ? nil : .default) { intention.close(outcome: outcome) }
             NotificationService.cancelQuestion(for: intention)
         case .setAgain:
             guard intention.aspiration?.isArchived == false else { return }
             guard let renewed = try? IntentionRenewal.setAgain(intention) else { return }
-            withAnimation { modelContext.insert(renewed) }
+            withAnimation(reduceMotion ? nil : .default) { modelContext.insert(renewed) }
             NotificationService.cancelQuestion(for: intention)
             NotificationService.scheduleQuestion(for: renewed)
         case let .acceptPromotion(promotion):
@@ -178,7 +179,7 @@ extension WeeklyReviewView {
             measurementType: type,
             colorName: MetricColor.nextAvailable(usedNames: metrics.map(\.colorName)).rawValue
         )
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .default) {
             modelContext.insert(metric)
             aspiration.metrics.append(metric)
         }
@@ -210,16 +211,17 @@ extension WeeklyReviewView {
 /// judgment copy, no derived outcome label — and letting go sits visually
 /// equal to every other decision.
 struct IntentionClosureRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let closure: WeeklyReview.IntentionClosure
     let act: (IntentionClosureAction) -> Void
     @State private var showingPromotion = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(closure.title)
-                    .font(.subheadline)
-                Spacer()
+                    .font(IntentionVoice.title)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let progress = closure.progressText {
                     Text(progress)
                         .font(.caption)
@@ -233,7 +235,7 @@ struct IntentionClosureRow: View {
             }
             decisions
         }
-        .padding(.vertical, 2)
+        .cardSurface()
         .confirmationDialog(
             "Make it permanent?",
             isPresented: $showingPromotion,
@@ -250,7 +252,10 @@ struct IntentionClosureRow: View {
 
 extension IntentionClosureRow {
     private var decisions: some View {
-        HStack(spacing: 8) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
             if closure.kind == .reflective || (closure.ownerIsArchived && !closure.sourceRemoved) {
                 decisionButton("Done") { act(.outcome(.done)) }
                 decisionButton("Partly") { act(.outcome(.partly)) }
@@ -306,6 +311,7 @@ extension IntentionClosureRow {
 /// One aspiration's weekly alignment pulse: the three answers sitting
 /// visually equal and — once one is chosen — room for a note.
 struct AspirationPulseRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let title: String
     let record: (AlignmentRating, String?) -> Void
     @State private var rating: AlignmentRating?
@@ -315,14 +321,17 @@ struct AspirationPulseRow: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.subheadline)
-            HStack(spacing: 8) {
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 8))
+            layout {
                 ForEach(AlignmentRating.allCases, id: \.rawValue) { option in
                     ratingChip(option)
                 }
             }
             noteField
         }
-        .padding(.vertical, 2)
+        .cardSurface()
     }
 
     private func ratingChip(_ option: AlignmentRating) -> some View {
@@ -336,6 +345,7 @@ struct AspirationPulseRow: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(rating == option ? .isSelected : [])
     }
 
     @ViewBuilder

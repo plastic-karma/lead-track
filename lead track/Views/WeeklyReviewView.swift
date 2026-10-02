@@ -17,6 +17,8 @@ import SwiftUI
 /// notification simply switches to this tab. Hosted in `ContentView`'s
 /// navigation stack, so the shared drill-in destinations apply.
 struct WeeklyReviewView: View {
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
     /// The metrics themselves — grouped by aspiration into the compact cards
     /// of the effort slide (see `WeeklyReview.metricGroups`).
     @Query(sort: \Metric.createdAt) var metrics: [Metric]
@@ -147,9 +149,10 @@ extension WeeklyReviewView {
     /// each zone now opens its own slide, so there is nothing to divide.
     func sectionBreak(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.weight(.semibold))
+            .font(.headline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
     }
 
     /// `sectionBreak` plus a quiet close button on the title row, so a
@@ -159,12 +162,15 @@ extension WeeklyReviewView {
     func dismissibleSectionHeader(_ title: String, dismiss: @escaping () -> Void) -> some View {
         HStack {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.headline)
                 .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
             Spacer()
             Button(action: dismiss) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Dismiss until next week")

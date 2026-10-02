@@ -1,18 +1,23 @@
 import SwiftUI
 
-/// The small caps, tracked section label the aspiration form uses above every
-/// block ("ASPIRATION", "WHY THIS MATTERS", "COLOR", "WHAT FEEDS THIS"), tinted
-/// in the aspiration's identity color so the whole form shifts with the color row.
+/// The tracked section label keeps readable text neutral and uses a small dot
+/// to carry the aspiration's color without relying on it for contrast.
 struct FormEyebrow: View {
     let text: String
     var tint: Color
 
     var body: some View {
-        Text(text)
-            .font(.caption.weight(.semibold))
-            .tracking(0.8)
-            .textCase(.uppercase)
-            .foregroundStyle(tint)
+        HStack(spacing: 6) {
+            Circle()
+                .fill(tint)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .tracking(0.8)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
@@ -38,26 +43,22 @@ struct SelectionBadge: View {
     }
 }
 
-/// The horizontal palette in the aspiration form: every `MetricColor` as a dot,
-/// the selected one wearing a halo ring in its own color. Spacers justify the
-/// dots edge to edge so the row fills the width like a swatch tray.
+/// The aspiration palette wraps rather than compressing its touch targets on
+/// smaller screens. Each swatch has a 44-point target and a selection ring.
 struct ColorSwatchRow: View {
     @Binding var selection: MetricColor
 
     var body: some View {
-        HStack(spacing: 0) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 8)], spacing: 8) {
             ForEach(MetricColor.allCases) { option in
                 swatch(option)
-                if option != MetricColor.allCases.last {
-                    Spacer(minLength: 0)
-                }
             }
         }
     }
 
     private func swatch(_ option: MetricColor) -> some View {
         Button {
-            withAnimation(.snappy) { selection = option }
+            selection = option
         } label: {
             ZStack {
                 Circle()
@@ -68,6 +69,8 @@ struct ColorSwatchRow: View {
                     .frame(width: 24, height: 24)
             }
             .frame(width: 34, height: 34)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(option.label)

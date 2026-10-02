@@ -25,10 +25,15 @@ struct AspirationThumbnail: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Theme.photoOutline, lineWidth: 1)
+        }
+        .accessibilityHidden(true)
     }
 }
 
-/// One row of the Aspirations list: cover, title, and a one-line rollup summary.
+/// One row of the Aspirations list: cover, title, and a wrapping rollup summary.
 struct AspirationCardView: View {
     let aspiration: Aspiration
 
@@ -39,11 +44,13 @@ struct AspirationCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(aspiration.title)
                     .font(.headline)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(summary(rollup))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")

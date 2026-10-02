@@ -59,7 +59,7 @@ extension ClusterIntentionRow {
         if let serves = intention.principle?.text, !serves.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
                 title
-                IntentionServesLine(text: serves, accent: accent)
+                IntentionServesLine(text: serves)
             }
         } else {
             title

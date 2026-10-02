@@ -31,7 +31,7 @@ extension WeeklyReviewView {
     /// Hides the oversubscription check-in for the rest of the calendar week;
     /// it returns on its own next week (see `WeeklyCheckInDismissal`).
     private func dismissOversubscription() {
-        withAnimation(.easeOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
             dismissedOversubscriptionWeek = WeeklyCheckInDismissal.marker(for: .now)
         }
     }

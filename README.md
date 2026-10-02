@@ -85,6 +85,35 @@ These boundaries are not a measured performance result. Native compilation and
 portable tests do not exercise SwiftUI state retention, photo paging, extension
 completion, or Watch delivery on devices; verify those workflows separately.
 
+## Interface conventions
+
+- Keep the copper-warm `Theme` surfaces, 20pt card corners, and 16pt card padding.
+  Center dashboard and narrative columns at a maximum 680pt reading width rather
+  than stretching cards across a wide window.
+- Use semantic system fonts: serif for commitments and reflection, rounded
+  monospaced digits for data. Let titles, provenance, and cover headings grow;
+  provide stacked layouts and an external ring readout at accessibility sizes.
+- Give custom controls at least 44pt touch targets without overlapping adjacent
+  actions. Keep recording controls separate from detail-navigation links, and
+  photo removal separate from photo viewing.
+- Keep caption-sized labels in primary/secondary ink. Identity colors promise
+  only 3:1 contrast in light mode and belong on icons, large numerals, washes,
+  and selection outlines—not small readable labels.
+- Use `Theme.photoOutline` for a neutral 1pt inset photo edge: black at 10% in
+  light appearance, white at 10% in dark appearance. Do not duplicate strokes
+  on both a shared thumbnail and its wrapper.
+- Gate custom animations with `accessibilityReduceMotion`. Prefer static
+  selected/recording cues over repeated pulses; haptics supplement the visible
+  state rather than replace it.
+- Name icon-only controls and numeric fields. Heatmap cells expose their date
+  and correctly formatted measurement/unit, hide future days from accessibility,
+  and retain all 16 weeks in a horizontally scrollable grid.
+
+Native compilation and palette/data checks do not establish visual fit or
+VoiceOver behavior. Verify small screens, iPad widths, light/dark appearance,
+Increase Contrast, accessibility text sizes, Reduce Motion, photo actions, and
+Watch complication fitting on devices.
+
 ## Linting
 
 Use SwiftLint 0.63.3 and SwiftFormat 0.61.1 locally. Native xtool builds skip the validation-only Xcode linter phases, so run these explicitly:

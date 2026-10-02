@@ -8,10 +8,20 @@ struct WeekdaySelector: View {
 
     @Environment(\.calendar) private var calendar
 
+    private static let wrappedColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
+
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(orderedWeekdays, id: \.self) { weekday in
-                dayButton(weekday)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                ForEach(orderedWeekdays, id: \.self) { weekday in
+                    dayButton(weekday)
+                }
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            LazyVGrid(columns: Self.wrappedColumns, spacing: 8) {
+                ForEach(orderedWeekdays, id: \.self) { weekday in
+                    dayButton(weekday)
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -32,6 +42,8 @@ extension WeekdaySelector {
                 .frame(width: diameter, height: diameter)
                 .background(isGoalDay ? Color.accentColor : Theme.inactive)
                 .clipShape(Circle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)

@@ -17,6 +17,12 @@ struct AspirationIntentionsCard: View {
         VStack(alignment: .leading, spacing: 0) {
             AspirationCardHeader(title: "This week", isExpanded: $isExpanded)
             if isExpanded {
+                if currentWeekIntentions.isEmpty {
+                    Text("No open intentions this week.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 12)
+                }
                 ForEach(currentWeekIntentions) { intention in
                     IntentionRowView(intention: intention, showsPrinciple: true)
                         .padding(.vertical, 11)

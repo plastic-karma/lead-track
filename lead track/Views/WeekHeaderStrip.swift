@@ -52,9 +52,15 @@ private struct WeekHeaderNavigation: View {
     }
 
     private var titleLine: some View {
-        Text("\(Text(weekTitle).fontWeight(.semibold))\(Text(" · \(formattedRange)").foregroundStyle(.secondary))")
-            .font(.subheadline)
-            .lineLimit(1)
+        VStack(spacing: 2) {
+            Text(weekTitle)
+                .fontWeight(.semibold)
+            Text(formattedRange)
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func chevron(
@@ -67,6 +73,8 @@ private struct WeekHeaderNavigation: View {
                 .font(.footnote.weight(.semibold))
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Theme.chipFill))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -84,6 +92,7 @@ private struct WeekHeaderNavigation: View {
 // MARK: - Hero line
 
 private struct WeekHeaderHero: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let goalArcs: [GoalDialArc]
     let heroText: String
     let heroCaption: String
@@ -92,18 +101,26 @@ private struct WeekHeaderHero: View {
     /// the headline number, then the day-by-day pulse — the same circle · number
     /// · flame-graph shape the Today header wears.
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 16))
+        layout {
             if !goalArcs.isEmpty {
                 SegmentedGoalDial(arcs: goalArcs)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(heroText)
                     .numeralStyle(.value)
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(heroCaption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
             miniBars
         }
     }

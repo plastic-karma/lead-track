@@ -5,6 +5,7 @@ import UIKit
 // MARK: - Recent-photo picker
 
 struct RecentMomentPhotoPicker: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -24,6 +25,7 @@ struct RecentMomentPhotoPicker: View {
                 .navigationTitle("Photos from the Last 7 Days")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbar }
+                .background(Theme.washedScreen)
         }
         .interactiveDismissDisabled(isImporting)
         .task { library.refresh(in: window) }
@@ -134,7 +136,9 @@ private extension RecentMomentPhotoPicker {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .frame(maxWidth: 680)
                 .padding()
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -153,13 +157,19 @@ private extension RecentMomentPhotoPicker {
     }
 
     var limitedAccessNote: some View {
-        HStack(alignment: .firstTextBaseline) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+        return layout {
             Text("Showing photos LeadStone can access.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Spacer()
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
             Button("Manage Access", action: openSettings)
                 .font(.caption)
+                .frame(minHeight: 44)
         }
     }
 
@@ -187,6 +197,10 @@ private extension RecentMomentPhotoPicker {
                 library: library,
                 selectionNumber: selectedIndex.map { $0 + 1 }
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Theme.photoOutline, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
         .disabled(selectedIndex == nil && selection.count >= MomentFormView.photoCap)

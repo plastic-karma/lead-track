@@ -9,10 +9,12 @@ import SwiftUI
 /// is ever shown, here or in the link that leads here.
 struct MomentListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let aspiration: Aspiration
     @State private var editingMoment: Moment?
     @State private var photoViewerRoute: MomentPhotoViewerRoute?
     @State private var momentPendingDelete: Moment?
+    @State private var showingKeepMoment = false
 
     var body: some View {
         List {
@@ -20,9 +22,23 @@ struct MomentListView: View {
                 row(moment)
             }
         }
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: 680)
+        .frame(maxWidth: .infinity)
+        .background(Theme.washedScreen)
         .navigationTitle("Moments")
         .navigationBarTitleDisplayMode(.inline)
         .overlay { emptyState }
+        .toolbar {
+            if !aspiration.isArchived {
+                ToolbarItem {
+                    Button("Keep a moment", systemImage: "plus") { showingKeepMoment = true }
+                }
+            }
+        }
+        .sheet(isPresented: $showingKeepMoment) {
+            MomentFormView(aspiration: aspiration)
+        }
         .sheet(item: $editingMoment) { moment in
             MomentFormView(aspiration: aspiration, moment: moment)
         }
@@ -88,7 +104,7 @@ extension MomentListView {
     }
 
     private func delete(_ moment: Moment) {
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             do {
                 try modelContext.deleteMomentAndPhotos(moment)
             } catch {

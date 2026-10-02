@@ -9,6 +9,7 @@ import SwiftUI
 /// `TodayClusterSections`), so the screen earns its calm as the day is
 /// completed.
 struct ClusterStubView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let cluster: TodayGrouping.Cluster
     let runningSessions: [Session]
     /// The day the cluster describes — today, or an earlier day the header
@@ -20,7 +21,7 @@ struct ClusterStubView: View {
         ZStack {
             if isExpanded {
                 ClusterCardView(cluster: cluster, runningSessions: runningSessions, day: day) {
-                    withAnimation(.snappy) { isExpanded = false }
+                    withAnimation(reduceMotion ? nil : .snappy) { isExpanded = false }
                 }
             } else {
                 ClusterCollapsedCard(cluster: cluster, day: day, isExpanded: $isExpanded)
@@ -30,6 +31,7 @@ struct ClusterStubView: View {
 }
 
 private struct ClusterCollapsedCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let cluster: TodayGrouping.Cluster
     let day: Date
     @Binding var isExpanded: Bool
@@ -37,7 +39,7 @@ private struct ClusterCollapsedCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.snappy) { isExpanded = true }
+                withAnimation(reduceMotion ? nil : .snappy) { isExpanded = true }
             } label: {
                 header
             }

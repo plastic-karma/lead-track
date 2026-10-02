@@ -213,7 +213,7 @@ extension ClusterHeaderLabel {
     }
 
     private var titleTint: Color {
-        aspiration == nil ? .secondary : iconTint
+        aspiration == nil ? .secondary : .primary
     }
 }
 

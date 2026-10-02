@@ -48,6 +48,8 @@ struct MetricListView: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
         }
         .aspirationReorderDropSurface(draggingID: $draggingClusterID)
         .background { Theme.washedScreen }
@@ -95,13 +97,15 @@ struct MetricListView: View {
         }
         .overlay {
             if showsEmptyState {
-                ContentUnavailableView(
-                    "Begin Something",
-                    systemImage: "mountain.2",
-                    description: Text(
-                        "Add something you want to pour yourself into. Tap + to start."
-                    )
-                )
+                ContentUnavailableView {
+                    Label("Begin Something", systemImage: "mountain.2")
+                } description: {
+                    Text("Choose something you want to pour yourself into.")
+                } actions: {
+                    Button("Add Your First Metric") { showingAddSheet = true }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                }
             }
         }
     }

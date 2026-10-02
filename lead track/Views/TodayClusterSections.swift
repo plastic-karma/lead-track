@@ -12,6 +12,7 @@ import SwiftUI
 /// onto the browsed day, so a forgotten log can be added after the fact.
 struct TodayClusterSections: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let metrics: [Metric]
     let aspirations: [Aspiration]
     let intentions: [Intention]
@@ -42,7 +43,7 @@ struct TodayClusterSections: View {
         if daysBack == 0, !clusters.isEmpty, clusters.allSatisfy({ $0.state != .needsYou }) {
             Text("Nothing left to carry. See you tomorrow.")
                 .font(.caption)
-                .foregroundStyle(.secondary.opacity(0.75))
+                .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
         }
@@ -57,7 +58,7 @@ struct TodayClusterSections: View {
         over targetID: String,
         visible clusters: [TodayGrouping.Cluster]
     ) {
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             AspirationReorder.applyMove(
                 all: aspirations,
                 visibleIDs: clusters.compactMap { $0.aspiration == nil ? nil : $0.id },

@@ -60,6 +60,8 @@ private struct DayDialNavigation: View {
                 .font(.footnote.weight(.semibold))
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Theme.chipFill))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -88,6 +90,7 @@ private struct DayDialHero: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(day, format: .dateTime.weekday(.wide).month(.wide).day())
                     .font(.title2.weight(.bold))
+                    .fontDesign(.serif)
                     .tracking(-0.2)
                 subtitleLine
             }
