@@ -9,8 +9,9 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    UI refinement: semantic typography, larger touch targets, adaptive large-text
-    layouts, calmer motion, clearer recording and photo actions, and accessible
-    activity heatmaps. Check Today, Week, Aspirations and Moments in light/dark
-    appearance, accessibility text sizes and Reduce Motion. Also verify HealthKit
-    access, timer and metric intents, Live Activities, sharing and Watch sync.
+    Optional Obsidian/GitHub backend: connect a private vault subdirectory in
+    Settings, browse generated Bases and linked Markdown, edit descriptions in
+    Obsidian and sync them back. Verify offline edits, conflict choices,
+    disconnect/reconnect, record deletion and photo preservation. Check that
+    existing stores migrate without data loss, and verify timer notifications,
+    Live Activities, Watch sync, widgets, sharing and Health permissions.

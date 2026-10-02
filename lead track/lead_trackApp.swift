@@ -35,12 +35,16 @@ struct lead_trackApp: App {
         // Stop any countdown that ran out while the app was closed, and watch
         // for ones that reach zero while it's open.
         CountdownCoordinator.shared.activate(container: sharedModelContainer)
+        if !sharedModelContainer.configurations.contains(where: \.isStoredInMemoryOnly) {
+            ObsidianSyncService.shared.activate(context: sharedModelContainer.mainContext)
+        }
     }
 
     var body: some Scene {
         WindowGroup {
             content
                 .modelContainer(sharedModelContainer)
+                .task { ObsidianSyncService.shared.setActive(scenePhase == .active) }
         }
         .onChange(of: scenePhase) { _, phase in
             handle(phase: phase)
@@ -60,6 +64,7 @@ struct lead_trackApp: App {
 
     private func handle(phase: ScenePhase) {
         lockService.handleScenePhase(phase)
+        ObsidianSyncService.shared.setActive(phase == .active)
         if phase == .inactive {
             // Every exit passes through .inactive, so this is when sessions
             // completed while the app was open get sent to Apple Health — at

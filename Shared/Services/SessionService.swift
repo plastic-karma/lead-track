@@ -338,8 +338,12 @@ enum SessionService {
             stopLiveActivity()
             return
         }
-        guard Activity<TimerActivityAttributes>.activities.isEmpty
-        else { return }
+        let attributes = liveActivityAttributes(metric: metric, project: running.project, session: running)
+        let matches = Activity<TimerActivityAttributes>.activities.contains {
+            $0.attributes == attributes && $0.content.state.startedAt == running.startedAt
+        }
+        guard !matches else { return }
+        stopLiveActivity()
         startLiveActivity(
             metric: metric,
             project: running.project,
@@ -354,14 +358,7 @@ enum SessionService {
         session: Session
     ) {
         #if canImport(ActivityKit) && !os(macOS)
-        let attributes = TimerActivityAttributes(
-            metricName: metric.name,
-            metricID: metric.stableID?.uuidString,
-            projectName: project?.name,
-            icon: metric.displayIcon,
-            colorName: metric.colorName,
-            countdownDuration: session.countdownDuration
-        )
+        let attributes = liveActivityAttributes(metric: metric, project: project, session: session)
         let state = TimerActivityAttributes.ContentState(
             startedAt: session.startedAt
         )
@@ -376,6 +373,21 @@ enum SessionService {
         )
         #endif
     }
+
+    #if canImport(ActivityKit) && !os(macOS)
+    private static func liveActivityAttributes(
+        metric: Metric, project: Project?, session: Session
+    ) -> TimerActivityAttributes {
+        TimerActivityAttributes(
+            metricName: metric.name,
+            metricID: metric.stableID?.uuidString,
+            projectName: project?.name,
+            icon: metric.displayIcon,
+            colorName: metric.colorName,
+            countdownDuration: session.countdownDuration
+        )
+    }
+    #endif
 
     private static func stopLiveActivity() {
         #if canImport(ActivityKit) && !os(macOS)
