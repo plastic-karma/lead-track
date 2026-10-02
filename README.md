@@ -37,6 +37,97 @@ artifacts, and Apple processing/tester-access checks. Keep credentials outside
 the repository. An unsigned smoke IPA is not TestFlight-installable, and a
 successful build does not prove device behavior.
 
+## Optional Obsidian / GitHub sync
+
+LeadStone still works entirely offline with its local SwiftData store. GitHub
+sync is off until you enable it in **Settings → Obsidian & GitHub**.
+
+1. Use an existing GitHub repository and branch containing your Obsidian vault;
+   the repository root should be the vault root. Initialize an empty repository
+   with a commit first.
+2. Create a fine-grained personal access token for that repository only, with
+   **Contents: Read and write**. Enter its owner, repository, branch, and a
+   nonempty vault subdirectory such as `LeadStone` or `Notes/LeadStone`.
+3. Confirm **Enable Sync**. The first sync combines existing local and remote
+   records rather than replacing either collection. The selected folder can be
+   created by this sync.
+4. Pull the repository into Obsidian using your Git client. Push Obsidian edits
+   back to that branch; LeadStone reads them on foreground/save-triggered sync
+   or **Sync Now**. This connects through GitHub, not directly to an Obsidian
+   installation, and is not Obsidian Sync.
+
+### Vault layout and editing
+
+The selected directory contains `Aspirations/`, `Metrics/`, `Projects/`, `Data/`,
+`Principles/`, `Intentions/`, `CheckIns/`, `Moments/`, `Photos/`, and
+`Attachments/`. Each record is a small Markdown file, initially named with its
+stable UUID; each measurement/session gets its own file in `Data/`, not a row
+inside a monolithic export.
+
+Every managed note has `leadstone_id`, `leadstone_type`, and
+`leadstone_version: 1` in YAML frontmatter. Keep these identifiers intact.
+Aspirations link to their metrics/projects; datapoints link to their metric
+and optional project; the remaining records link to their related notes using
+Obsidian wikilinks. For example, a count datapoint has this shape:
+
+```yaml
+---
+leadstone_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+leadstone_type: "session"
+leadstone_version: 1
+aliases: ["Reading · 2026-10-02T09:00:00Z"]
+metric: "[[aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa]]"
+project: null
+started_at: "2026-10-02T09:00:00.000Z"
+ended_at: "2026-10-02T09:00:00.000Z"
+countdown_duration: null
+value: 5
+---
+```
+
+Edit an aspiration's Markdown body to change its description in LeadStone; a
+metric's body is its description. Principle, intention, check-in, and Moment
+prose also lives in the body. Scalar properties such as `title`, `name`, `unit`,
+`value`, and ISO-8601 timestamps live in frontmatter. Keep required fields and
+relationship targets valid. Renaming a note is supported when its stable ID
+stays intact; let Obsidian update its links.
+
+Nine [Obsidian Bases](https://help.obsidian.md/bases) files sit beside these
+folders, including `Aspirations.base`, `Metrics.base`, and `Data.base`.
+Their scoped tables use readable, clickable record titles and expose the
+relevant relationships and measurement properties. Existing `.base` files are
+never overwritten, so their layouts and formulas can be customized.
+
+### Reconciliation and privacy
+
+- Local changes remain usable offline. Sync uses a destination-specific durable
+  journal, a three-way merge, and atomic Git commits tied to the fetched branch
+  head; it never force-pushes over someone else's commit.
+- Independent property edits merge. Competing edits and delete-versus-edit
+  changes pause for explicit choices in Settings. Newer edits invalidate old
+  choices instead of silently applying them to different content.
+- Remote deletions propagate once relationships remain valid. Malformed notes,
+  broken required links, unsupported schema versions, unsafe paths, and partial
+  remote snapshots stop reconciliation rather than importing a partial graph.
+- Unrelated notes, custom YAML properties, unchanged Markdown prose, and
+  user-customized Bases are retained. Files outside the selected directory are
+  not modified. Shared image references are retained when another note still
+  uses the attachment.
+- The token stays in this device's Keychain. Health connections/export settings,
+  notification schedules, app privacy preferences, and credentials are not
+  transferred. Recorded values—including Health-derived values—notes, photos,
+  and saved locations **are** uploaded when you opt in. Prefer a private
+  repository: Git history can retain content after a later deletion.
+- **Disconnect** disables syncing and removes the stored token without deleting
+  local records or repository files. Reconnecting to the same destination keeps
+  its reconciliation history.
+
+GitHub authentication/rate limits, protected branch rules, and network failures
+are shown in Settings without blocking ordinary recording. The transport has
+explicit bounds: 25 MiB per blob and per commit's added content, 128 MiB per
+downloaded folder snapshot, and 10,000 tree entries. Larger vault slices need
+to be reduced before they can synchronize.
+
 ## Project Layout
 
 - `lead track/` — iOS app sources

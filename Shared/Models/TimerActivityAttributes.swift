@@ -4,7 +4,7 @@
 import ActivityKit
 import Foundation
 
-struct TimerActivityAttributes: ActivityAttributes {
+struct TimerActivityAttributes: ActivityAttributes, Equatable {
     struct ContentState: Codable, Hashable {
         var startedAt: Date
     }

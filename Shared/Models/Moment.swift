@@ -132,6 +132,7 @@ extension Moment {
 @Model
 #endif
 final class MomentPhoto {
+    var stableID: UUID?
     #if canImport(SwiftData)
     @Attribute(.externalStorage)
     #endif
@@ -141,6 +142,7 @@ final class MomentPhoto {
     var moment: Moment?
 
     init(data: Data, sortIndex: Int = 0, moment: Moment? = nil) {
+        stableID = UUID()
         self.data = data
         self.sortIndex = sortIndex
         self.moment = moment

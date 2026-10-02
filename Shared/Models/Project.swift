@@ -7,6 +7,7 @@ import SwiftData
 @Model
 #endif
 final class Project {
+    var stableID: UUID?
     var name: String
     var metric: Metric?
     /// Stored as the enum itself — the same pre-doctrine exception as
@@ -39,6 +40,7 @@ final class Project {
         startedAt: Date = .now,
         finishedAt: Date? = nil
     ) {
+        stableID = UUID()
         self.name = name
         self.metric = metric
         self.status = status
