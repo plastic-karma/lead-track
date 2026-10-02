@@ -5,6 +5,7 @@ import SwiftUI
 /// alone, and a notch riding the outer ring where the pace expectation sits.
 /// Pure geometry — the caller supplies fractions and the center readout.
 struct MetricRingCluster<Center: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let today: Double?
     let week: Double?
     let notch: Double?
@@ -37,8 +38,8 @@ struct MetricRingCluster<Center: View>: View {
             center
         }
         .frame(width: 160, height: 160)
-        .animation(.snappy, value: today)
-        .animation(.snappy, value: week)
+        .animation(reduceMotion ? nil : .snappy, value: today)
+        .animation(reduceMotion ? nil : .snappy, value: week)
     }
 
     /// Today's ring fills the cluster when it is the only ring.

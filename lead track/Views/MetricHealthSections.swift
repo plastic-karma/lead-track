@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// Read-only day history for a health-linked metric, as flat rows for the
@@ -111,5 +112,38 @@ struct HealthFoldContent: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Health Provenance
+
+/// Health metrics record themselves, so their instrument carries a manual sync.
+struct MetricHealthProvenance: View {
+    @Environment(\.modelContext) private var modelContext
+    let metric: Metric
+    @State private var isSyncingHealth = false
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Label("From Apple Health", systemImage: "heart.fill")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Button("Sync Now", action: syncNow)
+                .font(.footnote.weight(.medium))
+                .frame(minHeight: 44)
+                .disabled(isSyncingHealth)
+        }
+    }
+
+    private func syncNow() {
+        guard let id = metric.stableID else { return }
+        isSyncingHealth = true
+        let container = modelContext.container
+        Task {
+            await HealthMetricSyncService.shared.connect(
+                metricID: id, container: container
+            )
+            isSyncingHealth = false
+        }
     }
 }

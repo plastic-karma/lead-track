@@ -4,13 +4,14 @@ import SwiftUI
 /// and showing every entry. Renders nothing when the list fits within the
 /// preview limit.
 struct SessionListExpandButton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let totalCount: Int
     @Binding var isExpanded: Bool
 
     var body: some View {
         if totalCount > SessionStatistics.sessionListPreviewLimit {
             Button {
-                withAnimation {
+                withAnimation(reduceMotion ? nil : .default) {
                     isExpanded.toggle()
                 }
             } label: {

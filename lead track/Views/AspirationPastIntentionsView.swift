@@ -8,6 +8,7 @@ import SwiftUI
 /// accumulation standing as fact.
 struct AspirationPastIntentionsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let aspiration: Aspiration
 
     var body: some View {
@@ -17,6 +18,10 @@ struct AspirationPastIntentionsView: View {
             }
             .onDelete(perform: deleteIntentions)
         }
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: 680)
+        .frame(maxWidth: .infinity)
+        .background(Theme.washedScreen)
         .navigationTitle("Past Intentions")
         .navigationBarTitleDisplayMode(.inline)
         .overlay { emptyState }
@@ -52,7 +57,7 @@ extension AspirationPastIntentionsView {
 
     private func deleteIntentions(_ offsets: IndexSet) {
         let targets = offsets.map { pastIntentions[$0] }
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             for intention in targets {
                 NotificationService.cancelQuestion(for: intention)
                 modelContext.delete(intention)
@@ -69,13 +74,14 @@ private struct AspirationPastIntentionRow: View {
             Text("Week of \(intention.weekStart.formatted(.dateTime.month(.abbreviated).day()))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            HStack {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(intention.title)
                     .font(.subheadline)
-                Spacer()
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(historyDetail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
         }
         .padding(.vertical, 2)

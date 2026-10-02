@@ -59,7 +59,10 @@ extension MetricFoldsCard {
     private func foldView(_ fold: Fold) -> some View {
         switch fold {
         case .activity:
-            MetricActivityFold(dailyTotals: dailyTotals, tint: tint, activityOpen: $activityOpen)
+            MetricActivityFold(
+                dailyTotals: dailyTotals, measurementType: metric.measurementType,
+                unit: metric.unit, tint: tint, activityOpen: $activityOpen
+            )
         case .history:
             MetricHistoryFold(
                 metric: metric, dailyTotals: dailyTotals,
@@ -73,6 +76,7 @@ extension MetricFoldsCard {
 }
 
 private struct MetricFoldHeader<Icon: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
     let detail: String
     @Binding var isOpen: Bool
@@ -80,7 +84,7 @@ private struct MetricFoldHeader<Icon: View>: View {
 
     var body: some View {
         Button {
-            withAnimation(.snappy) { isOpen.toggle() }
+            withAnimation(reduceMotion ? nil : .snappy) { isOpen.toggle() }
         } label: {
             HStack(spacing: 12) {
                 icon
@@ -120,6 +124,8 @@ private struct MetricFoldSymbol: View {
 
 private struct MetricActivityFold: View {
     let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+    let unit: String?
     let tint: Color
     @Binding var activityOpen: Bool
 
@@ -133,9 +139,11 @@ private struct MetricActivityFold: View {
                 activityGlyph
             }
             if activityOpen {
-                CalendarHeatmapView(dailyTotals: dailyTotals, tint: tint)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                CalendarHeatmapView(
+                    dailyTotals: dailyTotals, measurementType: measurementType, unit: unit, tint: tint
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             }
         }
     }
@@ -224,7 +232,7 @@ private struct MetricHistoryFold: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16)
-        .frame(minHeight: 40)
+        .frame(minHeight: 44)
         .contentShape(Rectangle())
         .contextMenu { sessionMenu(session) }
     }
@@ -259,7 +267,7 @@ private struct MetricHistoryFold: View {
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(tint)
                 .padding(.horizontal, 16)
-                .frame(minHeight: 36)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -284,22 +284,31 @@ private struct GoalStreakAlertSettingsSection: View {
 }
 
 private struct GoalAmountField: View {
+    @ScaledMetric(relativeTo: .body) private var fieldWidth: CGFloat = 80
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Binding var value: Double
     let unit: String
     let suffix: String
     let step: Double
 
     var body: some View {
-        HStack {
+        layout {
             TextField(unit, value: $value, format: .number)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
-                .frame(width: 80)
+                .frame(minWidth: 80, maxWidth: fieldWidth)
+                .accessibilityLabel("Goal amount, \(unit) \(suffix)")
             Text("\(unit) \(suffix)")
                 .foregroundStyle(.secondary)
-            Spacer()
-            Stepper("", value: $value, in: step ... .infinity, step: step)
+            Stepper("\(unit) \(suffix)", value: $value, in: step ... .infinity, step: step)
                 .labelsHidden()
+                .accessibilityValue(value.formatted())
         }
+    }
+
+    private var layout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout())
     }
 }

@@ -102,7 +102,7 @@ private struct MomentPhotoControls: View {
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .padding(.horizontal, 13)
-                    .frame(height: 44)
+                    .frame(minHeight: 44)
                     .background(.black.opacity(0.55), in: Capsule())
             }
             Spacer()

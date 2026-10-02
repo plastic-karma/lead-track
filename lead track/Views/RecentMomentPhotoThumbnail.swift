@@ -4,6 +4,7 @@ import UIKit
 
 /// Selection changes do not invalidate the independent PhotoKit request host.
 struct RecentMomentPhotoThumbnail: View {
+    @ScaledMetric(relativeTo: .caption2) private var selectionBadgeSize = 24
     let photo: RecentMomentPhotoLibrary.Photo
     let library: RecentMomentPhotoLibrary
     let selectionNumber: Int?
@@ -21,8 +22,9 @@ struct RecentMomentPhotoThumbnail: View {
                 if let selectionNumber {
                     Text(selectionNumber.formatted())
                         .font(.caption2.weight(.bold))
+                        .monospacedDigit()
                         .foregroundStyle(.white)
-                        .frame(width: 24, height: 24)
+                        .frame(width: selectionBadgeSize, height: selectionBadgeSize)
                         .background(.tint, in: Circle())
                         .padding(5)
                 }

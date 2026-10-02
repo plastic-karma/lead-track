@@ -75,7 +75,9 @@ struct ProjectDetailView: View {
                 tint: metricTint
             )
             ActivitySection(
-                dailyTotals: SessionStatistics.dailyTotals(from: sessions), tint: metricTint
+                dailyTotals: SessionStatistics.dailyTotals(from: sessions),
+                measurementType: project.metric?.measurementType ?? .duration,
+                unit: project.metric?.unit, tint: metricTint
             )
             ProjectStatusSection(project: project, onFinish: finishProject, onReopen: reopenProject)
             if !completed.isEmpty {

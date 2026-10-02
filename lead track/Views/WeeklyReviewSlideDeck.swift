@@ -3,9 +3,9 @@ import SwiftUI
 
 // MARK: - Deck layout
 
-/// The Week tab's slide deck: the header strip stays pinned as the screen's
-/// masthead — its chevrons browse weeks from any slide — while the sections
-/// page sideways beneath it, one focus per swipe, closed by the done slide.
+/// The Week tab's slide deck: the header strip remains above the sections,
+/// scrollable at accessibility sizes so compact heights still leave a usable
+/// pager. Sections page sideways, one focus per swipe, closed by the done slide.
 /// `WeeklyReviewSlides` decides which slides exist; this file only renders
 /// and pages them.
 extension WeeklyReviewView {
@@ -19,16 +19,32 @@ extension WeeklyReviewView {
             weeks: review.metricWeeks, quiet: review.quietMetrics
         )
         let deck = review.slides(context: slideContext(hasGroups: !groups.isEmpty))
-        return VStack(spacing: 0) {
-            WeekHeaderStrip(
-                review: review,
-                weeksBack: $weeksBack,
-                goalSegments: WeeklyReview.weeklyGoalSegments(metrics: metrics, weeksBack: weeksBack)
-            )
-            .padding(.horizontal)
-            .padding(.top, 8)
-            slidePager(deck, review: review, groups: groups)
+        return GeometryReader { geometry in
+            VStack(spacing: 0) {
+                if dynamicTypeSize.isAccessibilitySize {
+                    ScrollView {
+                        reviewHeader(review)
+                    }
+                    // The full masthead stays reachable without displacing the decisions.
+                    .frame(maxHeight: geometry.size.height * 0.35)
+                } else {
+                    reviewHeader(review)
+                }
+                slidePager(deck, review: review, groups: groups)
+            }
         }
+    }
+
+    private func reviewHeader(_ review: WeeklyReview) -> some View {
+        WeekHeaderStrip(
+            review: review,
+            weeksBack: $weeksBack,
+            goalSegments: WeeklyReview.weeklyGoalSegments(metrics: metrics, weeksBack: weeksBack)
+        )
+        .frame(maxWidth: 680)
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
     }
 
     private func slidePager(
@@ -57,7 +73,7 @@ extension WeeklyReviewView {
     /// `WeekSlide.repairedSelection` for where it lands.
     private func repairSelection(from previous: [WeekSlide], to current: [WeekSlide]) {
         guard !current.contains(slide) else { return }
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             slide = WeekSlide.repairedSelection(slide, previous: previous, current: current)
         }
     }
@@ -112,6 +128,8 @@ extension WeeklyReviewView {
     private func slideScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
             content()
+                .frame(maxWidth: 680)
+                .frame(maxWidth: .infinity)
                 .padding(.top, 8)
                 .padding(.bottom, 44)
         }
@@ -134,19 +152,23 @@ extension WeeklyReviewView {
     /// back is the way back. The resting aspirations keep their closing
     /// seat here, names only, their numbers living on their own screens.
     private func doneSlide(_ review: WeeklyReview) -> some View {
-        VStack(spacing: 12) {
-            Spacer()
-            Image(systemName: "checkmark.seal.fill")
-                .font(.largeTitle)
-                .foregroundStyle(Color.accentColor)
-                .accessibilityHidden(true)
-            Text("That's the week.")
-                .font(.title3.weight(.semibold))
-            restingLine(review.quietAspirations)
-            Spacer()
+        ScrollView {
+            VStack(spacing: 12) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
+                Text("That's the week.")
+                    .font(.title3.weight(.semibold))
+                restingLine(review.quietAspirations)
+            }
+            .frame(maxWidth: 680)
+            .padding(.horizontal)
+            .padding(.top, 32)
+            .padding(.bottom, 44)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.bottom, 44)
+        .defaultScrollAnchor(.center, for: .alignment)
     }
 
     /// Resting aspirations close the review as one centered breath.
@@ -171,6 +193,7 @@ extension WeeklyReviewView {
 /// expensive part. The groups still flow down from the parent's queries, so
 /// any model change rebuilds them exactly as before.
 struct MetricGroupsSection: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let groups: [WeeklyReview.MetricGroup]
     /// The full aspiration set a drag rewrites ranks over.
     let aspirations: [Aspiration]
@@ -204,7 +227,7 @@ struct MetricGroupsSection: View {
     /// One hover step of a drag: rewrite the ranks and save. The unaligned
     /// group never takes part — it always trails.
     private func move(_ draggedID: String, over targetID: String) {
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             AspirationReorder.applyMove(
                 all: aspirations,
                 visibleIDs: groups.map(\.id).filter { $0 != AspirationGrouping.unalignedID },

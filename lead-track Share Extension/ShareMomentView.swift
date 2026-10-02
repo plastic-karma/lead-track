@@ -201,13 +201,20 @@ private struct SharePhotoThumbnail: View {
                 .scaledToFill()
                 .frame(width: 84, height: 84)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Theme.photoOutline, lineWidth: 1)
+                }
                 .overlay(alignment: .topTrailing) {
                     Button {
                         loader.remove(photo)
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.white, .black.opacity(0.55))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                     .padding(5)
                     .accessibilityLabel("Remove photo")
                 }

@@ -10,6 +10,7 @@ import SwiftUI
 /// title returns to the current month.
 struct GoalCalendarView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Metric.createdAt) private var metrics: [Metric]
     @Query(sort: \Aspiration.createdAt) private var aspirations: [Aspiration]
     @State private var filter: GoalCalendarFilter?
@@ -62,6 +63,8 @@ struct GoalCalendarView: View {
             .padding(.horizontal)
             .padding(.top, 8)
             .padding(.bottom, 24)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -89,19 +92,19 @@ struct GoalCalendarView: View {
 
 extension GoalCalendarView {
     private func returnToCurrentMonth() {
-        withAnimation(.snappy(duration: 0.25)) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             monthAnchor = GoalCalendar.monthStart(containing: .now, calendar: calendar)
         }
     }
 
     private func clearFilter() {
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
             filter = nil
         }
     }
 
     private func step(_ offset: Int) {
-        withAnimation(.snappy(duration: 0.25)) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             monthAnchor = GoalCalendar.monthStart(offset, from: monthAnchor, calendar: calendar)
             selectedDay = nil
         }
@@ -169,9 +172,11 @@ private struct GoalCalendarMonthHeader: View {
             Button(action: returnToCurrentMonth) {
                 Text(month, format: .dateTime.month(.wide).year())
                     .font(.headline)
+                    .fontDesign(.serif)
+                    .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Current month")
+            .accessibilityLabel(Text(month, format: .dateTime.month(.wide).year()))
             .accessibilityHint("Returns to the current month")
             Spacer()
             chevron("chevron.right", label: "Later month") { step(1) }
@@ -184,36 +189,16 @@ private struct GoalCalendarMonthHeader: View {
                 .font(.footnote.weight(.semibold))
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Theme.chipFill))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
     }
 }
 
-private struct GoalCalendarFilterChip: View {
-    let title: String
-    let icon: String
-    let tint: Color
-    let clear: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-            Text(title).lineLimit(1)
-            Button(action: clear) {
-                Image(systemName: "xmark.circle.fill")
-            }
-            .accessibilityLabel("Clear filter")
-        }
-        .font(.footnote.weight(.medium))
-        .foregroundStyle(tint)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(tint.opacity(0.14)))
-    }
-}
-
 private struct GoalCalendarGrid: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let month: GoalCalendarMonth
     let calendar: Calendar
     let tint: Color
@@ -274,7 +259,7 @@ private struct GoalCalendarGrid: View {
     private func daySlot(_ day: Date?) -> some View {
         if let day {
             Button {
-                withAnimation(.snappy(duration: 0.2)) {
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
                     selectedDay = selectedDay == day ? nil : day
                 }
             } label: {

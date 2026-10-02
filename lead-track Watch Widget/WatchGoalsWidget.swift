@@ -122,6 +122,11 @@ private struct WatchGoalsCircularContent: View {
             VStack(spacing: 1) {
                 ForEach(lines) { line in
                     WatchGoalsCircularRow(icon: line.icon, colorName: line.colorName, percent: line.percent)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(line.name)
+                        .accessibilityValue(line.percent.map {
+                            "\($0.formatted()) percent of daily goal"
+                        } ?? "No active daily goal")
                 }
             }
             .padding(2)
@@ -141,10 +146,9 @@ private struct WatchGoalsCircularRow: View {
                 .foregroundStyle(MetricColor.color(named: colorName))
                 .widgetAccentable()
             Text(percent.map { "\($0.formatted())%" } ?? "—")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .monospacedDigit()
+                .roundedDigits(.caption2, weight: .semibold)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.8)
         }
     }
 }

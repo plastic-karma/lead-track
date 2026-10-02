@@ -30,6 +30,7 @@ private struct AdditionalReviewRoute: Identifiable {
 /// that a nested scroll view would otherwise collapse. The built-in page dots
 /// are hidden since `AppTabBar` is the visible affordance.
 struct ContentView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedTab: AppTab = .today
     @State private var todayPath = NavigationPath()
     @State private var weekPath = NavigationPath()
@@ -62,7 +63,7 @@ struct ContentView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
-            AppTabBar(selectedTab: $selectedTab.animation(.snappy))
+            AppTabBar(selectedTab: $selectedTab.animation(reduceMotion ? nil : .snappy))
         }
         .sheet(item: $additionalReviewRoute) { route in
             NavigationStack {
@@ -81,6 +82,7 @@ struct ContentView: View {
 /// Notification state is read only here, not by the three-page hierarchy.
 private struct NotificationRoutingModifier: ViewModifier {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedTab: AppTab
     @Binding var aspirationsPath: NavigationPath
     @Binding var additionalReviewRoute: AdditionalReviewRoute?
@@ -107,7 +109,7 @@ private struct NotificationRoutingModifier: ViewModifier {
     /// Consumes the review deep-link flag by switching to the Week tab.
     private func routeToWeekIfRequested() {
         guard notificationResponder.showWeeklyReview else { return }
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             selectedTab = .week
         }
         notificationResponder.showWeeklyReview = false
@@ -130,7 +132,7 @@ private struct NotificationRoutingModifier: ViewModifier {
         guard let id = notificationResponder.pendingAspirationID else { return }
         notificationResponder.pendingAspirationID = nil
         guard let aspiration = try? Aspiration.find(stableID: id, in: modelContext) else { return }
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : .snappy) {
             selectedTab = .aspirations
         }
         aspirationsPath = NavigationPath()

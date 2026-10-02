@@ -13,8 +13,7 @@ extension WeeklyReviewView {
             } label: {
                 Label("Explore this period", systemImage: "book.pages")
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(Theme.cardShape())
+                    .cardSurface()
             }
             .buttonStyle(.plain)
             .padding(.horizontal)
@@ -92,9 +91,7 @@ private struct WeeklyPhotoCaptureCard: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardShape())
+        .cardSurface()
     }
 }
 

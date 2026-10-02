@@ -58,7 +58,8 @@ private struct AspirationDetailContent: View {
         VStack(alignment: .leading, spacing: 12) {
             if !aspiration.detail.isEmpty {
                 Text(aspiration.detail)
-                    .font(.system(size: 19, design: .serif))
+                    .font(.title3)
+                    .fontDesign(.serif)
                     .lineSpacing(5)
                     .padding(.bottom, 12)
             }
@@ -74,6 +75,8 @@ private struct AspirationDetailContent: View {
                     .padding(.top, 8)
             }
         }
+        .frame(maxWidth: 680, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal)
         .padding(.top, 20)
         .padding(.bottom, 24)
@@ -98,16 +101,17 @@ private struct AspirationSetAsideNotice: View {
 
 /// Shared visual grammar for the independently observed narrative cards.
 struct AspirationCardHeader: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let title: String
     @Binding var isExpanded: Bool
 
     var body: some View {
         Button {
-            withAnimation(.snappy(duration: 0.25)) { isExpanded.toggle() }
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { isExpanded.toggle() }
         } label: {
             HStack(spacing: 6) {
                 Text(title)
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
                     .kerning(1.2)
                 Spacer(minLength: 8)
@@ -116,8 +120,7 @@ struct AspirationCardHeader: View {
                     .rotationEffect(.degrees(isExpanded ? 0 : -90))
             }
             .foregroundStyle(.secondary)
-            .padding(.top, 14)
-            .padding(.bottom, 4)
+            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -137,11 +140,14 @@ struct AspirationPlusRow: View {
             HStack(spacing: 10) {
                 Image(systemName: "plus.circle")
                     .font(.subheadline)
+                    .foregroundStyle(tint)
                 Text(title)
                     .font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(tint)
+            .foregroundStyle(.primary)
+            .tint(tint)
             .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -191,17 +197,33 @@ private struct AspirationDisclosureLabel: View {
     let detail: String
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(title)
-                .font(.subheadline)
-            Spacer(minLength: 8)
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                Text(title).font(.subheadline)
+                Spacer(minLength: 8)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .fixedSize()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.subheadline)
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.vertical, 13)
         .contentShape(Rectangle())

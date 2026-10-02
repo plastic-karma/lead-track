@@ -20,7 +20,7 @@ struct AspirationWeekDetailView: View {
                     start: detail.start, end: detail.end, weeksBack: detail.weeksBack,
                     values: detail.week.dailySeries,
                     totals: detail.week.totals.map(\.text).joined(separator: " · "),
-                    activity: "\(ValueFormatter.sessions(detail.week.sessionCount)) · \(ValueFormatter.days(detail.week.activeDays)) active",
+                    activity: activityText(sessions: detail.week.sessionCount, days: detail.week.activeDays),
                     busiestDay: busiestDayText(detail), tint: aspiration.displayColor
                 )
                 AspirationWeekSourcesCard(sources: detail.sources)
@@ -29,10 +29,12 @@ struct AspirationWeekDetailView: View {
                 }
                 AspirationWeekDoorway(aspiration: aspiration)
             }
+            .frame(maxWidth: 680)
             .padding(.horizontal)
             .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
-        .background(Theme.screenBackground)
+        .background(Theme.washedScreen)
         .navigationTitle(aspiration.title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -42,6 +44,10 @@ struct AspirationWeekDetailView: View {
         let weekday = detail.day(at: offset).formatted(.dateTime.weekday(.wide))
         let sessions = Int(detail.week.dailySeries[offset])
         return "Busiest day \(weekday) · \(ValueFormatter.sessions(sessions))"
+    }
+
+    private func activityText(sessions: Int, days: Int) -> String {
+        "\(ValueFormatter.sessions(sessions)) · \(ValueFormatter.days(days)) active"
     }
 }
 
@@ -57,29 +63,8 @@ private struct AspirationWeekSummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(periodTitle)
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Text("\(start.formatted(.dateTime.month().day())) — \(end.formatted(.dateTime.month().day()))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if totals.isEmpty {
-                Text("Quiet this week")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(totals)
-                        .numeralStyle(.value)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                    Text(activity)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            AspirationWeekPeriodHeading(start: start, end: end, weeksBack: weeksBack)
+            AspirationWeekReading(totals: totals, activity: activity)
             WeekBarsView(
                 values: values,
                 labels: WeekBarsView.weekdayLabels(from: start, count: WeeklyReview.periodDays),
@@ -87,17 +72,35 @@ private struct AspirationWeekSummaryCard: View {
             )
             .frame(height: 72)
             if let busiestDay {
-                HStack(spacing: 8) {
-                    Image(systemName: "trophy")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(busiestDay)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Label(busiestDay, systemImage: "trophy")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .cardSurface()
+    }
+}
+
+private struct AspirationWeekPeriodHeading: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let start: Date
+    let end: Date
+    let weeksBack: Int
+
+    var body: some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout())
+        layout {
+            Text(periodTitle)
+                .font(.subheadline.weight(.semibold))
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
+            Text("\(start.formatted(.dateTime.month().day())) — \(end.formatted(.dateTime.month().day()))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var periodTitle: String {
@@ -105,6 +108,29 @@ private struct AspirationWeekSummaryCard: View {
         case 0: "This Week"
         case 1: "Last Week"
         default: "\(weeksBack) Weeks Ago"
+        }
+    }
+}
+
+private struct AspirationWeekReading: View {
+    let totals: String
+    let activity: String
+
+    var body: some View {
+        if totals.isEmpty {
+            Text("Quiet this week")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(totals)
+                    .numeralStyle(.value)
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(activity)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -130,23 +156,32 @@ private struct AspirationWeekSourcesCard: View {
 }
 
 private struct AspirationWeekSourceRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let name: String
     let isProject: Bool
     let text: String
 
     var body: some View {
-        HStack(spacing: 10) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(spacing: 10))
+        layout {
             Image(systemName: isProject ? "folder" : "chart.bar")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
             Text(name)
                 .font(.subheadline)
-            Spacer()
+                .fixedSize(horizontal: false, vertical: true)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
             Text(text)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -171,6 +206,7 @@ private struct AspirationWeekIntentionsCard: View {
                 Button { showingSetIntention = true } label: {
                     Label("Set an intention", systemImage: "plus.circle")
                         .font(.subheadline)
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.borderless)
             }

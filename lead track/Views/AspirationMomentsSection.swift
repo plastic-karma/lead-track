@@ -8,6 +8,7 @@ import UIKit
 /// closing the card, the effort ledger. It never begs and never counts.
 struct AspirationStoryCard: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let aspiration: Aspiration
     @State private var isExpanded = true
     @State private var showingKeepMoment = false
@@ -120,6 +121,7 @@ private struct AspirationStoryDoorways: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.vertical, 11)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -145,6 +147,7 @@ private struct AspirationStoryDoorways: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 11)
+            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -195,7 +198,7 @@ extension AspirationStoryCard {
     }
 
     private func deleteMoment(_ moment: Moment) {
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
             do {
                 try modelContext.deleteMomentAndPhotos(moment)
             } catch {
@@ -245,16 +248,19 @@ private struct MomentRowTestimony: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(moment.text)
                     .font(.subheadline)
+                    .foregroundStyle(.primary)
                     .lineLimit(4)
                 Text(metaText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint("Edit this moment")
     }
 
     private var metaText: String {
@@ -294,29 +300,36 @@ private struct MomentRowPhotos: View {
     var body: some View {
         let sources = moment.photos.sorted { $0.sortIndex < $1.sortIndex }
             .map { Source(id: $0.id, data: $0.data) }
-        HStack(spacing: 7) {
-            if prepared.sources == sources {
-                ForEach(prepared.thumbnails) { thumbnail in
-                    Button {
-                        onPhotoTap(
-                            MomentPhotoViewerRoute(
-                                photos: sources.map(\.data),
-                                selectedIndex: thumbnail.index
+        ScrollView(.horizontal) {
+            HStack(spacing: 7) {
+                if prepared.sources == sources {
+                    ForEach(prepared.thumbnails) { thumbnail in
+                        Button {
+                            onPhotoTap(
+                                MomentPhotoViewerRoute(
+                                    photos: sources.map(\.data),
+                                    selectedIndex: thumbnail.index
+                                )
                             )
-                        )
-                    } label: {
-                        Image(uiImage: thumbnail.image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        } label: {
+                            Image(uiImage: thumbnail.image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .strokeBorder(Theme.photoOutline, lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("View photo \(thumbnail.index + 1) of \(sources.count)")
+                        .accessibilityHint("Opens the photo full screen")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("View photo \(thumbnail.index + 1) of \(sources.count)")
-                    .accessibilityHint("Opens the photo full screen")
                 }
             }
         }
+        .scrollIndicators(.hidden)
         .padding(.top, 3)
         .task(id: sources) {
             prepared = PreparedPhotos(

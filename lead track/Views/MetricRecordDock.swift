@@ -26,6 +26,8 @@ struct MetricRecordDock: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
+        .frame(maxWidth: 680)
+        .frame(maxWidth: .infinity)
         .sensoryFeedback(.increase, trigger: quickLogTrigger)
         .sheet(isPresented: $showingCountdownPicker) {
             CountdownStartView(metric: metric)

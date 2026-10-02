@@ -9,15 +9,15 @@ struct AspirationCoverBanner: View {
     let aspiration: Aspiration
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
+        AspirationBannerHeading(
+            icon: aspiration.displayIcon, title: aspiration.title, createdAt: aspiration.createdAt
+        )
+        .padding(.top, 120)
+        .frame(maxWidth: .infinity, minHeight: 344, alignment: .bottomLeading)
+        .background {
             AspirationBannerBackground(aspiration: aspiration)
-            scrim
-            AspirationBannerHeading(
-                icon: aspiration.displayIcon, title: aspiration.title, createdAt: aspiration.createdAt
-            )
+                .overlay { scrim }
         }
-        .frame(height: 344)
-        .frame(maxWidth: .infinity)
         .clipped()
     }
 
@@ -53,10 +53,12 @@ private struct AspirationBannerHeading: View {
             .foregroundStyle(.white.opacity(0.88))
             Text(title)
                 .font(.largeTitle.bold())
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 1)
         }
+        .frame(maxWidth: 680, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
         .padding(.bottom, 16)
     }
@@ -72,14 +74,15 @@ struct AspirationRollupHeader: View {
         VStack(alignment: .leading, spacing: 5) {
             Text(lifetimeSummary)
                 .numeralStyle(.value)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
             if !recentParts.isEmpty {
                 Label(
                     "\(recentParts.joined(separator: " · ")) in the last 30 days",
                     systemImage: "arrow.up.right"
                 )
                 .font(.caption)
+                .monospacedDigit()
                 .foregroundStyle(.secondary)
             }
         }

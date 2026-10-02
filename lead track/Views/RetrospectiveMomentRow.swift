@@ -7,7 +7,11 @@ struct RetrospectiveMomentRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(moment.text).font(.subheadline).textSelection(.enabled)
+            Text(moment.text)
+                .font(.body)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
             Text(moment.occurredAt, format: Date.FormatStyle(date: .abbreviated, time: .omitted))
                 .font(.caption).foregroundStyle(.secondary)
             RetrospectiveMomentProvenance(
@@ -57,6 +61,10 @@ private struct RetrospectiveMomentPhotos: View {
                         route = MomentPhotoViewerRoute(photos: photos.map(\.data), selectedIndex: index)
                     } label: {
                         MomentPhotoThumbnail(data: photo.data, size: 64)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(Theme.photoOutline, lineWidth: 1)
+                            }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("View photo \(index + 1) of \(photos.count)")

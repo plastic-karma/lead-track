@@ -30,6 +30,11 @@ enum Theme {
     /// Quiet warm chip behind card icons.
     static let chipFill = warmNeutral(dark: 0.16, light: 0.93)
 
+    /// Neutral inset edge for photos, independent of aspiration identity ink.
+    static let photoOutline = Color(uiColor: UIColor { traits in
+        UIColor(white: traits.userInterfaceStyle == .dark ? 1 : 0, alpha: 0.1)
+    })
+
     /// A soft atmosphere washing down from the top of a surface, echoing the
     /// aspiration create sheet. Fades to clear so content sits on the base;
     /// `peak` sets how strongly it opens — 0.16 for a whole screen, quieter

@@ -66,16 +66,24 @@ private struct MomentRediscoveryCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("From earlier").font(.headline)
                 Spacer()
-                Button("Hide for this period", systemImage: "xmark", action: onHide)
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.plain)
+                Button(action: onHide) {
+                    Image(systemName: "xmark")
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Hide for this period")
             }
             Text("An older Moment you kept under an aspiration in this period.")
                 .font(.caption).foregroundStyle(.secondary)
             RetrospectiveMomentRow(moment: moment)
-            Button("Don’t rediscover this Moment", systemImage: "eye.slash", action: onExclude)
-                .font(.caption)
-                .buttonStyle(.plain)
+            Button(action: onExclude) {
+                Label("Don’t rediscover this Moment", systemImage: "eye.slash")
+                    .font(.caption)
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Text("Hiding or excluding leaves your saved Moment and photos untouched.")
                 .font(.caption).foregroundStyle(.secondary)
         }

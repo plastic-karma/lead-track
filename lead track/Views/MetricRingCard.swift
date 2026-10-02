@@ -9,6 +9,8 @@ import SwiftUI
 /// rings. Metrics with one goal get a single full-size ring; metrics with
 /// none keep the plain hero numeral; binary habits show today's check.
 struct MetricRingCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let metric: Metric
     let activeSession: Session?
     let todayTotal: TimeInterval
@@ -20,6 +22,12 @@ struct MetricRingCard: View {
                 ringCluster
             } else {
                 bareValue
+            }
+            if hasRings, metric.measurementType.tracksQuantity, dynamicTypeSize.isAccessibilitySize {
+                bareValue
+                Text(centerCaption)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
             if weeklyFraction != nil {
                 legend
@@ -107,16 +115,23 @@ extension MetricRingCard {
 // MARK: - Center
 
 extension MetricRingCard {
+    @ViewBuilder
     private var center: some View {
-        VStack(spacing: 1) {
-            centerValue
+        if dynamicTypeSize.isAccessibilitySize, metric.measurementType.tracksQuantity {
+            Image(systemName: metric.displayIcon)
+                .font(.title2)
                 .foregroundStyle(tint)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .frame(maxWidth: centerWidth)
-            Text(centerCaption)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+        } else {
+            VStack(spacing: 1) {
+                centerValue
+                    .foregroundStyle(tint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .frame(maxWidth: centerWidth)
+                Text(centerCaption)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -124,12 +139,14 @@ extension MetricRingCard {
     private var centerValue: some View {
         if metric.measurementType == .binary {
             Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 30, weight: .semibold))
+                .font(.largeTitle.weight(.semibold))
         } else {
             liveValueText
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(.title2, design: .rounded, weight: .bold))
                 .monospacedDigit()
-                .contentTransition(.numericText(countsDown: activeSession?.countsDown ?? false))
+                .contentTransition(reduceMotion ? .identity : .numericText(
+                    countsDown: activeSession?.countsDown ?? false
+                ))
         }
     }
 
@@ -190,7 +207,9 @@ extension MetricRingCard {
                 .foregroundStyle(tint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .contentTransition(.numericText(countsDown: activeSession?.countsDown ?? false))
+                .contentTransition(reduceMotion ? .identity : .numericText(
+                    countsDown: activeSession?.countsDown ?? false
+                ))
             Text(unitCaption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -244,11 +263,12 @@ extension MetricRingCard {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: coachSymbol)
                 .font(.footnote)
+                .foregroundStyle(tint)
             Text(line)
                 .font(.footnote)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .foregroundStyle(tint)
+        .foregroundStyle(.primary)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -260,38 +280,6 @@ extension MetricRingCard {
         case .ahead: "gauge.with.dots.needle.67percent"
         case .behind: "gauge.with.dots.needle.33percent"
         default: "gauge.with.dots.needle.50percent"
-        }
-    }
-}
-
-// MARK: - Health Provenance
-
-/// Health metrics record themselves, so their instrument carries a manual sync.
-private struct MetricHealthProvenance: View {
-    @Environment(\.modelContext) private var modelContext
-    let metric: Metric
-    @State private var isSyncingHealth = false
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Label("From Apple Health", systemImage: "heart.fill")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Button("Sync Now", action: syncNow)
-                .font(.footnote.weight(.medium))
-                .disabled(isSyncingHealth)
-        }
-    }
-
-    private func syncNow() {
-        guard let id = metric.stableID else { return }
-        isSyncingHealth = true
-        let container = modelContext.container
-        Task {
-            await HealthMetricSyncService.shared.connect(
-                metricID: id, container: container
-            )
-            isSyncingHealth = false
         }
     }
 }

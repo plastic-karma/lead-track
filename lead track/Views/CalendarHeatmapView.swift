@@ -2,12 +2,15 @@ import SwiftUI
 
 struct CalendarHeatmapView: View {
     let dailyTotals: [DailyTotal]
+    let measurementType: MeasurementType
+    let unit: String?
     var tint: Color = .accentColor
 
     /// How many trailing weeks the grid shows — internal so the Activity
     /// fold's "16 weeks" label can never drift from the grid itself.
     static let weekCount = 16
-    private static let cellSize: CGFloat = 16
+    @ScaledMetric(relativeTo: .caption2) private var cellSize: CGFloat = 16
+    @ScaledMetric(relativeTo: .caption2) private var labelWidth: CGFloat = 14
     private static let spacing: CGFloat = 3
 
     private let calendar = Calendar.current
@@ -17,11 +20,15 @@ struct CalendarHeatmapView: View {
         // one of the grid's 112 cells.
         let scale = intensityScale
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 6) {
-                weekdayLabels
-                grid(scale)
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: 6) {
+                    weekdayLabels
+                    grid(scale)
+                }
             }
+            .defaultScrollAnchor(.trailing)
             HeatmapLegend(tint: tint)
+                .accessibilityHidden(true)
         }
         .padding(.vertical, 4)
     }
@@ -56,7 +63,18 @@ extension CalendarHeatmapView {
     private func cell(for date: Date?, scale: IntensityScale) -> some View {
         RoundedRectangle(cornerRadius: 4, style: .continuous)
             .fill(color(for: date, scale: scale))
-            .frame(width: Self.cellSize, height: Self.cellSize)
+            .frame(width: cellSize, height: cellSize)
+            .accessibilityElement()
+            .accessibilityLabel(Text(
+                date ?? .distantFuture,
+                format: .dateTime.weekday(.wide).month(.wide).day().year()
+            ))
+            .accessibilityValue(ValueFormatter.format(
+                date.flatMap { scale.totalsByDay[$0] } ?? 0,
+                type: measurementType,
+                unit: unit
+            ))
+            .accessibilityHidden(date.map { $0 > calendar.startOfDay(for: .now) } ?? true)
     }
 
     private var weekdayLabels: some View {
@@ -65,9 +83,10 @@ extension CalendarHeatmapView {
                 Text(weekdayLabel(weekday))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .frame(width: 14, height: Self.cellSize)
+                    .frame(width: labelWidth, height: cellSize)
             }
         }
+        .accessibilityHidden(true)
     }
 }
 

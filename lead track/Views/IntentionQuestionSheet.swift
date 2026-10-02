@@ -34,7 +34,8 @@ struct IntentionQuestionSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarButtons }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     @ToolbarContentBuilder

@@ -31,7 +31,10 @@ private struct RetrospectiveIntentionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(intention.title).font(.subheadline).textSelection(.enabled)
+            Text(intention.title)
+                .font(IntentionVoice.title)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
             RetrospectiveWeekLabel(date: intention.weekStart, aspirationTitle: intention.aspiration?.title)
             if let principle = intention.principle {
                 Text("serves “\(principle.text)”").font(.caption).foregroundStyle(.secondary)
@@ -52,7 +55,11 @@ private struct RetrospectiveCheckInRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(checkIn.note).font(.subheadline).textSelection(.enabled)
+            Text(checkIn.note)
+                .font(.body)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
             RetrospectiveWeekLabel(date: checkIn.weekStart, aspirationTitle: checkIn.aspiration?.title)
         }
         .padding(.vertical, 4)

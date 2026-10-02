@@ -4,6 +4,7 @@ import SwiftUI
 /// moment the goal is reached — the small celebration the old hairline bars
 /// never gave. The height comes from the caller's frame.
 struct ProgressTrack: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let fraction: Double
     var tint: Color = .accentColor
 
@@ -25,7 +26,7 @@ struct ProgressTrack: View {
                     )
             }
         }
-        .animation(.snappy, value: fraction)
+        .animation(reduceMotion ? nil : .snappy, value: fraction)
     }
 
     private func fillWidth(_ available: CGFloat) -> CGFloat {

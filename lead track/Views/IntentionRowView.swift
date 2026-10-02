@@ -17,20 +17,32 @@ import SwiftUI
 /// no row ever wears a red state, an overdue style, or a badge — progress is
 /// only ever accumulation.
 struct IntentionRowView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let intention: Intention
     var showsPrinciple = false
 
     var body: some View {
-        HStack(alignment: servesLine == nil ? .center : .top, spacing: 12) {
-            if !showsPrinciple {
-                Image(systemName: intention.aspiration?.displayIcon ?? "mountain.2")
-                    .font(.subheadline)
-                    .foregroundStyle(accent)
-                    .frame(width: 24)
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(alignment: servesLine == nil ? .center : .top, spacing: 12))
+        layout {
+            HStack(alignment: .top, spacing: 12) {
+                if !showsPrinciple {
+                    Image(systemName: intention.aspiration?.displayIcon ?? "mountain.2")
+                        .font(.subheadline)
+                        .foregroundStyle(accent)
+                        .frame(width: 24)
+                        .accessibilityHidden(true)
+                }
+                titleBlock
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            titleBlock
-            Spacer()
-            IntentionRowTrailing(intention: intention, accent: accent)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
+            HStack(spacing: 12) {
+                IntentionRowTrailing(intention: intention, accent: accent)
+            }
         }
         .contentShape(Rectangle())
         .intentionRowActions(intention)
@@ -47,7 +59,7 @@ struct IntentionRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(intention.title)
                     .font(IntentionVoice.title)
-                IntentionServesLine(text: serves, accent: accent)
+                IntentionServesLine(text: serves)
             }
         } else {
             Text(intention.title)
@@ -69,19 +81,19 @@ enum IntentionVoice {
     /// The commitment itself.
     static let title = Font.system(.subheadline, design: .serif, weight: .regular).italic()
     /// The quieter lines threaded beneath it.
-    static let detail = Font.system(size: 12.5, weight: .regular, design: .serif).italic()
+    static let detail = Font.system(.caption, design: .serif, weight: .regular).italic()
 }
 
 /// The "serves …" line — the principle threaded through an intention row,
-/// in the owning aspiration's ink.
+/// in a readable secondary voice beside the aspiration's identity glyph.
 struct IntentionServesLine: View {
     let text: String
-    let accent: Color
 
     var body: some View {
         Text("serves \(text)")
             .font(IntentionVoice.detail)
-            .foregroundStyle(accent)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -91,6 +103,7 @@ struct IntentionServesLine: View {
 /// progress for counted intentions, progress alone for derived ones, and
 /// nothing at all for reflective ones.
 struct IntentionRowTrailing: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let intention: Intention
     let accent: Color
 
@@ -126,11 +139,13 @@ struct IntentionRowTrailing: View {
     /// are recorded, they just don't advance a per-day count.
     private var tickButton: some View {
         Button {
-            withAnimation(.snappy) { _ = intention.tick() }
+            withAnimation(reduceMotion ? nil : .snappy) { _ = intention.tick() }
         } label: {
             Image(systemName: intention.hasTick() ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
                 .foregroundStyle(accent)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Tick \(intention.title)")
@@ -142,6 +157,7 @@ struct IntentionRowTrailing: View {
 /// The context menu and rename alert every intention row skin carries, so
 /// undo/rename/let-go/delete never drift between surfaces.
 private struct IntentionRowActions: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     let intention: Intention
     @State private var showingRename = false
@@ -165,7 +181,7 @@ private struct IntentionRowActions: ViewModifier {
     private var actions: some View {
         if intention.kind == .counted, intention.hasTick() {
             Button("Undo Tick", systemImage: "arrow.uturn.backward") {
-                withAnimation(.snappy) { _ = intention.undoTick() }
+                withAnimation(reduceMotion ? nil : .snappy) { _ = intention.undoTick() }
             }
         }
         Button("Rename", systemImage: "pencil") {
@@ -180,11 +196,11 @@ private struct IntentionRowActions: ViewModifier {
         servesMenu
         Button("Let Go", systemImage: "leaf") {
             NotificationService.cancelQuestion(for: intention)
-            withAnimation { intention.letGo() }
+            withAnimation(reduceMotion ? nil : .default) { intention.letGo() }
         }
         Button("Delete", systemImage: "trash", role: .destructive) {
             NotificationService.cancelQuestion(for: intention)
-            withAnimation { modelContext.delete(intention) }
+            withAnimation(reduceMotion ? nil : .default) { modelContext.delete(intention) }
         }
     }
 
@@ -210,7 +226,7 @@ private struct IntentionRowActions: ViewModifier {
     private var servesSelection: Binding<Principle?> {
         Binding(
             get: { intention.principle },
-            set: { principle in withAnimation { intention.principle = principle } }
+            set: { principle in withAnimation(reduceMotion ? nil : .default) { intention.principle = principle } }
         )
     }
 

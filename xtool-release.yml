@@ -9,6 +9,8 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    Native Linux release including LeadStone, its iPhone widgets and controls,
-    Share extension, Watch app and Watch widgets. Verify HealthKit access,
-    timer and metric intents, Live Activities, sharing and Watch sync.
+    UI refinement: semantic typography, larger touch targets, adaptive large-text
+    layouts, calmer motion, clearer recording and photo actions, and accessible
+    activity heatmaps. Check Today, Week, Aspirations and Moments in light/dark
+    appearance, accessibility text sizes and Reduce Motion. Also verify HealthKit
+    access, timer and metric intents, Live Activities, sharing and Watch sync.

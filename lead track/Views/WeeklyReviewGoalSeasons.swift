@@ -55,6 +55,7 @@ extension WeeklyReviewView {
 // MARK: - Rows
 
 private struct GoalSeasonReviewRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let row: GoalSeason.Review
     let renew: () -> Void
     let adjust: () -> Void
@@ -108,7 +109,10 @@ private struct GoalSeasonReviewRow: View {
     }
 
     private var seasonDecisions: some View {
-        HStack(spacing: 8) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
             seasonButton("Renew", action: renew)
             seasonButton("Adjust", action: adjust)
             seasonButton("Retire", action: retire)
@@ -139,7 +143,7 @@ extension WeeklyReviewView {
     /// Same experiment, next season.
     private func renewSeason(_ row: GoalSeason.Review) {
         guard let metric = metric(for: row.id) else { return }
-        withAnimation { GoalSeason.renew(metric) }
+        withAnimation(reduceMotion ? nil : .default) { GoalSeason.renew(metric) }
     }
 
     /// Opens the shared goal-settings sheet; saving there re-stamps the season.
@@ -151,6 +155,6 @@ extension WeeklyReviewView {
     /// Clears the goals and the season; rest days, reminders, and the
     /// logged-day streak survive untouched (see `GoalSeason.retire`).
     private func retire(_ metric: Metric) {
-        withAnimation { GoalSeason.retire(metric) }
+        withAnimation(reduceMotion ? nil : .default) { GoalSeason.retire(metric) }
     }
 }

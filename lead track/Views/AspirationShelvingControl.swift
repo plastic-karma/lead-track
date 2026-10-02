@@ -16,6 +16,8 @@ struct AspirationShelvingControl: View {
                 showingConfirmation = true
             }
         }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
         .confirmationDialog(
             "Set aside \(aspiration.title)?",
             isPresented: $showingConfirmation,
@@ -81,6 +83,8 @@ struct SetAsideAspirationsView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
             .padding()
         }
         .background(Theme.washedScreen)

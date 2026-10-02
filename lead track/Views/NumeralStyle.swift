@@ -15,8 +15,8 @@ enum NumeralSize {
 
     fileprivate var font: Font {
         switch self {
-        case .hero: .system(size: 56, weight: .bold, design: .rounded)
-        case .value: .system(size: 26, weight: .semibold, design: .rounded)
+        case .hero: .system(.largeTitle, design: .rounded, weight: .bold)
+        case .value: .system(.title2, design: .rounded, weight: .semibold)
         case .stat: .system(.headline, design: .rounded)
         }
     }
