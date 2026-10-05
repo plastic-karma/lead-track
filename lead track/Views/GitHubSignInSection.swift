@@ -54,7 +54,6 @@ private struct GitHubSignInProgress: View {
     var body: some View {
         if let code = model.code {
             GitHubDeviceApprovalView(code: code, cancel: model.cancel)
-                .id(code.userCode)
         } else if model.state == .starting {
             ProgressView("Requesting a GitHub code…")
             Button("Cancel Sign-In", role: .cancel, action: model.cancel)
@@ -76,27 +75,37 @@ private struct GitHubDeviceApprovalView: View {
     @State private var copied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Enter this code on GitHub, then approve LeadStone.")
-            Text(code.userCode)
-                .font(.title.monospaced().weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            Text("GitHub verification code").font(.headline)
+            Text(verbatim: code.userCode)
+                .font(.largeTitle.monospaced().weight(.semibold))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .privacySensitive()
-                .accessibilityLabel("GitHub verification code: \(code.userCode)")
-            Button(copied ? "Code Copied" : "Copy Code", systemImage: copied ? "checkmark" : "doc.on.doc") {
-                UIPasteboard.general.setItems([["public.utf8-plain-text": code.userCode]], options: [
-                    .localOnly: true, .expirationDate: code.expiresAt
-                ])
-                copied = true
-            }
-            Link("Open GitHub", destination: code.verificationURL)
-                .buttonStyle(.borderedProminent)
+                .accessibilityLabel("GitHub verification code")
+                .accessibilityValue(code.userCode)
+            Text("Enter this code at github.com/login/device on another device, or open GitHub below.")
+                .font(.subheadline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        Button(copied ? "Code Copied" : "Copy Code", systemImage: copied ? "checkmark" : "doc.on.doc") {
+            UIPasteboard.general.setItems([["public.utf8-plain-text": code.userCode]], options: [
+                .localOnly: true, .expirationDate: code.expiresAt
+            ])
+            copied = true
+        }
+        .buttonStyle(.borderless)
+        Link("Open GitHub", destination: code.verificationURL)
+            .buttonStyle(.borderedProminent)
+        VStack(alignment: .leading, spacing: 8) {
             ProgressView("Waiting for GitHub approval…")
             Text("Code expires \(code.expiresAt, format: .dateTime.hour().minute()). Return here after approving.")
                 .font(.caption).foregroundStyle(.secondary)
-            Button("Cancel Sign-In", role: .cancel, action: cancel)
         }
-        .padding(.vertical, 8)
+        Button("Cancel Sign-In", role: .cancel, action: cancel)
+            .buttonStyle(.borderless)
     }
 }
 

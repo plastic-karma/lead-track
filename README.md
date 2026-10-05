@@ -48,11 +48,15 @@ sync is off until you enable it in **Settings → Obsidian & GitHub**.
 2. Enter the owner, repository, branch, and a nonempty vault subdirectory such
    as `LeadStone` or `Notes/LeadStone`. Tap **Continue with GitHub**, review the
    sensitive-data notice, and confirm **Agree & Continue to GitHub**.
-3. Copy the displayed code, tap **Open GitHub**, and approve **LeadStone** on
-   GitHub. Return to the app; successful authorization enables sync without
-   creating or pasting an API token. The first sync combines existing local and
-   remote records rather than replacing either collection. The selected folder
-   can be created by this sync.
+3. The form scrolls to a large **GitHub verification code** as soon as it arrives;
+   no copy or browser tap is required to reveal it. Keep LeadStone open and enter
+   that code at [github.com/login/device](https://github.com/login/device) on a
+   computer or tablet, then approve **LeadStone**. Alternatively, use **Copy Code**
+   and **Open GitHub** on the iPhone, then return to the app. Copy, browser opening,
+   and cancellation are separate controls; copying does not cancel sign-in.
+   Successful authorization enables sync without creating or pasting an API token.
+   The first sync combines existing local and remote records rather than replacing
+   either collection. The selected folder can be created by this sync.
 4. Pull the repository into Obsidian using your Git client. Push Obsidian edits
    back to that branch; LeadStone reads them on foreground/save-triggered sync
    or **Sync Now**. This connects through GitHub, not directly to an Obsidian

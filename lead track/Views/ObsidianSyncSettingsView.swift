@@ -6,24 +6,32 @@ struct ObsidianSyncSettingsView: View {
     @State private var signIn: GitHubSignInModel?
     @State private var confirmingManualConnection = false
 
+    private enum ScrollTarget: Hashable {
+        case gitHubSignIn
+    }
+
     var body: some View {
-        Form {
-            VaultSyncStatusSection(service: service)
-            VaultConnectionFields(destination: $destination)
-                .disabled(service.isEnabled || service.isSyncing || connectionInProgress)
-            if service.isEnabled {
-                VaultSyncActionsSection(service: service)
-                VaultConflictsSection(service: service)
-            } else if let signIn {
-                GitHubSignInSection(
-                    model: signIn, destination: $destination,
-                    isDisabled: service.isSyncing || confirmingManualConnection, connect: connect
-                )
-                ManualGitHubConnectionSection(
-                    destination: $destination, confirmingConnection: $confirmingManualConnection, connect: connect
-                )
-                .disabled(service.isSyncing || signIn.isInFlight)
+        ScrollViewReader { proxy in
+            Form {
+                VaultSyncStatusSection(service: service)
+                VaultConnectionFields(destination: $destination)
+                    .disabled(service.isEnabled || service.isSyncing || connectionInProgress)
+                if service.isEnabled {
+                    VaultSyncActionsSection(service: service)
+                    VaultConflictsSection(service: service)
+                } else if let signIn {
+                    GitHubSignInSection(
+                        model: signIn, destination: $destination,
+                        isDisabled: service.isSyncing || confirmingManualConnection, connect: connect
+                    )
+                    .id(ScrollTarget.gitHubSignIn)
+                    ManualGitHubConnectionSection(
+                        destination: $destination, confirmingConnection: $confirmingManualConnection, connect: connect
+                    )
+                    .disabled(service.isSyncing || signIn.isInFlight)
+                }
             }
+            .onChange(of: signIn?.code) { proxy.scrollTo(ScrollTarget.gitHubSignIn, anchor: .top) }
         }
         .navigationTitle("Obsidian & GitHub")
         .task { prepareSettings() }
