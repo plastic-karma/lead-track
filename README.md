@@ -80,6 +80,13 @@ the attempt, while opening the GitHub browser page keeps it alive. GitHub may
 ask for a passkey or two-factor confirmation there. An expired refresh token or
 revoked authorization requires signing in again.
 
+Temporary polling timeouts or connection loss keep the same device code and
+retry with increasing delays until its original expiry. GitHub's “all set”
+confirms browser approval; return to LeadStone and wait for **Two-way sync
+enabled** to confirm the app completed sign-in. Cancellation, denial, expiry,
+and TLS/certificate failures still stop the attempt. Remaining connection
+failures show a numeric network error code, never credentials or server details.
+
 The project and `xtool-release.yml` configure LeadStone's public
 `GITHUB_CLIENT_ID`, emitted as `GitHubClientID` in the app's Info.plist. For a
 separate app identity:

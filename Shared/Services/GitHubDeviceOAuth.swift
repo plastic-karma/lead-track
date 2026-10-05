@@ -18,7 +18,8 @@ protocol GitHubDeviceAuthorizing: Sendable {
 
 nonisolated enum GitHubDeviceOAuthError: Error, LocalizedError, Equatable {
     case missingConfiguration, invalidResponse, unsafeResponse, responseTooLarge
-    case expired, denied, deviceFlowDisabled, authorizationFailed, connectionFailed
+    case expired, denied, deviceFlowDisabled, authorizationFailed
+    case connectionFailed(URLError.Code)
 
     var errorDescription: String? {
         switch self {
@@ -31,7 +32,19 @@ nonisolated enum GitHubDeviceOAuthError: Error, LocalizedError, Equatable {
         case .denied: "GitHub authorization was declined. You can start sign-in again."
         case .deviceFlowDisabled: "Device Flow is disabled for this GitHub app. Use a personal access token instead."
         case .authorizationFailed: "GitHub could not authorize this sign-in. Please start again."
-        case .connectionFailed: "Could not contact GitHub securely. Check your connection and try again."
+        case let .connectionFailed(code):
+            "Could not contact GitHub (network error \(code.rawValue)). Check your connection and try again."
+        }
+    }
+
+    var isRecoverableNetworkFailure: Bool {
+        guard case let .connectionFailed(code) = self else { return false }
+        switch code {
+        case .timedOut, .networkConnectionLost, .notConnectedToInternet,
+             .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            return true
+        default:
+            return false
         }
     }
 }
@@ -84,10 +97,18 @@ nonisolated struct GitHubDeviceOAuth: GitHubDeviceAuthorizing {
         while true {
             try await wait(interval, until: authorization.expiresAt)
             let startedAt = now()
-            let wire = try await form("oauth/access_token", fields: [
-                "client_id": clientID, "device_code": authorization.deviceCode,
-                "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
-            ])
+            let wire: GitHubDeviceOAuthWire
+            do {
+                wire = try await form("oauth/access_token", fields: [
+                    "client_id": clientID, "device_code": authorization.deviceCode,
+                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
+                ])
+            } catch let error as GitHubDeviceOAuthError where error.isRecoverableNetworkFailure {
+                // RFC 8628 §3.5: keep the device grant, but reduce polling after a timeout.
+                // The next wait still enforces cancellation and the original authorization expiry.
+                interval *= 2
+                continue
+            }
             try Task.checkCancellation()
             guard now() < authorization.expiresAt else { throw GitHubDeviceOAuthError.expired }
             if let error = wire.error {

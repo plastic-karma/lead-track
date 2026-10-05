@@ -47,6 +47,7 @@ final nonisolated class GitHubDeviceOAuthStub: URLProtocol {
         var destination: URL?
         var headers: [String: String] = [:]
         var beforeFinish: (() -> Void)?
+        var error: URLError?
 
         init(_ object: [String: Any]) throws {
             body = try JSONSerialization.data(withJSONObject: object)
@@ -54,6 +55,11 @@ final nonisolated class GitHubDeviceOAuthStub: URLProtocol {
 
         init(data: Data) {
             body = data
+        }
+
+        init(error: URLError.Code) {
+            body = Data()
+            self.error = URLError(error, userInfo: [NSLocalizedDescriptionKey: "private-device-code"])
         }
     }
 
@@ -89,6 +95,10 @@ final nonisolated class GitHubDeviceOAuthStub: URLProtocol {
         let reply = Self.lock.withLock { () -> Reply? in
             Self.requests.append(request)
             return Self.replies.isEmpty ? nil : Self.replies.removeFirst()
+        }
+        if let error = reply?.error {
+            client?.urlProtocol(self, didFailWithError: error)
+            return
         }
         guard let reply, let url = reply.destination ?? request.url,
               let response = HTTPURLResponse(

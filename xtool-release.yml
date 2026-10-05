@@ -12,9 +12,10 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    Continue with GitHub in Settings: review sync consent, copy the device code,
-    open GitHub, approve LeadStone and return to automatic sync. Check sign-in
-    cancellation, denial, expired codes, token refresh and the optional manual
-    token path. Verify Obsidian description round trips, offline edits,
-    conflict choices and disconnect/reconnect. Check existing-store migration,
-    timer notifications, Live Activities, Watch sync, widgets and sharing.
+    GitHub sign-in now retains its device code through temporary polling timeouts
+    and connection loss. Leave LeadStone in the background for at least 30 seconds
+    while approving in GitHub, then return and wait for Two-way sync enabled.
+    Check recovery after temporary connectivity loss, cancellation, denial and
+    code expiry. If a connection error remains, report its numeric error code.
+    Verify token refresh, the optional manual token path, Obsidian round trips,
+    offline edits, conflicts, Watch sync, widgets and sharing.

@@ -185,8 +185,9 @@ private final nonisolated class GitHubDeviceOAuthReceiver: NSObject, URLSessionD
 
     func urlSession(_: URLSession, task _: URLSessionTask, didCompleteWithError error: Error?) {
         if let error {
-            let failure: Error = (error as? URLError)?.code == .cancelled
-                ? CancellationError() : GitHubDeviceOAuthError.connectionFailed
+            let code = (error as? URLError)?.code ?? .unknown
+            let failure: Error = code == .cancelled
+                ? CancellationError() : GitHubDeviceOAuthError.connectionFailed(code)
             finish(.failure(failure))
         } else {
             let data = lock.withLock { body }
