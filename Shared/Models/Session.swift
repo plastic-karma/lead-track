@@ -7,6 +7,7 @@ import SwiftData
 @Model
 #endif
 final class Session {
+    var stableID: UUID?
     var metric: Metric?
     var project: Project?
     var startedAt: Date
@@ -43,6 +44,7 @@ final class Session {
         value: Double? = nil,
         countdownDuration: TimeInterval? = nil
     ) {
+        stableID = UUID()
         self.metric = metric
         self.project = project
         self.startedAt = startedAt

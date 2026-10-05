@@ -14,6 +14,11 @@ struct AppSettingsView: View {
                     } label: {
                         Label("Privacy & Security", systemImage: "lock")
                     }
+                    NavigationLink {
+                        ObsidianSyncSettingsView(service: .shared)
+                    } label: {
+                        Label("Obsidian & GitHub", systemImage: "arrow.triangle.2.circlepath")
+                    }
                 }
             }
             .navigationTitle("Settings")

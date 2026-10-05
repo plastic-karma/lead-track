@@ -51,6 +51,28 @@
 		9C8237579C65D2E39123B8DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 034A5860D1A07B340E37FE9D /* Foundation.framework */; };
 		D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */; };
 		DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */; };
+		0B5100000000000000000102 /* ObsidianVaultCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000101 /* ObsidianVaultCodecTests.swift */; };
+		0B5100000000000000000202 /* GitHubVaultClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000201 /* GitHubVaultClientTests.swift */; };
+		0B5100000000000000000302 /* GitHubVaultTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000301 /* GitHubVaultTestSupport.swift */; };
+		0B5100000000000000000402 /* VaultModelCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000401 /* VaultModelCodecTests.swift */; };
+		0B5100000000000000000502 /* SwiftDataVaultStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000501 /* SwiftDataVaultStoreTests.swift */; };
+		0B5100000000000000000602 /* VaultMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000601 /* VaultMergeTests.swift */; };
+		0B5100000000000000000702 /* VaultSyncEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000701 /* VaultSyncEngineTests.swift */; };
+		0B5100000000000000000802 /* VaultLinkAttachmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000801 /* VaultLinkAttachmentTests.swift */; };
+		0B5100000000000000000902 /* VaultStateFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000901 /* VaultStateFileTests.swift */; };
+		0B5100000000000000000A02 /* SchemaMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000A01 /* SchemaMigrationTests.swift */; };
+		0B5100000000000000000B02 /* SchemaMigrationFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000B01 /* SchemaMigrationFixture.swift */; };
+		0B5100000000000000000C02 /* GitHubDeviceOAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000C01 /* GitHubDeviceOAuthTests.swift */; };
+		0B5100000000000000000D02 /* GitHubDeviceOAuthTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000D01 /* GitHubDeviceOAuthTestSupport.swift */; };
+		0B5100000000000000000E02 /* GitHubSignInModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000E01 /* GitHubSignInModelTests.swift */; };
+		0B5100000000000000000F02 /* GitHubSignInTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000000F01 /* GitHubSignInTestSupport.swift */; };
+		0B5100000000000000001002 /* VaultCredentialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001001 /* VaultCredentialTests.swift */; };
+		0B5100000000000000001102 /* GitHubDeviceOAuthNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001101 /* GitHubDeviceOAuthNetworkTests.swift */; };
+		0B5100000000000000001202 /* VaultSessionOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */; };
+		0B5100000000000000001302 /* VaultSyncFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001301 /* VaultSyncFailureTests.swift */; };
+		0B5100000000000000001402 /* VaultSyncTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001401 /* VaultSyncTestSupport.swift */; };
+		0B5100000000000000001502 /* VaultUnassignedSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */; };
+		0B5100000000000000001602 /* MetricDeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001601 /* MetricDeletionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +183,28 @@
 		D1F00100000000000A0001 /* TodayClusterReadingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayClusterReadingTests.swift; sourceTree = "<group>"; };
 		54F77EFB378C1915227981BF /* DurationFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DurationFormatterTests.swift; sourceTree = "<group>"; };
 		6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionStatisticsTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000101 /* ObsidianVaultCodecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObsidianVaultCodecTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000201 /* GitHubVaultClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubVaultClientTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000301 /* GitHubVaultTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubVaultTestSupport.swift; sourceTree = "<group>"; };
+		0B5100000000000000000401 /* VaultModelCodecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultModelCodecTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000501 /* SwiftDataVaultStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataVaultStoreTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000601 /* VaultMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultMergeTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000701 /* VaultSyncEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSyncEngineTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000801 /* VaultLinkAttachmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultLinkAttachmentTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000901 /* VaultStateFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultStateFileTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000A01 /* SchemaMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaMigrationTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000B01 /* SchemaMigrationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaMigrationFixture.swift; sourceTree = "<group>"; };
+		0B5100000000000000000C01 /* GitHubDeviceOAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDeviceOAuthTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000D01 /* GitHubDeviceOAuthTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDeviceOAuthTestSupport.swift; sourceTree = "<group>"; };
+		0B5100000000000000000E01 /* GitHubSignInModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubSignInModelTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000000F01 /* GitHubSignInTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubSignInTestSupport.swift; sourceTree = "<group>"; };
+		0B5100000000000000001001 /* VaultCredentialTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultCredentialTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001101 /* GitHubDeviceOAuthNetworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubDeviceOAuthNetworkTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSessionOwnershipTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001301 /* VaultSyncFailureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSyncFailureTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001401 /* VaultSyncTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSyncTestSupport.swift; sourceTree = "<group>"; };
+		0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultUnassignedSessionTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001601 /* MetricDeletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricDeletionTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -325,6 +369,28 @@
 			children = (
 				54F77EFB378C1915227981BF /* DurationFormatterTests.swift */,
 				6DBA1A409F133BEF128F00CD /* SessionStatisticsTests.swift */,
+				0B5100000000000000000101 /* ObsidianVaultCodecTests.swift */,
+				0B5100000000000000000201 /* GitHubVaultClientTests.swift */,
+				0B5100000000000000000301 /* GitHubVaultTestSupport.swift */,
+				0B5100000000000000000401 /* VaultModelCodecTests.swift */,
+				0B5100000000000000000501 /* SwiftDataVaultStoreTests.swift */,
+				0B5100000000000000000601 /* VaultMergeTests.swift */,
+				0B5100000000000000000701 /* VaultSyncEngineTests.swift */,
+				0B5100000000000000000801 /* VaultLinkAttachmentTests.swift */,
+				0B5100000000000000000901 /* VaultStateFileTests.swift */,
+				0B5100000000000000000A01 /* SchemaMigrationTests.swift */,
+				0B5100000000000000000B01 /* SchemaMigrationFixture.swift */,
+				0B5100000000000000000C01 /* GitHubDeviceOAuthTests.swift */,
+				0B5100000000000000000D01 /* GitHubDeviceOAuthTestSupport.swift */,
+				0B5100000000000000000E01 /* GitHubSignInModelTests.swift */,
+				0B5100000000000000000F01 /* GitHubSignInTestSupport.swift */,
+				0B5100000000000000001001 /* VaultCredentialTests.swift */,
+				0B5100000000000000001101 /* GitHubDeviceOAuthNetworkTests.swift */,
+				0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */,
+				0B5100000000000000001301 /* VaultSyncFailureTests.swift */,
+				0B5100000000000000001401 /* VaultSyncTestSupport.swift */,
+				0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */,
+				0B5100000000000000001601 /* MetricDeletionTests.swift */,
 				2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */,
 				507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */,
 				7A1C3E5E4B0D6A2E81F10B22 /* CSVImporterTests.swift */,
@@ -747,6 +813,28 @@
 			files = (
 				44DC0F785C341119F65F3C13 /* DurationFormatterTests.swift in Sources */,
 				D46B95433D70D3EEE0F0AD87 /* SessionStatisticsTests.swift in Sources */,
+				0B5100000000000000000102 /* ObsidianVaultCodecTests.swift in Sources */,
+				0B5100000000000000000202 /* GitHubVaultClientTests.swift in Sources */,
+				0B5100000000000000000302 /* GitHubVaultTestSupport.swift in Sources */,
+				0B5100000000000000000402 /* VaultModelCodecTests.swift in Sources */,
+				0B5100000000000000000502 /* SwiftDataVaultStoreTests.swift in Sources */,
+				0B5100000000000000000602 /* VaultMergeTests.swift in Sources */,
+				0B5100000000000000000702 /* VaultSyncEngineTests.swift in Sources */,
+				0B5100000000000000000802 /* VaultLinkAttachmentTests.swift in Sources */,
+				0B5100000000000000000902 /* VaultStateFileTests.swift in Sources */,
+				0B5100000000000000000A02 /* SchemaMigrationTests.swift in Sources */,
+				0B5100000000000000000B02 /* SchemaMigrationFixture.swift in Sources */,
+				0B5100000000000000000C02 /* GitHubDeviceOAuthTests.swift in Sources */,
+				0B5100000000000000000D02 /* GitHubDeviceOAuthTestSupport.swift in Sources */,
+				0B5100000000000000000E02 /* GitHubSignInModelTests.swift in Sources */,
+				0B5100000000000000000F02 /* GitHubSignInTestSupport.swift in Sources */,
+				0B5100000000000000001002 /* VaultCredentialTests.swift in Sources */,
+				0B5100000000000000001102 /* GitHubDeviceOAuthNetworkTests.swift in Sources */,
+				0B5100000000000000001202 /* VaultSessionOwnershipTests.swift in Sources */,
+				0B5100000000000000001302 /* VaultSyncFailureTests.swift in Sources */,
+				0B5100000000000000001402 /* VaultSyncTestSupport.swift in Sources */,
+				0B5100000000000000001502 /* VaultUnassignedSessionTests.swift in Sources */,
+				0B5100000000000000001602 /* MetricDeletionTests.swift in Sources */,
 				DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */,
 				62F24EBA9D2BF7273AD21179 /* CSVExporterTests.swift in Sources */,
 				7A1C3E5F4B0D6A2E81F10B22 /* CSVImporterTests.swift in Sources */,
@@ -1037,7 +1125,9 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GITHUB_CLIENT_ID = Ov23liStViy5GpPELFDM;
 				INFOPLIST_KEY_CFBundleDisplayName = LeadStone;
+				INFOPLIST_KEY_GitHubClientID = "$(GITHUB_CLIENT_ID)";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";
@@ -1084,7 +1174,9 @@
 				DEVELOPMENT_TEAM = 9492A97LWY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GITHUB_CLIENT_ID = Ov23liStViy5GpPELFDM;
 				INFOPLIST_KEY_CFBundleDisplayName = LeadStone;
+				INFOPLIST_KEY_GitHubClientID = "$(GITHUB_CLIENT_ID)";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Authenticate to unlock LeadStone.";

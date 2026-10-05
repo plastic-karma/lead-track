@@ -37,6 +37,169 @@ artifacts, and Apple processing/tester-access checks. Keep credentials outside
 the repository. An unsigned smoke IPA is not TestFlight-installable, and a
 successful build does not prove device behavior.
 
+## Optional Obsidian / GitHub sync
+
+LeadStone still works entirely offline with its local SwiftData store. GitHub
+sync is off until you enable it in **Settings → Obsidian & GitHub**.
+
+1. Use an existing GitHub repository and branch containing your Obsidian vault;
+   the repository root should be the vault root. Initialize an empty repository
+   with a commit first.
+2. Enter the owner, repository, branch, and a nonempty vault subdirectory such
+   as `LeadStone` or `Notes/LeadStone`. Tap **Continue with GitHub**, review the
+   sensitive-data notice, and confirm **Agree & Continue to GitHub**.
+3. The form scrolls to a large **GitHub verification code** as soon as it arrives;
+   no copy or browser tap is required to reveal it. Keep LeadStone open and enter
+   that code at [github.com/login/device](https://github.com/login/device) on a
+   computer or tablet, then approve **LeadStone**. Alternatively, use **Copy Code**
+   and **Open GitHub** on the iPhone, then return to the app. Copy, browser opening,
+   and cancellation are separate controls; copying does not cancel sign-in.
+   Successful authorization enables sync without creating or pasting an API token.
+   The first sync combines existing local and remote records rather than replacing
+   either collection. The selected folder can be created by this sync.
+4. Pull the repository into Obsidian using your Git client. Push Obsidian edits
+   back to that branch; LeadStone reads them on foreground/save-triggered sync
+   or **Sync Now**. This connects through GitHub, not directly to an Obsidian
+   installation, and is not Obsidian Sync.
+
+**Use a Manual Token Instead** remains available for a fine-grained personal
+access token limited to that repository, with **Contents: Read and write**.
+Existing token connections continue to work after updating.
+
+### GitHub sign-in and build configuration
+
+**Continue with GitHub** uses GitHub's
+[OAuth Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow).
+It requests the `repo` scope, which can authorize more repositories than the
+one selected in LeadStone. LeadStone only synchronizes the configured
+destination; use the optional fine-grained token for repository-limited
+authorization. Organization OAuth restrictions or SAML SSO can require separate
+approval from the organization.
+
+Access and refresh tokens stay together in the device-only Keychain, never in
+the vault or preferences. Expiring access tokens refresh before sync, and
+rotating credentials are saved together before sync resumes. Losing connectivity
+does not affect local recording. Canceling sign-in or leaving Settings discards
+the attempt, while opening the GitHub browser page keeps it alive. GitHub may
+ask for a passkey or two-factor confirmation there. An expired refresh token or
+revoked authorization requires signing in again.
+
+Temporary polling timeouts or connection loss keep the same device code and
+retry with increasing delays until its original expiry. GitHub's “all set”
+confirms browser approval; return to LeadStone and wait for **Two-way sync
+enabled** to confirm the app completed sign-in. Cancellation, denial, expiry,
+and TLS/certificate failures still stop the attempt. Remaining connection
+failures show a numeric network error code, never credentials or server details.
+
+The project and `xtool-release.yml` configure LeadStone's public
+`GITHUB_CLIENT_ID`, emitted as `GitHubClientID` in the app's Info.plist. For a
+separate app identity:
+
+1. Register an OAuth App in **GitHub Settings → Developer settings → OAuth
+   Apps**, using the app's name and HTTPS repository/homepage URL. The required
+   redirect URI can be that same URL; Device Flow does not use a callback.
+2. Enable **Device Flow** and retain **Expire user access tokens**. LeadStone
+   handles the resulting access/refresh-token rotation.
+3. Set that app's public client ID in the project's Debug/Release
+   `GITHUB_CLIENT_ID` build setting and the native release manifest's
+   `settings.GITHUB_CLIENT_ID`. Do not generate or embed a client secret.
+
+### Vault layout and editing
+
+The selected directory contains `Aspirations/`, `Metrics/`, `Projects/`, `Data/`,
+`Principles/`, `Intentions/`, `CheckIns/`, `Moments/`, `Photos/`, and
+`Attachments/`. Each record is a small Markdown file, initially named with its
+stable UUID; each measurement/session gets its own file in `Data/`, not a row
+inside a monolithic export.
+
+Every managed note has `leadstone_id`, `leadstone_type`, and
+`leadstone_version: 1` in YAML frontmatter. Keep these identifiers intact.
+Aspirations link to their metrics/projects; assigned datapoints link to their
+metric and optional project; the remaining records link to their related notes
+using Obsidian wikilinks. For example, a count datapoint has this shape:
+
+```yaml
+---
+leadstone_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+leadstone_type: "session"
+leadstone_version: 1
+aliases: ["Reading · 2026-10-02T09:00:00Z"]
+metric: "[[aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa]]"
+project: null
+started_at: "2026-10-02T09:00:00.000Z"
+ended_at: "2026-10-02T09:00:00.000Z"
+countdown_duration: null
+value: 5
+---
+```
+
+Sessions with no metric or project are preserved as **unassigned** notes in
+`Data/`, with `metric: null`, `project: null`, and an initial `Unassigned` alias.
+Their UUIDs, values, start/end times, and countdowns are retained; no metric is
+guessed and no record is skipped or deleted. To assign one, set `metric` to a
+valid metric wikilink; an optional project must belong to that metric. To
+unassign a note, set both links to `null`. Measurement-specific validation
+applies once an owner is assigned. Update every syncing LeadStone installation
+before using unassigned notes: older builds reject a missing session metric.
+
+Edit an aspiration's Markdown body to change its description in LeadStone; a
+metric's body is its description. Principle, intention, check-in, and Moment
+prose also lives in the body. Scalar properties such as `title`, `name`, `unit`,
+`value`, and ISO-8601 timestamps live in frontmatter. Keep required fields and
+relationship targets valid. Renaming a note is supported when its stable ID
+stays intact; let Obsidian update its links.
+
+Nine [Obsidian Bases](https://help.obsidian.md/bases) files sit beside these
+folders, including `Aspirations.base`, `Metrics.base`, and `Data.base`.
+Their scoped tables use readable, clickable record titles and expose the
+relevant relationships and measurement properties. Existing `.base` files are
+never overwritten, so their layouts and formulas can be customized.
+
+### Reconciliation and privacy
+
+- Local changes remain usable offline. Sync uses a destination-specific durable
+  journal, a three-way merge, and atomic Git commits tied to the fetched branch
+  head; it never force-pushes over someone else's commit.
+- Independent property edits merge. Competing edits and delete-versus-edit
+  changes pause for explicit choices in Settings. Newer edits invalidate old
+  choices instead of silently applying them to different content.
+- Remote deletions propagate once relationships remain valid. Malformed notes,
+  broken required links, unsupported schema versions, unsafe paths, and partial
+  remote snapshots stop reconciliation rather than importing a partial graph.
+- A local session can inherit its metric from its project. Export writes both
+  links explicitly without changing the local session's ownership. Unassigned
+  sessions remain unassigned. Conflicting owners, dangling or incorrectly typed
+  non-null links, invalid values/timestamps/countdowns, and multiple running
+  timers for one metric still stop sync.
+- Explicit in-app metric/project deletions resolve their dependent records
+  through forward relationships rather than relying on SwiftData inverse
+  arrays. Already-unassigned sessions are not swept up. Moving a project-only
+  session preserves its known metric before changing or removing the project.
+- Model-validation failures identify the sync phase: initial local snapshot,
+  merged snapshot validation, local recheck after publication, or local apply.
+  Select and copy the complete error in Settings when reporting a remaining
+  failure. Phase context preserves the original error and recovery behavior.
+- Unrelated notes, custom YAML properties, unchanged Markdown prose, and
+  user-customized Bases are retained. Files outside the selected directory are
+  not modified. Shared image references are retained when another note still
+  uses the attachment.
+- Access and refresh tokens stay in this device's Keychain. Health connections/export settings,
+  notification schedules, app privacy preferences, and credentials are not
+  transferred. Recorded values—including Health-derived values—notes, photos,
+  and saved locations **are** uploaded when you opt in. Prefer a private
+  repository: Git history can retain content after a later deletion.
+- **Disconnect** disables syncing and removes this device's stored credentials
+  without deleting local records or repository files. Reconnecting to the same
+  destination keeps its reconciliation history. To revoke GitHub authorization
+  itself, use **GitHub Settings → Applications → Authorized OAuth Apps**;
+  revocation can affect other devices using that authorization.
+
+GitHub authentication/rate limits, protected branch rules, and network failures
+are shown in Settings without blocking ordinary recording. The transport has
+explicit bounds: 25 MiB per blob and per commit's added content, 128 MiB per
+downloaded folder snapshot, and 10,000 tree entries. Larger vault slices need
+to be reduced before they can synchronize.
+
 ## Project Layout
 
 - `lead track/` — iOS app sources

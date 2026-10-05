@@ -25,6 +25,9 @@ struct MetricProjectRow: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project
     let tint: Color
+    @State private var showingDeleteConfirmation = false
+    @State private var deletionErrorMessage = ""
+    @State private var showingDeletionError = false
 
     var body: some View {
         NavigationLink(value: project) {
@@ -36,8 +39,22 @@ struct MetricProjectRow: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button("Delete Project", systemImage: "trash", role: .destructive) {
-                withAnimation { modelContext.delete(project) }
+                showingDeleteConfirmation = true
             }
+        }
+        .confirmationDialog(
+            "Delete \(project.name)?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Project", role: .destructive, action: deleteProject)
+        } message: {
+            Text("Every session logged in this project is deleted with it. This can't be undone.")
+        }
+        .alert("Couldn't delete project", isPresented: $showingDeletionError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deletionErrorMessage)
         }
     }
 
@@ -66,5 +83,16 @@ struct MetricProjectRow: View {
 
     private var title: String {
         project.status == .finished ? "\(project.name) · finished" : project.name
+    }
+
+    private func deleteProject() {
+        do {
+            try withAnimation {
+                try modelContext.deleteProjectAndDependents(project)
+            }
+        } catch {
+            deletionErrorMessage = error.localizedDescription
+            showingDeletionError = true
+        }
     }
 }

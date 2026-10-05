@@ -2,6 +2,9 @@ version: 1
 project: lead track.xcodeproj
 target: lead track
 swiftVersion: 6.4.0
+settings:
+  # Public OAuth app identifier; no client secret is required for Device Flow.
+  GITHUB_CLIENT_ID: Ov23liStViy5GpPELFDM
 skippedBuildScripts:
   SwiftLint: Validation-only phase; run the repository's lint gate separately.
   SwiftFormat Check: Validation-only phase; run the repository's formatting gate separately.
@@ -9,8 +12,13 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    UI refinement: semantic typography, larger touch targets, adaptive large-text
-    layouts, calmer motion, clearer recording and photo actions, and accessible
-    activity heatmaps. Check Today, Week, Aspirations and Moments in light/dark
-    appearance, accessibility text sizes and Reduce Motion. Also verify HealthKit
-    access, timer and metric intents, Live Activities, sharing and Watch sync.
+    Sessions without a metric or project now sync as Unassigned notes instead
+    of blocking the initial local snapshot. Keep the existing GitHub connection
+    and tap Sync Now; confirm the record appears in Data with null metric and
+    project links and unchanged values/times. Owners are never guessed and
+    unassigned records are not skipped or deleted. Editing a note's metric
+    link can assign it; clear both metric and project links to unassign it.
+    Future explicit metric/project deletions use forward-linked dependents,
+    and project moves retain the session's known metric. Copy the full phase
+    error if sync still fails; do not disconnect or reset the store.
+    Also check ordinary recording, Watch sync, widgets and sharing.

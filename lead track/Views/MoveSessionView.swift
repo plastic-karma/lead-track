@@ -31,7 +31,8 @@ extension MoveSessionView {
     /// session isn't already in.
     private var destinations: [Project] {
         let current = session.project?.persistentModelID
-        return (session.metric?.projects ?? [])
+        let metric = session.metric ?? session.project?.metric
+        return (metric?.projects ?? [])
             .filter { $0.persistentModelID != current }
             .sorted(by: orderedBefore)
     }
@@ -54,7 +55,7 @@ extension MoveSessionView {
     }
 
     private func move(to project: Project?) {
-        SessionService.move(session, to: project)
+        guard SessionService.move(session, to: project) else { return }
         dismiss()
     }
 }

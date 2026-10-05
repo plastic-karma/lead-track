@@ -4,13 +4,9 @@ import SwiftData
 import os
 #endif
 
-/// The store's schema history. Every released shape gets a version here so
-/// future non-additive changes (renames, tightened optionality, new #Unique
-/// constraints) have a custom-migration hook and fixture stores to test
-/// against — instead of relying on implicit lightweight migration and
-/// discovering the first hard break as a launch crash on real data.
-enum LeadTrackSchemaV1: VersionedSchema {
-    static let versionIdentifier = Schema.Version(1, 0, 0)
+/// Current application models. Historical versions own frozen model graphs.
+enum LeadTrackSchemaV2: VersionedSchema {
+    static let versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -22,20 +18,19 @@ enum LeadTrackSchemaV1: VersionedSchema {
             Intention.self,
             AspirationCheckIn.self,
             Moment.self,
-            MomentPhoto.self
+            MomentPhoto.self,
+            VaultSyncReceipt.self
         ]
     }
 }
 
 enum LeadTrackMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [LeadTrackSchemaV1.self]
+        [LeadTrackSchemaV1.self, LeadTrackSchemaV2.self]
     }
 
-    /// Purely additive evolution so far; the first breaking change appends a
-    /// stage (usually `.lightweight`) between its old and new schema.
     static var stages: [MigrationStage] {
-        []
+        [.lightweight(fromVersion: LeadTrackSchemaV1.self, toVersion: LeadTrackSchemaV2.self)]
     }
 }
 
@@ -57,7 +52,7 @@ enum SharedModelContainer {
     }()
 
     static func create(inMemoryOnly: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: LeadTrackSchemaV1.self)
+        let schema = Schema(versionedSchema: LeadTrackSchemaV2.self)
         let config: ModelConfiguration
         if inMemoryOnly {
             config = ModelConfiguration(

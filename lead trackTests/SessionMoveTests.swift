@@ -83,6 +83,45 @@ struct SessionMoveTests {
         #expect(session.project == nil)
     }
 
+    @Test(arguments: [false, true])
+    func movingProjectOnlySessionRetainsMetric(toAnotherProject: Bool) throws {
+        let context = try makeContext()
+        let metric = makeMetric(in: context)
+        let first = makeProject("A", for: metric, in: context)
+        let destination = toAnotherProject ? makeProject("B", for: metric, in: context) : nil
+        let instant = Date(timeIntervalSince1970: 1_750_000_000)
+        let session = Session(project: first, startedAt: instant, endedAt: instant, value: 7)
+        context.insert(session)
+        let id = session.stableID
+        #expect(session.metric == nil)
+
+        let moved = SessionService.move(session, to: destination)
+        try context.save()
+
+        #expect(moved)
+        #expect(session.metric === metric)
+        #expect(session.project === destination)
+        #expect(session.stableID == id)
+        #expect(session.startedAt == instant && session.endedAt == instant && session.value == 7)
+    }
+
+    @Test
+    func rejectedProjectOnlyMovePreservesOriginalOwnership() throws {
+        let context = try makeContext()
+        let metric = makeMetric(in: context)
+        let original = makeProject("Original", for: metric, in: context)
+        let otherMetric = makeMetric("Running", in: context)
+        let foreign = makeProject("Foreign", for: otherMetric, in: context)
+        let session = Session(project: original, startedAt: .now, endedAt: .now, value: 1)
+        context.insert(session)
+
+        let moved = SessionService.move(session, to: foreign)
+
+        #expect(!moved)
+        #expect(session.metric == nil)
+        #expect(session.project === original)
+    }
+
     @Test
     func rejectsProjectFromAnotherMetric() throws {
         let context = try makeContext()
