@@ -1,12 +1,26 @@
 import Foundation
 
-/// The one rule for gathering a metric's completed effort: a session belongs
-/// to a metric directly or through one of its projects, counts once even
-/// when reachable both ways, never counts while running, and is windowed
-/// half-open on `startedAt` — the `SessionStatistics` convention.
-/// `IntentionProgress` and `MarkdownExportWindow` share this instead of
-/// keeping drift-prone hand-rolled copies.
+/// Shared session selection for recorded effort and live timers. Ownership
+/// can be direct or through a project; inverse arrays are not ownership.
 enum SessionCollection {
+    /// Without a metric, selects the first owned timer for the Live Activity.
+    /// Unassigned sessions remain stored but cannot represent a metric control.
+    static func runningSession(
+        for metric: Metric? = nil,
+        in sessions: [Session]
+    ) -> Session? {
+        sessions.first { session in
+            guard session.isRunning,
+                  let owner = session.metric ?? session.project?.metric
+            else { return false }
+            guard let metric else { return true }
+            if owner === metric { return true }
+            guard let id = metric.stableID else { return false }
+            return owner.stableID == id
+        }
+    }
+
+    /// Counts completed effort once, windowed half-open on `startedAt`.
     static func completedSessions(
         of metrics: [Metric],
         startingIn window: DateInterval? = nil

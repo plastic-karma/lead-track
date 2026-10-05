@@ -27,7 +27,7 @@ struct StopTimerIntent: LiveActivityIntent {
         let running = try context.fetch(descriptor)
         var stopped = StoppedMetrics()
         for session in running where matches(session) {
-            stopped.record(session.metric)
+            stopped.record(session.metric ?? session.project?.metric)
             SessionService.stopSession(session)
         }
         try context.save()
@@ -42,7 +42,7 @@ extension StopTimerIntent {
     /// Whether a running session belongs to the targeted metric — or to any
     /// metric when no id is set (the Live Activity's Stop button stops all).
     private func matches(_ session: Session) -> Bool {
-        metricID.isEmpty || session.metric?.stableID?.uuidString == metricID
+        metricID.isEmpty || (session.metric ?? session.project?.metric)?.stableID?.uuidString == metricID
     }
 
     /// The identities of the metrics whose sessions a stop pass ended:

@@ -6,7 +6,15 @@ import SwiftData
 
 enum SessionService {
     static func activeSession(for metric: Metric) -> Session? {
-        metric.sessions.first { $0.isRunning }
+        if let running = SessionCollection.runningSession(for: metric, in: metric.sessions) {
+            return running
+        }
+        for project in metric.projects {
+            if let running = SessionCollection.runningSession(for: metric, in: project.sessions) {
+                return running
+            }
+        }
+        return nil
     }
 
     /// Starts the metric's timer, or stops the one already running — the
@@ -78,7 +86,7 @@ enum SessionService {
             predicate: Session.isRunningPredicate
         )
         let running = (try? context.fetch(descriptor)) ?? []
-        return running.first { $0.metric === metric }
+        return SessionCollection.runningSession(for: metric, in: running)
     }
 
     /// Reassigns a completed session to another project under the same metric,
@@ -103,7 +111,7 @@ enum SessionService {
         session.endedAt = endedAt
         commit(session.modelContext)
         stopLiveActivity()
-        if let metric = session.metric {
+        if let metric = session.metric ?? session.project?.metric {
             cancelCountdownIfStoppedEarly(metric, session: session, endedAt: endedAt)
             rescheduleNotifications(for: metric)
         }
@@ -336,8 +344,9 @@ enum SessionService {
         let descriptor = FetchDescriptor<Session>(
             predicate: Session.isRunningPredicate
         )
-        guard let running = try? context.fetch(descriptor).first,
-              let metric = running.metric
+        guard let sessions = try? context.fetch(descriptor),
+              let running = SessionCollection.runningSession(in: sessions),
+              let metric = running.metric ?? running.project?.metric
         else {
             stopLiveActivity()
             return
