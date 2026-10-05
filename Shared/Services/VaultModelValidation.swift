@@ -8,7 +8,7 @@ enum VaultModelValidation {
         for project in models.projects {
             try validateProject(project)
         }
-        try validateSessions(models.sessions)
+        try validateSessions(models)
         for intention in models.intentions {
             try validateIntention(intention)
         }
@@ -58,20 +58,22 @@ enum VaultModelValidation {
         }
     }
 
-    private static func validateSessions(_ values: [Session]) throws {
+    private static func validateSessions(_ models: VaultModels) throws {
         var runningMetrics = Set<UUID>()
-        for value in values {
-            let metric = try validateSession(value)
+        for value in models.sessions {
+            let metric = try validateSession(value, models: models)
             guard value.isRunning else { continue }
             guard let id = metric.stableID else { throw VaultError.invalid("Session metric requires an identity") }
             try require(runningMetrics.insert(id).inserted, "Multiple running timers for a metric")
         }
     }
 
-    private static func validateSession(_ value: Session) throws -> Metric {
+    private static func validateSession(_ value: Session, models: VaultModels) throws -> Metric {
         let project = value.project
         let projectMetric = project?.metric
-        guard let metric = value.metric ?? projectMetric else { throw VaultError.invalid("Session requires a metric") }
+        guard let metric = value.metric ?? projectMetric else {
+            throw VaultError.sessionWithoutMetric(ownershipIssue(value, models: models))
+        }
         if project != nil {
             try require(projectMetric === metric, "Session project belongs to another metric")
         }
@@ -97,6 +99,24 @@ enum VaultModelValidation {
             try require(value.value == 1, "Binary sessions must have value 1")
         }
         return metric
+    }
+
+    private static func ownershipIssue(_ value: Session, models: VaultModels) -> VaultSessionOwnershipIssue {
+        let sessionID = value.stableID
+        func matches(_ candidate: Session) -> Bool {
+            if let id = sessionID { return candidate.stableID == id }
+            return candidate === value
+        }
+        return VaultSessionOwnershipIssue(
+            sessionID: sessionID,
+            projectID: value.project?.stableID,
+            metricBacklinkIDs: models.metrics.compactMap {
+                $0.sessions.contains(where: matches) ? $0.stableID : nil
+            },
+            projectBacklinkIDs: models.projects.compactMap {
+                $0.sessions.contains(where: matches) ? $0.stableID : nil
+            }
+        )
     }
 
     private static func validateIntention(_ value: Intention) throws {

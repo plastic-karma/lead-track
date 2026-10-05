@@ -1,5 +1,31 @@
 import Foundation
 
+/// Identifies a model-validation boundary without obscuring the original vault error.
+nonisolated struct VaultSyncFailure: LocalizedError {
+    enum Stage {
+        case localSnapshot
+        case syncSnapshot
+        case localRecheck
+        case localApply
+
+        var description: String {
+            switch self {
+            case .localSnapshot: "Reading the initial local snapshot"
+            case .syncSnapshot: "Validating the merged sync snapshot before publication"
+            case .localRecheck: "Rechecking local data after publication"
+            case .localApply: "Applying the published sync to local data"
+            }
+        }
+    }
+
+    let stage: Stage
+    let underlying: VaultError
+
+    var errorDescription: String? {
+        "\(stage.description): \(underlying.localizedDescription)"
+    }
+}
+
 struct VaultPendingSync: Codable {
     var source: VaultGraph
     var target: VaultGraph

@@ -12,11 +12,11 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    This build fixes "Session requires a metric" for existing data points whose
-    metric is linked through a project. Retry Sync Now on the existing GitHub
-    connection. Confirm all points remain and their identities, timestamps,
-    values and projects survive a round trip. Change a value in Obsidian, sync
-    it back, and check that no duplicate point appears. Invalid or conflicting
-    owners and multiple running timers must still stop sync without dropping
-    records. Also verify token refresh, manual token connections, offline
-    recording, Watch sync, widgets and sharing.
+    Diagnostic build for the unresolved "Session requires a metric" failure.
+    Keep the existing GitHub connection and tap Sync Now. Select and copy the
+    complete error, including its phase, session/project IDs and backlink IDs,
+    or send a screenshot of the full message. This identifies whether the
+    failure is in saved local data, snapshot validation, a post-publication
+    recheck or local apply. No relationship repair or validation bypass is
+    included; sync may still fail. Do not disconnect, reset or delete records.
+    Also check ordinary recording, Watch sync, widgets and sharing.

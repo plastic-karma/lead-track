@@ -161,6 +161,12 @@ never overwritten, so their layouts and formulas can be customized.
   links explicitly without changing its ID, timestamps, or value. Conflicting
   owners, unresolvable metrics, invalid values, and multiple running timers for
   one metric still stop sync; no session is skipped to bypass validation.
+- Model-validation failures identify the sync phase: initial local snapshot,
+  merged snapshot validation, local recheck after publication, or local apply.
+  A session missing its metric reports its session/project UUIDs and any
+  metric/project backlink UUIDs, without adding record names, values, dates,
+  note contents, or credentials. Select and copy the complete error in Settings
+  when reporting it. These read-only diagnostics do not repair or delete records.
 - Unrelated notes, custom YAML properties, unchanged Markdown prose, and
   user-customized Bases are retained. Files outside the selected directory are
   not modified. Shared image references are retained when another note still

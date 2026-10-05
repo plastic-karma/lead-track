@@ -60,7 +60,7 @@ final class VaultSyncEngine {
     private func reconcile(
         _ remoteGraph: VaultGraph, snapshot: VaultRemoteSnapshot, resolutions: [String: VaultResolution]
     ) async throws -> VaultSyncOutcome {
-        let local = try capture().normalized
+        let local = try atStage(.localSnapshot) { try capture().normalized }
         var merger = VaultMerge(resolutions: resolutions)
         var result = try merger.merge(base: state.baseline, local: local, remote: remoteGraph)
         if let pending = state.pending {
@@ -71,7 +71,9 @@ final class VaultSyncEngine {
         }
         guard result.conflicts.isEmpty else { return VaultSyncOutcome(conflicts: result.conflicts) }
         let target = try VaultPublicationLinks.rewrite(result.graph, folder: configuration.folder)
-        let projection = try VaultModelCodec.export(VaultModelCodec.materialize(target))
+        let projection = try atStage(.syncSnapshot) {
+            try VaultModelCodec.export(VaultModelCodec.materialize(target))
+        }
         let plan = try VaultSyncPlan(graph: target, remoteGraph: remoteGraph, snapshot: snapshot)
         state.pending = VaultPendingSync(source: local, target: target, projection: projection, files: plan.files)
         state.pending?.published = plan.changes.isEmpty
@@ -91,13 +93,15 @@ final class VaultSyncEngine {
             try acknowledge(pending)
             return VaultSyncOutcome(needsSync: true, date: state.lastSyncedAt)
         }
-        let current = try capture()
+        let current = try atStage(.localRecheck) { try capture() }
         var merger = VaultMerge(resolutions: resolutions)
         let result = try merger.merge(base: pending.source, local: current.normalized, remote: pending.target)
         guard result.conflicts.isEmpty else { return VaultSyncOutcome(conflicts: result.conflicts) }
         if result.graph != current.normalized {
             let transaction = VaultApplyTransaction(id: pending.transactionID, destination: state.destination)
-            try store.apply(result.graph, expecting: current.raw, transaction: transaction)
+            try atStage(.localApply) {
+                try store.apply(result.graph, expecting: current.raw, transaction: transaction)
+            }
         }
         try acknowledge(pending)
         return VaultSyncOutcome(needsSync: result.graph != pending.target, date: state.lastSyncedAt)
@@ -108,6 +112,14 @@ final class VaultSyncEngine {
         var normalized = VaultLocalChanges.overlay(snapshot: raw, base: state.baseline, projection: state.projection)
         normalized.attachmentRoot = configuration.folder
         return (raw, normalized)
+    }
+
+    private func atStage<Value>(_ stage: VaultSyncFailure.Stage, _ operation: () throws -> Value) throws -> Value {
+        do {
+            return try operation()
+        } catch let error as VaultError {
+            throw VaultSyncFailure(stage: stage, underlying: error)
+        }
     }
 
     private func acknowledge(_ pending: VaultPendingSync) throws {
