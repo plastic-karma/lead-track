@@ -61,33 +61,23 @@ enum VaultModelValidation {
     private static func validateSessions(_ models: VaultModels) throws {
         var runningMetrics = Set<UUID>()
         for value in models.sessions {
-            let metric = try validateSession(value, models: models)
-            guard value.isRunning else { continue }
+            let metric = try validateSession(value)
+            guard value.isRunning, let metric else { continue }
             guard let id = metric.stableID else { throw VaultError.invalid("Session metric requires an identity") }
             try require(runningMetrics.insert(id).inserted, "Multiple running timers for a metric")
         }
     }
 
-    private static func validateSession(_ value: Session, models: VaultModels) throws -> Metric {
+    private static func validateSession(_ value: Session) throws -> Metric? {
         let project = value.project
         let projectMetric = project?.metric
-        guard let metric = value.metric ?? projectMetric else {
-            throw VaultError.sessionWithoutMetric(ownershipIssue(value, models: models))
-        }
+        let metric = value.metric ?? projectMetric
         if project != nil {
             try require(projectMetric === metric, "Session project belongs to another metric")
         }
-        if let ended = value.endedAt { try require(ended >= value.startedAt, "Session ends before it starts") }
-        try require(
-            CSVImporter.isSane(
-                started: value.startedAt,
-                ended: value.endedAt,
-                value: value.value,
-                now: .now
-            ),
-            "Session values must be nonnegative and timestamps cannot be in the future"
-        )
-        try require(positive(value.countdownDuration), "Countdown must be positive")
+        try validateSessionValues(value)
+        // Unassigned records retain their data; no measurement type or owner is guessed.
+        guard let metric else { return nil }
         if value.isRunning { try require(metric.measurementType == .duration, "Only duration metrics can run timers") }
         if value.countdownDuration != nil {
             try require(metric.measurementType == .duration, "Only duration metrics can have countdowns")
@@ -101,21 +91,20 @@ enum VaultModelValidation {
         return metric
     }
 
-    private static func ownershipIssue(_ value: Session, models: VaultModels) -> VaultSessionOwnershipIssue {
-        let sessionID = value.stableID
-        func matches(_ candidate: Session) -> Bool {
-            if let id = sessionID { return candidate.stableID == id }
-            return candidate === value
-        }
-        return VaultSessionOwnershipIssue(
-            sessionID: sessionID,
-            projectID: value.project?.stableID,
-            metricBacklinkIDs: models.metrics.compactMap {
-                $0.sessions.contains(where: matches) ? $0.stableID : nil
-            },
-            projectBacklinkIDs: models.projects.compactMap {
-                $0.sessions.contains(where: matches) ? $0.stableID : nil
-            }
+    private static func validateSessionValues(_ value: Session) throws {
+        if let ended = value.endedAt { try require(ended >= value.startedAt, "Session ends before it starts") }
+        try require(
+            CSVImporter.isSane(
+                started: value.startedAt,
+                ended: value.endedAt,
+                value: value.value,
+                now: .now
+            ),
+            "Session values must be nonnegative and timestamps cannot be in the future"
+        )
+        try require(
+            value.countdownDuration.map { $0.isFinite && $0 > 0 } ?? true,
+            "Countdown must be finite and positive"
         )
     }
 

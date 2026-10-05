@@ -72,31 +72,14 @@ nonisolated struct VaultGraph: Codable, Equatable {
     var attachmentRoot: String = ""
 }
 
-nonisolated struct VaultSessionOwnershipIssue: Equatable {
-    let sessionID: UUID?
-    let projectID: UUID?
-    let metricBacklinkIDs: [UUID]
-    let projectBacklinkIDs: [UUID]
-
-    var errorDescription: String {
-        let metrics = metricBacklinkIDs.lazy.map(\.uuidString).joined(separator: ", ")
-        let projects = projectBacklinkIDs.lazy.map(\.uuidString).joined(separator: ", ")
-        return "Session requires a metric. Session: \(sessionID?.uuidString ?? "none"); "
-            + "linked project: \(projectID?.uuidString ?? "none"); "
-            + "metric backlinks: [\(metrics)]; project backlinks: [\(projects)]."
-    }
-}
-
 nonisolated enum VaultError: Error, LocalizedError {
     case invalid(String)
     case conflict(String)
     case remote(String)
-    case sessionWithoutMetric(VaultSessionOwnershipIssue)
 
     var errorDescription: String? {
         switch self {
         case let .invalid(message), let .conflict(message), let .remote(message): message
-        case let .sessionWithoutMetric(issue): issue.errorDescription
         }
     }
 }

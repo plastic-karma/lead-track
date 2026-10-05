@@ -114,9 +114,9 @@ inside a monolithic export.
 
 Every managed note has `leadstone_id`, `leadstone_type`, and
 `leadstone_version: 1` in YAML frontmatter. Keep these identifiers intact.
-Aspirations link to their metrics/projects; datapoints link to their metric
-and optional project; the remaining records link to their related notes using
-Obsidian wikilinks. For example, a count datapoint has this shape:
+Aspirations link to their metrics/projects; assigned datapoints link to their
+metric and optional project; the remaining records link to their related notes
+using Obsidian wikilinks. For example, a count datapoint has this shape:
 
 ```yaml
 ---
@@ -132,6 +132,15 @@ countdown_duration: null
 value: 5
 ---
 ```
+
+Sessions with no metric or project are preserved as **unassigned** notes in
+`Data/`, with `metric: null`, `project: null`, and an initial `Unassigned` alias.
+Their UUIDs, values, start/end times, and countdowns are retained; no metric is
+guessed and no record is skipped or deleted. To assign one, set `metric` to a
+valid metric wikilink; an optional project must belong to that metric. To
+unassign a note, set both links to `null`. Measurement-specific validation
+applies once an owner is assigned. Update every syncing LeadStone installation
+before using unassigned notes: older builds reject a missing session metric.
 
 Edit an aspiration's Markdown body to change its description in LeadStone; a
 metric's body is its description. Principle, intention, check-in, and Moment
@@ -158,15 +167,18 @@ never overwritten, so their layouts and formulas can be customized.
   broken required links, unsupported schema versions, unsafe paths, and partial
   remote snapshots stop reconciliation rather than importing a partial graph.
 - A local session can inherit its metric from its project. Export writes both
-  links explicitly without changing its ID, timestamps, or value. Conflicting
-  owners, unresolvable metrics, invalid values, and multiple running timers for
-  one metric still stop sync; no session is skipped to bypass validation.
+  links explicitly without changing the local session's ownership. Unassigned
+  sessions remain unassigned. Conflicting owners, dangling or incorrectly typed
+  non-null links, invalid values/timestamps/countdowns, and multiple running
+  timers for one metric still stop sync.
+- Explicit in-app metric/project deletions resolve their dependent records
+  through forward relationships rather than relying on SwiftData inverse
+  arrays. Already-unassigned sessions are not swept up. Moving a project-only
+  session preserves its known metric before changing or removing the project.
 - Model-validation failures identify the sync phase: initial local snapshot,
   merged snapshot validation, local recheck after publication, or local apply.
-  A session missing its metric reports its session/project UUIDs and any
-  metric/project backlink UUIDs, without adding record names, values, dates,
-  note contents, or credentials. Select and copy the complete error in Settings
-  when reporting it. These read-only diagnostics do not repair or delete records.
+  Select and copy the complete error in Settings when reporting a remaining
+  failure. Phase context preserves the original error and recovery behavior.
 - Unrelated notes, custom YAML properties, unchanged Markdown prose, and
   user-customized Bases are retained. Files outside the selected directory are
   not modified. Shared image references are retained when another note still

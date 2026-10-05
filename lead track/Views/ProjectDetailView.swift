@@ -15,6 +15,8 @@ struct ProjectDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingClosingMoment = false
     @State private var sessionToMove: Session?
+    @State private var deletionErrorMessage = ""
+    @State private var showingDeletionError = false
 
     init(project: Project) {
         self.project = project
@@ -153,6 +155,11 @@ struct ProjectDetailView: View {
             Button("Delete Project", role: .destructive, action: deleteProject)
         } message: {
             Text("Every session logged in this project is deleted with it. This can't be undone.")
+        }
+        .alert("Couldn't delete project", isPresented: $showingDeletionError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deletionErrorMessage)
         }
     }
 }
@@ -315,7 +322,12 @@ extension ProjectDetailView {
     }
 
     private func deleteProject() {
-        modelContext.delete(project)
-        dismiss()
+        do {
+            try modelContext.deleteProjectAndDependents(project)
+            dismiss()
+        } catch {
+            deletionErrorMessage = error.localizedDescription
+            showingDeletionError = true
+        }
     }
 }

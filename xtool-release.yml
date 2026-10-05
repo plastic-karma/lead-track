@@ -12,11 +12,13 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    Diagnostic build for the unresolved "Session requires a metric" failure.
-    Keep the existing GitHub connection and tap Sync Now. Select and copy the
-    complete error, including its phase, session/project IDs and backlink IDs,
-    or send a screenshot of the full message. This identifies whether the
-    failure is in saved local data, snapshot validation, a post-publication
-    recheck or local apply. No relationship repair or validation bypass is
-    included; sync may still fail. Do not disconnect, reset or delete records.
+    Sessions without a metric or project now sync as Unassigned notes instead
+    of blocking the initial local snapshot. Keep the existing GitHub connection
+    and tap Sync Now; confirm the record appears in Data with null metric and
+    project links and unchanged values/times. Owners are never guessed and
+    unassigned records are not skipped or deleted. Editing a note's metric
+    link can assign it; clear both metric and project links to unassign it.
+    Future explicit metric/project deletions use forward-linked dependents,
+    and project moves retain the session's known metric. Copy the full phase
+    error if sync still fails; do not disconnect or reset the store.
     Also check ordinary recording, Watch sync, widgets and sharing.

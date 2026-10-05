@@ -220,10 +220,10 @@ struct VaultLinkAttachmentTests {
         #expect(imported.aspirations[0].metrics.isEmpty)
         #expect(imported.aspirations[0].projects.isEmpty)
         let metric = Metric(name: "Reading")
-        let point = Session(metric: metric, startedAt: Date(timeIntervalSince1970: 10))
-        var required = try VaultModelCodec.export(VaultModels(metrics: [metric], sessions: [point]))
-        let pointID = try #require(point.stableID)
-        required.records[pointID]?.fields["metric"] = .null
+        let project = Project(name: "Book", metric: metric)
+        var required = try VaultModelCodec.export(VaultModels(metrics: [metric], projects: [project]))
+        let projectID = try #require(project.stableID)
+        required.records[projectID]?.fields["metric"] = .null
         #expect(throws: (any Error).self) { try VaultModelCodec.materialize(required) }
     }
 

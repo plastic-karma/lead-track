@@ -53,127 +53,6 @@ struct VaultSessionOwnershipTests {
         #expect(session.project?.stableID == models.projects.first?.stableID)
     }
 
-    @Test
-    func sessionWithoutAnyResolvableMetricRemainsRejected() {
-        let session = Session(startedAt: instant, endedAt: instant.addingTimeInterval(60))
-        let models = VaultModels(sessions: [session])
-        #expect(throws: VaultError.self) { try VaultModelCodec.export(models) }
-    }
-
-    @Test
-    func orphanDiagnosticPreservesItsIdentityAndData() throws {
-        let session = Session(startedAt: instant, endedAt: instant.addingTimeInterval(60), value: 7)
-        session.stableID = fixtureID(1)
-        let models = VaultModels(sessions: [session])
-        let issue = try ownershipIssue(models)
-        #expect(issue == VaultSessionOwnershipIssue(
-            sessionID: fixtureID(1), projectID: nil, metricBacklinkIDs: [], projectBacklinkIDs: []
-        ))
-        #expect(models.sessions.count == 1)
-        #expect(models.sessions.first === session)
-        #expect(session.stableID == fixtureID(1))
-        #expect(session.metric == nil)
-        #expect(session.project == nil)
-        #expect(session.startedAt == instant)
-        #expect(session.endedAt == instant.addingTimeInterval(60))
-        #expect(session.value == 7)
-    }
-
-    #if !canImport(SwiftData) // These fixtures require broken inverse relationships.
-    @Test
-    func backlinkDiagnosticsUseSessionIdentityNotSharedProject() throws {
-        let models = backlinkModels()
-        let session = try #require(models.sessions.first)
-        let linkedProject = models.projects[0]
-        let backlinkProject = models.projects[1]
-        let metric = models.metrics[0]
-        let unrelatedMetric = models.metrics[1]
-        let matchingCopy = try #require(metric.sessions.first)
-        let otherSession = try #require(unrelatedMetric.sessions.first)
-        let issue = try ownershipIssue(models)
-        #expect(issue == VaultSessionOwnershipIssue(
-            sessionID: fixtureID(1), projectID: fixtureID(2),
-            metricBacklinkIDs: [fixtureID(4)], projectBacklinkIDs: [fixtureID(2), fixtureID(6)]
-        ))
-        #expect(session.metric == nil)
-        #expect(session.project === linkedProject)
-        #expect(session.stableID == fixtureID(1))
-        #expect(session.value == 7)
-        #expect(metric.sessions.count == 1 && metric.sessions.first === matchingCopy)
-        #expect(unrelatedMetric.sessions.count == 1 && unrelatedMetric.sessions.first === otherSession)
-        #expect(backlinkProject.sessions.count == 1 && backlinkProject.sessions.first === matchingCopy)
-        #expect(linkedProject.sessions.count == 2)
-        #expect(linkedProject.sessions.contains { $0 === session })
-        #expect(linkedProject.sessions.contains { $0 === otherSession })
-    }
-
-    private func backlinkModels() -> VaultModels {
-        let linkedProject = Project(name: "Private linked project", startedAt: instant)
-        linkedProject.stableID = fixtureID(2)
-        let session = Session(project: linkedProject, startedAt: instant, endedAt: instant, value: 7)
-        session.stableID = fixtureID(1)
-        let matchingCopy = Session(startedAt: instant, endedAt: instant)
-        matchingCopy.stableID = fixtureID(1)
-        let otherSession = Session(project: linkedProject, startedAt: instant, endedAt: instant)
-        otherSession.stableID = fixtureID(3)
-        let metric = Metric(name: "Private metric", createdAt: instant)
-        metric.stableID = fixtureID(4)
-        metric.sessions = [matchingCopy]
-        let unrelatedMetric = Metric(name: "Other private metric", createdAt: instant)
-        unrelatedMetric.stableID = fixtureID(5)
-        unrelatedMetric.sessions = [otherSession]
-        let backlinkProject = Project(name: "Private backlink project", startedAt: instant)
-        backlinkProject.stableID = fixtureID(6)
-        backlinkProject.sessions = [matchingCopy]
-        linkedProject.sessions = [session, otherSession]
-        return VaultModels(
-            metrics: [metric, unrelatedMetric], projects: [linkedProject, backlinkProject], sessions: [session]
-        )
-    }
-
-    @Test(arguments: [false, true], [false, true])
-    func brokenInverseDiagnosticsPreserveMissingOwners(includeActualSession: Bool, hasIdentity: Bool) throws {
-        let session = Session(startedAt: instant, endedAt: instant)
-        session.stableID = hasIdentity ? fixtureID(1) : nil
-        let unrelated = Session(startedAt: instant, endedAt: instant)
-        unrelated.stableID = nil
-        let metric = Metric(name: "Private metric", createdAt: instant)
-        metric.stableID = fixtureID(4)
-        let project = Project(name: "Private project", startedAt: instant)
-        project.stableID = fixtureID(2)
-        metric.sessions = includeActualSession ? [unrelated, session] : [unrelated]
-        project.sessions = metric.sessions
-        let models = VaultModels(metrics: [metric], projects: [project], sessions: [session])
-        let issue = try ownershipIssue(models)
-        #expect(issue == VaultSessionOwnershipIssue(
-            sessionID: hasIdentity ? fixtureID(1) : nil, projectID: nil,
-            metricBacklinkIDs: includeActualSession ? [fixtureID(4)] : [],
-            projectBacklinkIDs: includeActualSession ? [fixtureID(2)] : []
-        ))
-        #expect(session.stableID == (hasIdentity ? fixtureID(1) : nil))
-        #expect(unrelated.stableID == nil)
-        #expect(session.metric == nil && session.project == nil)
-        #expect(metric.sessions.count == (includeActualSession ? 2 : 1))
-        #expect(project.sessions.count == metric.sessions.count)
-        #expect(metric.sessions.first === unrelated)
-        #expect(project.sessions.first === unrelated)
-    }
-    #endif
-
-    private func fixtureID(_ value: UInt8) -> UUID {
-        UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, value))
-    }
-
-    private func ownershipIssue(_ models: VaultModels) throws -> VaultSessionOwnershipIssue {
-        do {
-            try VaultModelValidation.validate(models)
-        } catch let VaultError.sessionWithoutMetric(issue) {
-            return issue
-        }
-        Issue.record("Expected a missing session metric diagnostic")
-        throw VaultError.invalid("Missing ownership diagnostic")
-    }
-
     #if canImport(SwiftData)
     @Test
     func savedProjectOwnedSessionExportsWithoutRewritingItsRelationships() throws {
@@ -199,6 +78,35 @@ struct VaultSessionOwnershipTests {
         #expect(saved.metric == nil)
         let reopened = SwiftDataVaultStore(context: ModelContext(fixture.context.container))
         #expect(try reopened.snapshot() == graph)
+    }
+
+    @Test
+    func savedUnassignedSessionRoundTripsWithoutInventingOwnership() throws {
+        let fixture = try ModelFixture()
+        let session = Session(startedAt: instant, endedAt: instant, value: 7)
+        session.healthExportedAt = instant.addingTimeInterval(60)
+        fixture.context.insert(session)
+        try fixture.context.save()
+        let id = try #require(session.stableID)
+        let reader = ModelContext(fixture.context.container)
+        let store = SwiftDataVaultStore(context: reader)
+        let before = try store.snapshot()
+        #expect(before.records[id]?.fields["metric"] == .null)
+        #expect(before.records[id]?.fields["project"] == .null)
+        var incoming = before
+        incoming.records[id]?.fields["value"] = .number(9)
+        try store.apply(
+            incoming, expecting: before,
+            transaction: VaultApplyTransaction(id: UUID(), destination: "unassigned-persistence-test")
+        )
+        let reopened = ModelContext(fixture.context.container)
+        let saved = try #require(reopened.fetch(FetchDescriptor<Session>()).first)
+        #expect(saved.stableID == id)
+        #expect(saved.metric == nil && saved.project == nil)
+        #expect(saved.startedAt == instant && saved.endedAt == instant && saved.value == 9)
+        #expect(saved.healthExportedAt == instant.addingTimeInterval(60))
+        #expect(try reopened.fetch(FetchDescriptor<Metric>()).isEmpty)
+        #expect(try reopened.fetch(FetchDescriptor<Project>()).isEmpty)
     }
     #endif
 

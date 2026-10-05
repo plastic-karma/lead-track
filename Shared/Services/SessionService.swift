@@ -86,8 +86,12 @@ enum SessionService {
     /// makes no change if the target project belongs to a different metric.
     @discardableResult
     static func move(_ session: Session, to project: Project?) -> Bool {
-        if let project, project.metric !== session.metric {
+        let metric = session.metric ?? session.project?.metric
+        if let project, project.metric !== metric {
             return false
+        }
+        if session.metric == nil, let metric {
+            session.metric = metric
         }
         session.project = project
         return true

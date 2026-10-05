@@ -7,18 +7,18 @@ struct VaultSyncFailureTests {
     private let instant = Date(timeIntervalSince1970: 1_750_000_000)
 
     @Test
-    func ownerlessLocalSessionFailsBeforePublication() async throws {
+    func invalidLocalSessionFailsBeforePublication() async throws {
         let local = VaultTestLocalStore()
-        let session = Session(startedAt: instant, endedAt: instant, value: 7)
+        let session = Session(startedAt: instant, endedAt: instant, value: -1)
         local.models = VaultModels(sessions: [session])
         let remote = VaultTestRemote()
         let persistence = VaultTestState()
         let failure = try await failure(from: makeEngine(local, remote, persistence))
-        expectOwnershipFailure(failure, stage: .localSnapshot, session: session)
+        expectInvalidFailure(failure, stage: .localSnapshot)
         #expect(local.models.sessions.first === session)
         #expect(session.metric == nil)
         #expect(session.project == nil)
-        #expect(session.value == 7)
+        #expect(session.value == -1)
         #expect(session.startedAt == instant)
         #expect(try await remote.graph().records.isEmpty)
         #expect(persistence.state == nil)
@@ -44,17 +44,17 @@ struct VaultSyncFailureTests {
     }
 
     @Test
-    func ownershipLostDuringCommitRetainsPublishedRecovery() async throws {
+    func invalidScalarDuringCommitRetainsPublishedRecovery() async throws {
         let local = sessionStore()
         let session = try #require(local.models.sessions.first)
         let metric = try #require(session.metric)
         let remote = VaultTestRemote()
         let persistence = VaultTestState()
         await remote.beforeNextCommit {
-            await MainActor.run { session.metric = nil }
+            await MainActor.run { session.value = -1 }
         }
         let initial = try await failure(from: makeEngine(local, remote, persistence))
-        expectOwnershipFailure(initial, stage: .localRecheck, session: session)
+        expectInvalidFailure(initial, stage: .localRecheck)
         let pending = try #require(persistence.state?.pending)
         #expect(pending.published)
         #expect(persistence.state?.baseline.records.isEmpty == true)
@@ -62,12 +62,12 @@ struct VaultSyncFailureTests {
         let sessionID = try #require(session.stableID)
         #expect(published.records[sessionID]?.fields["metric"] == VaultModelLinks.linkID(metric.stableID))
         let recovered = try await failure(from: makeEngine(local, remote, persistence))
-        expectOwnershipFailure(recovered, stage: .localRecheck, session: session)
+        expectInvalidFailure(recovered, stage: .localRecheck)
         #expect(persistence.state?.pending?.transactionID == pending.transactionID)
         #expect(local.models.sessions.first === session)
-        #expect(session.metric == nil)
-        #expect(session.value == 7)
-        session.metric = metric
+        #expect(session.metric === metric)
+        #expect(session.value == -1)
+        session.value = 7
         _ = try await makeEngine(local, remote, persistence).synchronize()
         #expect(persistence.state?.pending == nil)
         #expect(try await remote.graph() == published)
@@ -147,16 +147,5 @@ struct VaultSyncFailureTests {
             Issue.record("Expected the original model validation error")
             return
         }
-    }
-
-    private func expectOwnershipFailure(
-        _ failure: VaultSyncFailure, stage: VaultSyncFailure.Stage, session: Session
-    ) {
-        #expect(failure.stage == stage)
-        guard case let .sessionWithoutMetric(issue) = failure.underlying else {
-            Issue.record("Expected the structured session ownership error")
-            return
-        }
-        #expect(issue.sessionID == session.stableID)
     }
 }

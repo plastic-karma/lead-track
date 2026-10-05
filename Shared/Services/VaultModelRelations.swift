@@ -69,7 +69,7 @@ enum VaultModelRelations {
         case let value as Project:
             value.metric = try links.one(record, "metric", required: true)
         case let value as Session:
-            value.metric = try links.one(record, "metric", required: true)
+            value.metric = try links.one(record, "metric")
             value.project = try links.one(record, "project")
         case let value as Principle:
             value.aspiration = try links.one(record, "aspiration", required: true)

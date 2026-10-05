@@ -71,6 +71,8 @@
 		0B5100000000000000001202 /* VaultSessionOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */; };
 		0B5100000000000000001302 /* VaultSyncFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001301 /* VaultSyncFailureTests.swift */; };
 		0B5100000000000000001402 /* VaultSyncTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001401 /* VaultSyncTestSupport.swift */; };
+		0B5100000000000000001502 /* VaultUnassignedSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */; };
+		0B5100000000000000001602 /* MetricDeletionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B5100000000000000001601 /* MetricDeletionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -201,6 +203,8 @@
 		0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSessionOwnershipTests.swift; sourceTree = "<group>"; };
 		0B5100000000000000001301 /* VaultSyncFailureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSyncFailureTests.swift; sourceTree = "<group>"; };
 		0B5100000000000000001401 /* VaultSyncTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSyncTestSupport.swift; sourceTree = "<group>"; };
+		0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultUnassignedSessionTests.swift; sourceTree = "<group>"; };
+		0B5100000000000000001601 /* MetricDeletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricDeletionTests.swift; sourceTree = "<group>"; };
 		89593D972FA017B600A16861 /* lead trackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "lead trackUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8B5C2F723550005F7ED1 /* lead track.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "lead track.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		89AF8CA12F800000005F7ED1 /* lead-track Widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "lead-track Widget.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -385,6 +389,8 @@
 				0B5100000000000000001201 /* VaultSessionOwnershipTests.swift */,
 				0B5100000000000000001301 /* VaultSyncFailureTests.swift */,
 				0B5100000000000000001401 /* VaultSyncTestSupport.swift */,
+				0B5100000000000000001501 /* VaultUnassignedSessionTests.swift */,
+				0B5100000000000000001601 /* MetricDeletionTests.swift */,
 				2290C0B8441D35A7B98AA206 /* ValueFormatterTests.swift */,
 				507D1DAE9D584F8CD20D4680 /* CSVExporterTests.swift */,
 				7A1C3E5E4B0D6A2E81F10B22 /* CSVImporterTests.swift */,
@@ -827,6 +833,8 @@
 				0B5100000000000000001202 /* VaultSessionOwnershipTests.swift in Sources */,
 				0B5100000000000000001302 /* VaultSyncFailureTests.swift in Sources */,
 				0B5100000000000000001402 /* VaultSyncTestSupport.swift in Sources */,
+				0B5100000000000000001502 /* VaultUnassignedSessionTests.swift in Sources */,
+				0B5100000000000000001602 /* MetricDeletionTests.swift in Sources */,
 				DFF7C10A66921420A7ED38A3 /* ValueFormatterTests.swift in Sources */,
 				62F24EBA9D2BF7273AD21179 /* CSVExporterTests.swift in Sources */,
 				7A1C3E5F4B0D6A2E81F10B22 /* CSVImporterTests.swift in Sources */,

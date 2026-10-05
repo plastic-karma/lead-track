@@ -22,6 +22,8 @@ struct ClusterMetricRow: View {
     @State private var showingDurationEntry = false
     @State private var showingDeleteConfirmation = false
     @State private var quickLogTrigger = false
+    @State private var deletionErrorMessage = ""
+    @State private var showingDeletionError = false
 
     var body: some View {
         ClusterMetricContent(
@@ -43,11 +45,14 @@ struct ClusterMetricRow: View {
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Delete Metric", role: .destructive) {
-                withAnimation(.snappy) { modelContext.delete(metric) }
-            }
+            Button("Delete Metric", role: .destructive, action: deleteMetric)
         } message: {
             Text("All of its logged sessions and projects are deleted with it. This can't be undone.")
+        }
+        .alert("Couldn't delete metric", isPresented: $showingDeletionError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deletionErrorMessage)
         }
         .sheet(isPresented: $showingCountEntry) {
             CountEntryView(metric: metric, project: nil, day: recordingDay)
@@ -64,6 +69,17 @@ struct ClusterMetricRow: View {
 
     private var recordingDay: Date? {
         Calendar.current.isDateInToday(day) ? nil : day
+    }
+
+    private func deleteMetric() {
+        do {
+            try withAnimation(.snappy) {
+                try modelContext.deleteMetricAndDependents(metric)
+            }
+        } catch {
+            deletionErrorMessage = error.localizedDescription
+            showingDeletionError = true
+        }
     }
 }
 
