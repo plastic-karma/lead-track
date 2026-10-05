@@ -45,14 +45,14 @@ final class ObsidianSyncService {
         observeSaves()
     }
 
-    func connect(configuration: VaultConfiguration, token: String) {
-        guard !isSyncing else { return }
+    @discardableResult
+    func connect(configuration: VaultConfiguration, credential: GitHubCredential) -> Bool {
+        guard !isEnabled, !isSyncing else { return false }
         do {
             let configuration = try configuration.validated()
-            let token = token.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !token.isEmpty else { throw VaultError.invalid("Enter a GitHub repository access token.") }
-            let engine = try makeEngine(configuration: configuration, token: token)
-            try VaultCredentialStore.save(token)
+            try VaultCredentialCodec.validate(credential)
+            let engine = try makeEngine(configuration: configuration, token: credential.accessToken)
+            try VaultCredentialStore.save(credential)
             try UserDefaults.standard.set(JSONEncoder().encode(configuration), forKey: Self.configurationKey)
             UserDefaults.standard.set(true, forKey: Self.enabledKey)
             self.configuration = configuration
@@ -61,8 +61,10 @@ final class ObsidianSyncService {
             conflicts = []
             resolutions = [:]
             syncNow()
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -117,7 +119,7 @@ final class ObsidianSyncService {
             if needsSync || resumeForeground { scheduleSync() }
         }
         do {
-            if engine == nil { try restoreEngine() }
+            try await prepareEngine()
             guard let engine else { throw VaultError.invalid("Reconnect GitHub to resume sync.") }
             let outcome = try await engine.synchronize(resolutions: resolutions)
             conflicts = outcome.conflicts
@@ -138,11 +140,25 @@ final class ObsidianSyncService {
     }
 
     private func restoreEngine() throws {
-        guard let configuration, let token = try VaultCredentialStore.load() else {
+        guard let configuration, let credential = try VaultCredentialStore.load() else {
             throw VaultError.invalid("Your records are available offline. Reconnect GitHub to resume sync.")
         }
-        engine = try makeEngine(configuration: configuration, token: token)
+        engine = try makeEngine(configuration: configuration, token: credential.accessToken)
         lastSyncedAt = try stateFile(for: configuration).load(destination: configuration.identity).lastSyncedAt
+    }
+
+    private func prepareEngine() async throws {
+        guard let configuration, let credential = try VaultCredentialStore.load() else {
+            throw VaultError.invalid("Your records are available offline. Reconnect GitHub to resume sync.")
+        }
+        let clientID = GitHubOAuthConfiguration.clientID
+        let valid = try await VaultCredentialRefresh.resolve(credential, using: {
+            try await GitHubDeviceOAuth(clientID: clientID).refresh($0)
+        }, persist: {
+            try VaultCredentialStore.save($0)
+            self.engine = nil
+        })
+        if engine == nil { engine = try makeEngine(configuration: configuration, token: valid.accessToken) }
     }
 
     private func makeEngine(configuration: VaultConfiguration, token: String) throws -> VaultSyncEngine {

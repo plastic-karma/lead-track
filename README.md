@@ -45,16 +45,53 @@ sync is off until you enable it in **Settings → Obsidian & GitHub**.
 1. Use an existing GitHub repository and branch containing your Obsidian vault;
    the repository root should be the vault root. Initialize an empty repository
    with a commit first.
-2. Create a fine-grained personal access token for that repository only, with
-   **Contents: Read and write**. Enter its owner, repository, branch, and a
-   nonempty vault subdirectory such as `LeadStone` or `Notes/LeadStone`.
-3. Confirm **Enable Sync**. The first sync combines existing local and remote
-   records rather than replacing either collection. The selected folder can be
-   created by this sync.
+2. Enter the owner, repository, branch, and a nonempty vault subdirectory such
+   as `LeadStone` or `Notes/LeadStone`. Tap **Continue with GitHub**, review the
+   sensitive-data notice, and confirm **Agree & Continue to GitHub**.
+3. Copy the displayed code, tap **Open GitHub**, and approve **LeadStone** on
+   GitHub. Return to the app; successful authorization enables sync without
+   creating or pasting an API token. The first sync combines existing local and
+   remote records rather than replacing either collection. The selected folder
+   can be created by this sync.
 4. Pull the repository into Obsidian using your Git client. Push Obsidian edits
    back to that branch; LeadStone reads them on foreground/save-triggered sync
    or **Sync Now**. This connects through GitHub, not directly to an Obsidian
    installation, and is not Obsidian Sync.
+
+**Use a Manual Token Instead** remains available for a fine-grained personal
+access token limited to that repository, with **Contents: Read and write**.
+Existing token connections continue to work after updating.
+
+### GitHub sign-in and build configuration
+
+**Continue with GitHub** uses GitHub's
+[OAuth Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow).
+It requests the `repo` scope, which can authorize more repositories than the
+one selected in LeadStone. LeadStone only synchronizes the configured
+destination; use the optional fine-grained token for repository-limited
+authorization. Organization OAuth restrictions or SAML SSO can require separate
+approval from the organization.
+
+Access and refresh tokens stay together in the device-only Keychain, never in
+the vault or preferences. Expiring access tokens refresh before sync, and
+rotating credentials are saved together before sync resumes. Losing connectivity
+does not affect local recording. Canceling sign-in or leaving Settings discards
+the attempt, while opening the GitHub browser page keeps it alive. GitHub may
+ask for a passkey or two-factor confirmation there. An expired refresh token or
+revoked authorization requires signing in again.
+
+The project and `xtool-release.yml` configure LeadStone's public
+`GITHUB_CLIENT_ID`, emitted as `GitHubClientID` in the app's Info.plist. For a
+separate app identity:
+
+1. Register an OAuth App in **GitHub Settings → Developer settings → OAuth
+   Apps**, using the app's name and HTTPS repository/homepage URL. The required
+   redirect URI can be that same URL; Device Flow does not use a callback.
+2. Enable **Device Flow** and retain **Expire user access tokens**. LeadStone
+   handles the resulting access/refresh-token rotation.
+3. Set that app's public client ID in the project's Debug/Release
+   `GITHUB_CLIENT_ID` build setting and the native release manifest's
+   `settings.GITHUB_CLIENT_ID`. Do not generate or embed a client secret.
 
 ### Vault layout and editing
 
@@ -113,14 +150,16 @@ never overwritten, so their layouts and formulas can be customized.
   user-customized Bases are retained. Files outside the selected directory are
   not modified. Shared image references are retained when another note still
   uses the attachment.
-- The token stays in this device's Keychain. Health connections/export settings,
+- Access and refresh tokens stay in this device's Keychain. Health connections/export settings,
   notification schedules, app privacy preferences, and credentials are not
   transferred. Recorded values—including Health-derived values—notes, photos,
   and saved locations **are** uploaded when you opt in. Prefer a private
   repository: Git history can retain content after a later deletion.
-- **Disconnect** disables syncing and removes the stored token without deleting
-  local records or repository files. Reconnecting to the same destination keeps
-  its reconciliation history.
+- **Disconnect** disables syncing and removes this device's stored credentials
+  without deleting local records or repository files. Reconnecting to the same
+  destination keeps its reconciliation history. To revoke GitHub authorization
+  itself, use **GitHub Settings → Applications → Authorized OAuth Apps**;
+  revocation can affect other devices using that authorization.
 
 GitHub authentication/rate limits, protected branch rules, and network failures
 are shown in Settings without blocking ordinary recording. The transport has

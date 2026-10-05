@@ -3,43 +3,54 @@ import SwiftUI
 struct ObsidianSyncSettingsView: View {
     let service: ObsidianSyncService
     @State private var destination = VaultConfiguration(owner: "", repository: "", branch: "main", folder: "LeadStone")
-    @State private var token = ""
-    @State private var confirmingConnection = false
+    @State private var signIn: GitHubSignInModel?
+    @State private var confirmingManualConnection = false
 
     var body: some View {
         Form {
             VaultSyncStatusSection(service: service)
-            VaultConnectionFields(destination: $destination, token: $token, isConnected: service.isEnabled)
-                .disabled(service.isEnabled || service.isSyncing)
+            VaultConnectionFields(destination: $destination)
+                .disabled(service.isEnabled || service.isSyncing || connectionInProgress)
             if service.isEnabled {
                 VaultSyncActionsSection(service: service)
                 VaultConflictsSection(service: service)
-            } else {
-                Section {
-                    Button("Connect GitHub & Enable Sync") { confirmingConnection = true }
-                        .disabled(token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                } footer: {
-                    Text("First sync merges your local records with this folder; it does not replace either side.")
-                }
+            } else if let signIn {
+                GitHubSignInSection(
+                    model: signIn, destination: $destination,
+                    isDisabled: service.isSyncing || confirmingManualConnection, connect: connect
+                )
+                ManualGitHubConnectionSection(
+                    destination: $destination, confirmingConnection: $confirmingManualConnection, connect: connect
+                )
+                .disabled(service.isSyncing || signIn.isInFlight)
             }
         }
         .navigationTitle("Obsidian & GitHub")
-        .task { if let saved = service.configuration { destination = saved } }
-        .onChange(of: service.isEnabled) { _, enabled in if enabled { token = "" } }
-        .confirmationDialog("Enable two-way GitHub sync?", isPresented: $confirmingConnection) {
-            Button("Enable Sync") { service.connect(configuration: destination, token: token) }
-        } message: {
-            Text("Your saved notes, measurements (including Health-linked values), photos and locations will be "
-                + "uploaded. Anyone with repository access can read them. Edits and deletions sync both ways; "
-                + "Git history retains previous content. Use a private repository for personal data.")
+        .task { prepareSettings() }
+        .onChange(of: service.isEnabled) { _, enabled in if enabled { signIn?.cancel() } }
+        .onDisappear { signIn?.cancel() }
+    }
+
+    private var connectionInProgress: Bool {
+        signIn?.isInFlight == true || confirmingManualConnection
+    }
+
+    private func prepareSettings() {
+        if let saved = service.configuration { destination = saved }
+        if signIn == nil {
+            let clientID = GitHubOAuthConfiguration.clientID
+            signIn = GitHubSignInModel(authorizer: clientID.isEmpty ? nil : GitHubDeviceOAuth(clientID: clientID))
         }
+    }
+
+    private func connect(configuration: VaultConfiguration, credential: GitHubCredential) -> Bool {
+        guard !service.isEnabled, !service.isSyncing else { return false }
+        return service.connect(configuration: configuration, credential: credential)
     }
 }
 
 private struct VaultConnectionFields: View {
     @Binding var destination: VaultConfiguration
-    @Binding var token: String
-    let isConnected: Bool
 
     var body: some View {
         Section {
@@ -47,21 +58,12 @@ private struct VaultConnectionFields: View {
             TextField("Repository", text: $destination.repository)
             TextField("Branch", text: $destination.branch)
             TextField("Vault subdirectory", text: $destination.folder)
-            if !isConnected {
-                SecureField("Fine-grained access token", text: $token)
-                    .textContentType(.password)
-                    .privacySensitive()
-                Link(
-                    "Create a GitHub token",
-                    destination: URL(string: "https://github.com/settings/personal-access-tokens/new")!
-                )
-            }
         } header: {
             Text("Vault Connection")
         } footer: {
             Text("Choose an existing repository and branch, and a nonempty folder inside your vault, such as "
-                + "LeadStone. The folder may be created by the first sync. The token needs Contents: Read and write "
-                + "for this repository only. It stays in this device’s Keychain.")
+                + "LeadStone. The folder may be created by the first sync. First sync merges local records with "
+                + "this folder; it does not replace either side.")
         }
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()

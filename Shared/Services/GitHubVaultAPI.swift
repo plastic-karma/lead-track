@@ -144,11 +144,13 @@ nonisolated struct GitHubVaultAPI {
         }
         switch status {
         case 401:
-            throw VaultError.remote("GitHub rejected the token. Reconnect with a valid personal access token.")
+            throw VaultError
+                .remote("GitHub rejected the credential. Reconnect using Continue with GitHub or a valid token.")
         case 403:
             throw VaultError
                 .remote(
-                    "GitHub denied access or rate-limited sync. Check repository Contents read/write permission and try later."
+                    "GitHub denied access or rate-limited sync. Check repository access, organization approval, "
+                        + "and token permissions; try later."
                 )
         case 404:
             throw VaultError
