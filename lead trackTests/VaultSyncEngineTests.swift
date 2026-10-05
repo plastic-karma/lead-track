@@ -123,6 +123,37 @@ struct VaultSyncEngineTests {
         #expect(try await remote.graph().records.isEmpty)
     }
 
+    @Test
+    func projectOwnedSessionRoundTripsThroughSyncWithoutDataLoss() async throws {
+        let date = Date(timeIntervalSince1970: 1_750_000_000)
+        let metric = Metric(name: "Reading", measurementType: .count, createdAt: date)
+        let project = Project(name: "Book", metric: metric, startedAt: date)
+        let session = Session(project: project, startedAt: date, endedAt: date, value: 7)
+        let local = VaultTestLocalStore()
+        local.models = VaultModels(metrics: [metric], projects: [project], sessions: [session])
+        let remote = VaultTestRemote()
+        let engine = try makeEngine(local, remote, VaultTestState())
+        let metricID = try #require(metric.stableID)
+        let projectID = try #require(project.stableID)
+        let sessionID = try #require(session.stableID)
+        _ = try await engine.synchronize()
+        var uploaded = try await remote.graph()
+        let restored = try VaultModelCodec.materialize(uploaded)
+        let uploadedSession = try #require(restored.sessions.first)
+        #expect(Set(uploaded.records.keys) == [metricID, projectID, sessionID])
+        #expect(uploadedSession.metric?.stableID == metricID)
+        #expect(uploadedSession.project?.stableID == projectID)
+        #expect(uploadedSession.startedAt == date)
+        #expect(uploadedSession.value == 7)
+        uploaded.records[sessionID]?.fields["value"] = .number(9)
+        try await remote.replaceGraph(uploaded)
+        _ = try await engine.synchronize()
+        #expect(local.models.sessions.first === session)
+        #expect(session.value == 9)
+        #expect(session.project?.stableID == projectID)
+        #expect(session.startedAt == date)
+    }
+
     private func makeEngine(
         _ store: VaultTestLocalStore, _ remote: VaultTestRemote, _ persistence: VaultTestState
     ) throws -> VaultSyncEngine {

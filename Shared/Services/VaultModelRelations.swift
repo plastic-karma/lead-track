@@ -10,7 +10,7 @@ enum VaultModelRelations {
         case let value as Project:
             record.fields["metric"] = try VaultModelLinks.link(value.metric)
         case let value as Session:
-            record.fields["metric"] = try VaultModelLinks.link(value.metric)
+            record.fields["metric"] = try VaultModelLinks.link(value.metric ?? value.project?.metric)
             record.fields["project"] = try VaultModelLinks.link(value.project)
         case let value as Principle:
             record.fields["aspiration"] = try VaultModelLinks.link(value.aspiration)

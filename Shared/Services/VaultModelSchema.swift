@@ -89,7 +89,7 @@ extension Session: VaultModel {
     }
 
     var vaultLabel: String {
-        "\(metric?.name ?? "Data") · \(startedAt.formatted(.iso8601))"
+        "\((metric ?? project?.metric)?.name ?? "Data") · \(startedAt.formatted(.iso8601))"
     }
 }
 

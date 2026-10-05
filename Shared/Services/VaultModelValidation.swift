@@ -8,9 +8,7 @@ enum VaultModelValidation {
         for project in models.projects {
             try validateProject(project)
         }
-        for session in models.sessions {
-            try validateSession(session)
-        }
+        try validateSessions(models.sessions)
         for intention in models.intentions {
             try validateIntention(intention)
         }
@@ -60,10 +58,22 @@ enum VaultModelValidation {
         }
     }
 
-    private static func validateSession(_ value: Session) throws {
-        guard let metric = value.metric else { throw VaultError.invalid("Session requires a metric") }
-        if let project = value.project {
-            try require(project.metric === metric, "Session project belongs to another metric")
+    private static func validateSessions(_ values: [Session]) throws {
+        var runningMetrics = Set<UUID>()
+        for value in values {
+            let metric = try validateSession(value)
+            guard value.isRunning else { continue }
+            guard let id = metric.stableID else { throw VaultError.invalid("Session metric requires an identity") }
+            try require(runningMetrics.insert(id).inserted, "Multiple running timers for a metric")
+        }
+    }
+
+    private static func validateSession(_ value: Session) throws -> Metric {
+        let project = value.project
+        let projectMetric = project?.metric
+        guard let metric = value.metric ?? projectMetric else { throw VaultError.invalid("Session requires a metric") }
+        if project != nil {
+            try require(projectMetric === metric, "Session project belongs to another metric")
         }
         if let ended = value.endedAt { try require(ended >= value.startedAt, "Session ends before it starts") }
         try require(
@@ -86,6 +96,7 @@ enum VaultModelValidation {
         if metric.measurementType == .binary {
             try require(value.value == 1, "Binary sessions must have value 1")
         }
+        return metric
     }
 
     private static func validateIntention(_ value: Intention) throws {
@@ -150,10 +161,6 @@ enum VaultModelValidation {
 
     private static func validateUniqueness(_ models: VaultModels) throws {
         for metric in models.metrics {
-            try require(
-                metric.sessions.lazy.filter(\.isRunning).prefix(2).count <= 1,
-                "Multiple running timers for a metric"
-            )
             try require(
                 metric.projects.lazy.filter { $0.isDefault && $0.status == .active }.prefix(2).count <= 1,
                 "Multiple default projects for a metric"

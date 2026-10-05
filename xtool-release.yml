@@ -12,11 +12,11 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    GitHub's verification code now has its own large, selectable row, and Settings
-    scrolls to it automatically. Confirm the code is readable without tapping Copy
-    Code or Open GitHub. Approve a fresh code on a second device while keeping
-    LeadStone open on the iPhone. Copy, Open GitHub and Cancel Sign-In must act
-    independently; copying must not cancel sign-in. Check large text sizes,
-    cancellation, code expiry, and returning from the iPhone browser. The earlier
-    approval-polling failure is not yet confirmed fixed. Verify token refresh,
-    manual token connections, Obsidian round trips, Watch sync, widgets and sharing.
+    This build fixes "Session requires a metric" for existing data points whose
+    metric is linked through a project. Retry Sync Now on the existing GitHub
+    connection. Confirm all points remain and their identities, timestamps,
+    values and projects survive a round trip. Change a value in Obsidian, sync
+    it back, and check that no duplicate point appears. Invalid or conflicting
+    owners and multiple running timers must still stop sync without dropping
+    records. Also verify token refresh, manual token connections, offline
+    recording, Watch sync, widgets and sharing.

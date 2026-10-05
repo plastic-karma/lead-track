@@ -157,6 +157,10 @@ never overwritten, so their layouts and formulas can be customized.
 - Remote deletions propagate once relationships remain valid. Malformed notes,
   broken required links, unsupported schema versions, unsafe paths, and partial
   remote snapshots stop reconciliation rather than importing a partial graph.
+- A local session can inherit its metric from its project. Export writes both
+  links explicitly without changing its ID, timestamps, or value. Conflicting
+  owners, unresolvable metrics, invalid values, and multiple running timers for
+  one metric still stop sync; no session is skipped to bypass validation.
 - Unrelated notes, custom YAML properties, unchanged Markdown prose, and
   user-customized Bases are retained. Files outside the selected directory are
   not modified. Shared image references are retained when another note still
