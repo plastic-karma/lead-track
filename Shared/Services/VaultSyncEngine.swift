@@ -32,7 +32,7 @@ final class VaultSyncEngine {
             outcome.needsSync = outcome.conflicts.isEmpty
             return outcome
         }
-        let snapshot = try await remote.fetch(cached: state.files)
+        let snapshot = try await fetchSnapshot()
         try Task.checkCancellation()
         let remoteGraph = try ObsidianVaultCodec.decode(snapshot.files.mapValues(\.data), folder: configuration.folder)
         try checkTrackedNotes(remoteGraph, snapshot: snapshot)
@@ -44,6 +44,25 @@ final class VaultSyncEngine {
             return try finish(resolutions: resolutions)
         }
         return try await reconcile(remoteGraph, snapshot: snapshot, resolutions: resolutions)
+    }
+
+    private func fetchSnapshot() async throws -> VaultRemoteSnapshot {
+        var cached = state.files
+        for (path, file) in state.pending?.files ?? [:]
+            where (cached[path]?.sha ?? "").isEmpty && !file.sha.isEmpty
+        {
+            cached[path] = file
+        }
+        let snapshot = try await remote.fetch(cached: cached)
+        // Cache immutable blobs independently of merge history. A conflict or
+        // interrupted publication must not discard a completed download.
+        if state.files != snapshot.files {
+            var downloaded = state
+            downloaded.files = snapshot.files
+            try persistence.save(downloaded)
+            state = downloaded
+        }
+        return snapshot
     }
 
     private func checkTrackedNotes(_ graph: VaultGraph, snapshot: VaultRemoteSnapshot) throws {

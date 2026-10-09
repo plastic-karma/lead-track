@@ -46,7 +46,7 @@ final class VaultTestState: VaultStatePersistence {
     }
 
     func save(_ state: VaultSyncState) throws {
-        if failAcknowledgment, state.pending == nil {
+        if failAcknowledgment, state.pending == nil, self.state?.pending?.published == true {
             failAcknowledgment = false
             throw URLError(.cannotWriteToFile)
         }

@@ -207,6 +207,15 @@ Standard CoreDevice app-container exports do not fully expose the App Group
 root database and are not a complete backup. Never uninstall LeadStone, change
 its bundle/team identity, or revoke production certificates to debug it.
 
+Once a development build is attached, use `import SQLite3` in a paused app-source
+frame and SQLite's online backup API to stage `lead-track.store` under the app's
+`Library/`. Keep writers quiescent while also copying `.lead-track_SUPPORT`, if
+present, so external image data accompanies the database. Resolve current
+container URLs rather than reusing container UUIDs from an earlier installation.
+Export the staged directory with `pymobiledevice3 apps pull` and check the copied
+database with `PRAGMA quick_check`. A raw copy of only `lead-track.store` can omit
+WAL transactions and external data. Keep these backups private.
+
 Keep the distribution signing file untouched. Create a separate external file:
 
 ```text

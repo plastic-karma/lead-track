@@ -21,7 +21,6 @@ struct VaultSyncFailureTests {
         #expect(session.value == -1)
         #expect(session.startedAt == instant)
         #expect(try await remote.graph().records.isEmpty)
-        #expect(persistence.state == nil)
     }
 
     @Test
@@ -40,7 +39,6 @@ struct VaultSyncFailureTests {
         expectInvalidFailure(failure, stage: .syncSnapshot)
         #expect(try local.snapshot() == original)
         #expect(try await remote.graph() == before)
-        #expect(persistence.state == nil)
     }
 
     @Test
