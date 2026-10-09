@@ -8,7 +8,8 @@ import WidgetKit
 /// Performs the current one-tap action for a metric selected by a system
 /// control. The metric is fetched again at execution time so a control never
 /// acts on stale type, archive, or Health-link state from its rendered value.
-struct MetricControlIntent: LiveActivityIntent {
+/// Keep AppIntent explicit so optimized builds retain its runtime conformance.
+struct MetricControlIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Use Metric"
     static var isDiscoverable = false
 
@@ -22,6 +23,7 @@ struct MetricControlIntent: LiveActivityIntent {
         self.metricID = metricID
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         guard let container = SharedModelContainer.shared else { return .result() }
         let context = ModelContext(container)
