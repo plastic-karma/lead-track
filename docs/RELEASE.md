@@ -190,6 +190,101 @@ Review; a `Ready to Submit` label can coexist with internal testing availability
 Do not automatically expire older builds, enroll testers, or submit a public App
 Store release.
 
+## Local USB debugging without a TestFlight upload
+
+Follow xtool's [local USB device debugging guide](https://github.com/plastic-karma/xtool/blob/main/Documentation/xtool.docc/NativeReleases.md#local-usb-device-debugging)
+for Arch usbmuxd/udev setup, pairing, personalized DDI mounting, rootless
+`pymobiledevice3==11.26.0` tunnels, and compatible Swift LLDB setup. No jailbreak,
+cloud build, or app-source rewrite is needed. The demonstrated phone was an
+iPhone15,4 on iOS 26.6.1 with Developer Mode already enabled.
+Use a source build containing xtool's
+[development-signing and debugger support](https://github.com/plastic-karma/xtool/pull/2);
+older native installations do not provide these flags or `xtool-debug`.
+
+Back up first. A same-bundle, same-team development update retained the tested
+app and App Group data, but future schema migrations can still change it.
+Standard CoreDevice app-container exports do not fully expose the App Group
+root database and are not a complete backup. Never uninstall LeadStone, change
+its bundle/team identity, or revoke production certificates to debug it.
+
+Keep the distribution signing file untouched. Create a separate external file:
+
+```text
+${XDG_CONFIG_HOME:-$HOME/.config}/xtool/signing/plastickarma.lead-track.development.yml
+```
+
+Use the same YAML mapping as the distribution example, but point `certificate`
+and `privateKey` at an Apple Development identity and all **five** profile entries
+at development profiles with appropriate registered devices and
+`get-task-allow=true`. Preserve the existing App Group and requested capabilities.
+Protect the directory/files with `0700`/`0600`; check `XTOOL_SIGNING_CONFIG` is not
+overriding this with the production configuration.
+
+```sh
+umask 077
+./scripts/build-release.sh --development --configuration debug \
+  --output .xtool/device-debug-releases
+# Set IPA to the generated IPA and UDID locally to the paired phone.
+pymobiledevice3 apps install --udid "$UDID" --developer "$IPA"
+pymobiledevice3 developer dvt launch --userspace --udid "$UDID" \
+  --no-kill-existing plastickarma.lead-track
+pymobiledevice3 developer dvt process-id-for-bundle-id \
+  --userspace --udid "$UDID" plastickarma.lead-track
+pymobiledevice3 apps list --udid "$UDID" --type User
+```
+
+Use the developer install path; plain install hung on the tested setup.
+This still builds all five bundles/seven slices. `--configuration debug`
+controls SwiftPM optimization/assertions, while canonical project import
+continues using Release settings. Linux Debug uses the bundled Swift Build
+toolset's whole-module compilation to avoid the pinned compiler's per-primary
+`@Model` conformance failure; it remains `-Onone`/`-g`/`DEBUG`, not an optimized
+Release build. Do not overlap build/release runs.
+
+For this app, the local executable is the selected build's
+`Payload/lead_track.app/lead_track`. Generate its matching symbols with
+`dsymutil -o .xtool/device-debug/lead_track.app.dSYM "$EXECUTABLE"` and compare
+executable/dSYM UUIDs as described in the native guide. Set `APP_PID` from the
+running-process command and `REMOTE_EXECUTABLE` from installed app metadata
+(`Path` plus `CFBundleExecutable`); both can change after an update/relaunch.
+
+Start the guide's loopback debugserver on port 62078 in another terminal, then:
+
+```sh
+native="${XTOOL_NATIVE_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/xtool/native}"
+"$native/bin/xtool-debug" "$EXECUTABLE" --pid "$APP_PID" \
+  --lldb "$SWIFT_LLDB" \
+  --symbols .xtool/device-debug/lead_track.app.dSYM/Contents/Resources/DWARF/lead_track \
+  --remote-executable "$REMOTE_EXECUTABLE" \
+  --sysroot "$CACHE/Symbols" --sdk "$IPHONEOS_SDK"
+```
+
+Create `.xtool/device-debug/` with mode `0700` first. The guide explains how to
+set `SWIFT_LLDB`, fetch/extract matching device OS symbols into `CACHE` using
+Linux `ipsw dyld extract` (not macOS-only `split`), and select the compiler's
+iPhoneOS 26.5 SDK. `--symbols` is a raw DWARF file, not a dSYM directory.
+Use the attach helper: direct `process connect` without its PID attach hung on
+iOS 26 despite the debugserver's printed connect hints.
+
+Actual source breakpoints were hit at `ObsidianSyncService.syncNow()` and
+`VaultSyncEngine.reconcile`; source stepping, backtraces, stop/resume, and detach
+were exercised. In a Debug app frame, Swift expressions `self.isEnabled`,
+`self.isSyncing`, and `self.conflicts.count` returned live values. The helper's
+SDK setup selects Darwin SwiftShims and CoreFoundation rather than Linux's
+host modules. Optimized builds can make local variables unavailable.
+Finish with LLDB `process detach`, then `quit`, and stop the server—not an
+uninstall. Still screenshots work on iOS 26; iOS 27-only display streaming is
+not part of this loop.
+
+Keep logs, screenshots, debugger output, and container backups private: they
+may contain vault data or tokens. Store them only under ignored `.xtool/` with
+restrictive permissions, never upload them. This loop does not establish
+Watch/runtime parity or unrestricted Swift expression evaluation.
+
+The default distribution build/upload path above is unchanged. `--upload`
+requires release configuration and distribution signing; development IPAs
+cannot be uploaded to TestFlight.
+
 ## Troubleshooting
 
 - **xtool is missing or lacks `release`:** select the source-built native CLI with
