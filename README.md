@@ -37,6 +37,17 @@ artifacts, and Apple processing/tester-access checks. Keep credentials outside
 the repository. An unsigned smoke IPA is not TestFlight-installable, and a
 successful build does not prove device behavior.
 
+## Control Center metric actions
+
+Favorite a metric in LeadStone, then add **LeadStone → Metric Action** in iOS
+Control Center and choose that metric. Duration metrics start or stop their
+timer; count metrics log one; binary metrics mark or clear today.
+
+Timer controls recognize sessions owned directly by the metric or through one
+of its projects, including sessions imported from the vault. A project-owned
+timer is stopped rather than duplicated. Unassigned sessions remain untouched
+and do not hide another metric's running Live Activity during a sync refresh.
+
 ## Optional Obsidian / GitHub sync
 
 LeadStone still works entirely offline with its local SwiftData store. GitHub

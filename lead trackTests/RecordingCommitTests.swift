@@ -104,6 +104,31 @@ struct RecordingCommitTests {
     }
 
     @Test
+    func projectOwnedTimerStopsWithoutCreatingDuplicate() throws {
+        let metric = try makeMetric()
+        let project = Project(name: "Book", metric: metric)
+        let session = Session(project: project, startedAt: Date(timeIntervalSince1970: 1_750_000_000))
+        context.insert(project)
+        context.insert(session)
+        try context.save()
+
+        let running = try #require(SessionService.storedRunningSession(for: metric, in: context))
+        #expect(running === session)
+        #expect(SessionService.activeSession(for: metric) === session)
+        #expect(SessionService.startSession(for: metric, in: context) === session)
+        SessionService.toggleSession(for: metric, runningSession: running, in: context)
+
+        let reopened = ModelContext(container)
+        try withExtendedLifetime(reopened) {
+            let stored = try reopened.fetch(FetchDescriptor<Session>())
+            #expect(stored.count == 1)
+            let stopped = try #require(stored.first)
+            #expect(stopped.stableID == session.stableID && !stopped.isRunning)
+            #expect(stopped.metric == nil && stopped.project?.stableID == project.stableID)
+        }
+    }
+
+    @Test
     func binaryToggleSeesSiblingContextSave() throws {
         let metric = try makeMetric(type: .binary)
         let sibling = ModelContext(container)
