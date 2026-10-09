@@ -171,6 +171,10 @@ never overwritten, so their layouts and formulas can be customized.
 - Local changes remain usable offline. Sync uses a destination-specific durable
   journal, a three-way merge, and atomic Git commits tied to the fetched branch
   head; it never force-pushes over someone else's commit.
+- Completed downloads are cached across app restarts, even if conflicts or an
+  interrupted upload prevent sync from finishing. Known Git blob IDs in the
+  pending journal are reused; caching does not acknowledge an uncertain upload
+  or advance the merge baseline or last-completed time.
 - Independent property edits merge. Competing edits and delete-versus-edit
   changes pause for explicit choices in Settings. Newer edits invalidate old
   choices instead of silently applying them to different content.
