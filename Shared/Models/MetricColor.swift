@@ -236,6 +236,7 @@ extension Aspiration {
 }
 
 #if canImport(ActivityKit) && !os(macOS)
+@MainActor
 extension TimerActivityAttributes {
     /// The Live Activity's identity color.
     var displayColor: Color {

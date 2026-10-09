@@ -8,7 +8,8 @@ import WidgetKit
 /// Starts the timer for a duration metric from a widget or Shortcut, without
 /// opening the app. Conforms to `LiveActivityIntent` so it may start the Live
 /// Activity even when run from the background.
-struct StartTimerIntent: LiveActivityIntent {
+/// Keep AppIntent explicit so optimized builds retain its runtime conformance.
+struct StartTimerIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Start Timer"
 
     @Parameter(title: "Metric ID") var metricID: String
@@ -21,6 +22,7 @@ struct StartTimerIntent: LiveActivityIntent {
         self.metricID = metricID
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         // The cached per-process container: rebuilding the stack (and
         // re-running the stable-ID backfill) on every widget tap is wasted

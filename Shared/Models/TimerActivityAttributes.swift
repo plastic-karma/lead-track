@@ -4,8 +4,8 @@
 import ActivityKit
 import Foundation
 
-struct TimerActivityAttributes: ActivityAttributes, Equatable {
-    struct ContentState: Codable, Hashable {
+nonisolated struct TimerActivityAttributes: ActivityAttributes, Equatable {
+    nonisolated struct ContentState: Codable, Hashable {
         var startedAt: Date
     }
 
@@ -22,6 +22,7 @@ struct TimerActivityAttributes: ActivityAttributes, Equatable {
 
     /// The range a countdown started at `startedAt` animates across, or nil
     /// for a count-up timer.
+    @MainActor
     func countdownInterval(startedAt: Date) -> ClosedRange<Date>? {
         CountdownDisplay.interval(startedAt: startedAt, duration: countdownDuration)
     }

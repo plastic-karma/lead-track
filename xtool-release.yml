@@ -12,13 +12,10 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    Sessions without a metric or project now sync as Unassigned notes instead
-    of blocking the initial local snapshot. Keep the existing GitHub connection
-    and tap Sync Now; confirm the record appears in Data with null metric and
-    project links and unchanged values/times. Owners are never guessed and
-    unassigned records are not skipped or deleted. Editing a note's metric
-    link can assign it; clear both metric and project links to unassign it.
-    Future explicit metric/project deletions use forward-linked dependents,
-    and project moves retain the session's known metric. Copy the full phase
-    error if sync still fails; do not disconnect or reset the store.
-    Also check ordinary recording, Watch sync, widgets and sharing.
+    Fixes widget timer actions whose implementations were missing from the
+    optimized app. Use an existing Home Screen Timer Control widget: start a
+    timer in LeadStone, tap Stop in the widget, and confirm the session is
+    completed and the timer no longer runs. Repeat with the app backgrounded
+    and closed. Also check Stop on the Lock Screen and Dynamic Island, plus
+    start/stop from a Control Center Metric Action. Keep existing data and
+    widget configurations. Check ordinary recording, Watch sync and vault sync.

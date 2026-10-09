@@ -67,6 +67,43 @@ Do not drop extensions, capabilities, or architectures to get a build through.
 Linux overlay tests and native compilation do not execute Apple's persistence or
 UI runtime. Exercise the app on devices and report that verification separately.
 
+### Widget intent runtime availability
+
+`StartTimerIntent`, `StopTimerIntent`, and `MetricControlIntent` explicitly
+conform to both `AppIntent` and `LiveActivityIntent`. Keep `AppIntent` explicit:
+its runtime-metadata retention requirement does not propagate through inherited
+protocols in the pinned compiler. Their ordinary Swift callers live in the
+widget extension, but
+[LiveActivityIntent runs in the app process](https://developer.apple.com/documentation/appintents/liveactivityintent).
+
+Install [xtool's application archive-retention fix](https://github.com/plastic-karma/xtool/commit/c9c7d12)
+before building this revision.
+
+The native xtool packer must also eagerly load application module archives, as
+it already does for extensions. Its `-all_load` application linker setting
+restores the semantics of Swift Build's relocatable-object link, which the SDK
+wrapper implements as an archive. Normal `-dead_strip` stays enabled. Public
+visibility alone is insufficient: an unreferenced archive member can be skipped
+even when its runtime metadata is marked `N_NO_DEAD_STRIP`.
+
+The previous build advertised these intents in source-generated
+`Metadata.appintents` JSON while omitting their native implementations from the
+app. Matching metadata JSON and passing portable tests did not detect that failure.
+
+When changing these intents or the native toolchain, inspect the final app and
+widget executables with `llvm-nm --defined-only` and `swift-demangle`. Each intent
+must retain its nominal type descriptor, metadata accessor, AppIntent and
+LiveActivityIntent conformance descriptors, and AppIntent `perform()` witness.
+Check the app's AppIntents framework linkage with
+`llvm-objdump --macho --dylibs-used` as well. Do not substitute debug builds or
+compiler declaration records for the final optimized executable.
+
+The handlers perform recording work on `MainActor`; their ActivityKit value
+payloads are nonisolated so ActivityKit can encode and end activities across
+executors. On a device, test Home Screen timer Stop, Lock Screen/Dynamic Island
+Stop, and Control Center start/stop with the app open, backgrounded, and closed.
+Verify both the completed session and the stopped widget/Live Activity display.
+
 ## External distribution signing and Apple authentication
 
 Reuse a valid distribution certificate and its matching private key. Provision an

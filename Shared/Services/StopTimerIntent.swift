@@ -5,7 +5,9 @@ import Foundation
 import SwiftData
 import WidgetKit
 
-struct StopTimerIntent: LiveActivityIntent {
+/// Keep AppIntent explicit so optimized builds retain its runtime conformance.
+/// LiveActivityIntent alone does not propagate that retention requirement.
+struct StopTimerIntent: AppIntent, LiveActivityIntent {
     static var title: LocalizedStringResource = "Stop Timer"
 
     @Parameter(title: "Metric ID") var metricID: String
@@ -18,6 +20,7 @@ struct StopTimerIntent: LiveActivityIntent {
         self.metricID = metricID
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         guard let container = SharedModelContainer.shared else { return .result() }
         let context = ModelContext(container)
@@ -70,6 +73,7 @@ extension StopTimerIntent {
         }
     }
 
+    @MainActor
     private func endActivities(for stopped: StoppedMetrics) async {
         for activity in Activity<TimerActivityAttributes>.activities {
             if metricID.isEmpty || stopped.matches(activity.attributes) {
