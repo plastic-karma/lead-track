@@ -6,16 +6,6 @@ final class LeadTrackUITests: XCTestCase {
     }
 
     @MainActor
-    func testAppLaunchesAndShowsTodayDashboard() {
-        let app = launchUITestApp()
-        // A freshly cloned simulator's first cold launch in CI can take well
-        // over 5s, so allow a generous timeout to avoid flaky failures.
-        XCTAssertTrue(
-            app.navigationBars["Today"].waitForExistence(timeout: 30)
-        )
-    }
-
-    @MainActor
     func testCreateNewMetric() {
         let app = launchUITestApp()
         createMetric(named: "Reading", in: app)
@@ -77,9 +67,7 @@ final class LeadTrackUITests: XCTestCase {
 
     @MainActor
     private func createMetric(named name: String, in app: XCUIApplication) {
-        let today = app.navigationBars["Today"]
-        XCTAssertTrue(today.waitForExistence(timeout: 30))
-        let addMetric = today.buttons["Add Metric"]
+        let addMetric = app.buttons["Add Metric"]
         XCTAssertTrue(addMetric.waitForExistence(timeout: 5))
         addMetric.tap()
         XCTAssertTrue(app.navigationBars["New Metric"].waitForExistence(timeout: 5))

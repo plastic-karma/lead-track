@@ -12,10 +12,11 @@ appStoreConnect:
   appID: "6761788241"
   locale: en-US
   testNotes: >-
-    Fixes widget timer actions whose implementations were missing from the
-    optimized app. Use an existing Home Screen Timer Control widget: start a
-    timer in LeadStone, tap Stop in the widget, and confirm the session is
-    completed and the timer no longer runs. Repeat with the app backgrounded
-    and closed. Also check Stop on the Lock Screen and Dynamic Island, plus
-    start/stop from a Control Center Metric Action. Keep existing data and
-    widget configurations. Check ordinary recording, Watch sync and vault sync.
+    Refines the Today screen with aligned headings, compact day navigation,
+    clearer light-mode controls and a visible Log Effort action. Check light
+    and dark appearance and larger text sizes. With every group collapsed,
+    open Log Effort, record a count or duration and mark/undo a binary habit;
+    verify configured Log +1 behavior. Browse an earlier day and check that
+    entries land on that day, then return to Today. Cancel an entry and confirm
+    no record was added. Health-linked and archived metrics must not appear in
+    the picker. Check ordinary timers, widgets, Watch sync and vault sync.
