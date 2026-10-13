@@ -140,13 +140,12 @@ struct TodayClusterPastDayTests {
     // MARK: - Browsed-day readings
 
     @Test
-    func summariesReadTheBrowsedDay() {
+    func remainingEffortReadsTheBrowsedDay() {
         let reading = makeMetric("Reading", dailyGoal: 180)
         log(reading, daysAgo: 3, seconds: 102)
 
-        #expect(TodayGrouping.openSummary(for: [reading], now: date(3)) == "1m 18s left")
         #expect(TodayGrouping.remainingToday(for: reading, now: date(3)) == 78)
-        #expect(TodayGrouping.openSummary(for: [reading]) == "3m 00s left")
+        #expect(TodayGrouping.remainingToday(for: reading) == 180)
     }
 
     @Test

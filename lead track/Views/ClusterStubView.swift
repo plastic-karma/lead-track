@@ -4,10 +4,8 @@ import SwiftUI
 /// One cluster's collapsible today-card. Folded, the cluster compresses to
 /// one quiet line — plus its intention rows, which never fold. Tapping the
 /// header (or its chevron) expands the cluster inline into its full card;
-/// the expansion is per-cluster, transient, and never persisted. Needy
-/// clusters arrive expanded, everything else folded (see
-/// `TodayClusterSections`), so the screen earns its calm as the day is
-/// completed.
+/// the expansion is per-cluster and transient (see `TodayClusterSections`).
+/// Logging also remains reachable without expanding through Today's Log Effort.
 struct ClusterStubView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let cluster: TodayGrouping.Cluster
@@ -104,13 +102,12 @@ extension ClusterCollapsedCard {
         }
     }
 
-    /// What a folded needy cluster still holds: "1m 18s left" or
-    /// "2 still open".
+    /// A remaining quantity or the count of unfinished metrics.
     private var openStatus: some View {
         Text(TodayGrouping.openSummary(for: cluster.metrics, now: day))
             .font(.caption2)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
+            .foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var doneStatus: some View {
@@ -120,7 +117,7 @@ extension ClusterCollapsedCard {
                 .foregroundStyle(cluster.aspiration?.displayColor ?? .accentColor)
             Text(TodayGrouping.doneSummary(for: cluster.metrics, now: day))
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
     }
@@ -130,7 +127,7 @@ extension ClusterCollapsedCard {
         if let date = TodayGrouping.nextGoalDate(for: cluster.metrics, now: day) {
             Text("resting until \(date.formatted(.dateTime.weekday(.wide)))")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
     }
@@ -143,10 +140,10 @@ extension ClusterCollapsedCard {
                 .font(.system(.caption2, design: .rounded, weight: .semibold))
                 .foregroundStyle(.primary)
                 + Text(" · fills itself from Health")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         } else {
             Text("fills itself from Health")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
         return line
             .font(.caption2)

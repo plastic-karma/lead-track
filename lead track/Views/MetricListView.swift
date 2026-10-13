@@ -40,6 +40,9 @@ struct MetricListView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 DayDialView(metrics: metrics.unarchived, daysBack: $daysBack)
+                if metrics.contains(where: { !$0.isArchived && !$0.isHealthLinked }) {
+                    TodayLogButton(daysBack: daysBack)
+                }
                 TodayClusterSections(
                     metrics: metrics, aspirations: aspirations, intentions: intentions,
                     runningSessions: runningSessions, daysBack: daysBack,
@@ -53,7 +56,8 @@ struct MetricListView: View {
         }
         .aspirationReorderDropSurface(draggingID: $draggingClusterID)
         .background { Theme.washedScreen }
-        .navigationTitle("Today")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 appMenu
@@ -61,6 +65,7 @@ struct MetricListView: View {
             ToolbarItem {
                 Button { showingAddSheet = true } label: {
                     Label("Add Metric", systemImage: "plus")
+                        .foregroundStyle(.primary)
                 }
             }
         }

@@ -37,6 +37,28 @@ artifacts, and Apple processing/tester-access checks. Keep credentials outside
 the repository. An unsigned smoke IPA is not TestFlight-installable, and a
 successful build does not prove device behavior.
 
+## Today and recording
+
+Today's title shares the content margins with its cards. Earlier/later-day
+controls sit beside it, with a **Today** shortcut available while browsing the
+past; the full date appears once beside the progress ring. The controls move
+below the title when larger text needs more room.
+
+**Log Effort** stays visible above the aspiration groups even when every group
+is collapsed. It offers active, manually recorded metrics without changing
+any group's expansion state:
+
+- Duration metrics open the existing time-entry form.
+- Count metrics follow their configured log style: enter an amount or log +1.
+- Binary habits can be marked done or undone for the selected day.
+- Historical entries use the day being browsed; today's entries use the time
+  of recording. Health-linked and archived metrics are excluded.
+
+Collapsed groups distinguish unfinished metrics (**To do: 2**) from a quantity
+gap (**1m 18s remaining**). Unitless count gaps also name their metric, such as
+**Repetitions: 2 remaining**. Today uses semantic primary ink for small status
+text and the enabled Add Metric icon in both appearances.
+
 ## Control Center metric actions
 
 Favorite a metric in LeadStone, then add **LeadStone → Metric Action** in iOS

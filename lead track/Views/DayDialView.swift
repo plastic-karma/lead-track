@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// The Today screen's header instrument: chevrons for browsing days around a
-/// relative title (the same controls the Week tab's header strip wears), then
-/// a segmented day dial — one arc per active daily goal, each wearing its
-/// metric's color — beside the browsed day's date. Today closes the line with
-/// a warm streak; an earlier day closes with how its goals held instead.
+/// Today's title and day controls share one row above the segmented goal dial
+/// and the browsed day's date. At larger text sizes the controls wrap below
+/// the title. Today closes the date with a streak; past days show goal results.
 /// Rest-day metrics are excluded by the same rule as `GoalSummary`.
 struct DayDialView: View {
     let metrics: [Metric]
@@ -14,7 +12,7 @@ struct DayDialView: View {
     @Binding var daysBack: Int
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             DayDialNavigation(daysBack: $daysBack)
             DayDialHero(metrics: metrics, daysBack: daysBack)
         }
@@ -33,15 +31,37 @@ private struct DayDialNavigation: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 12) {
+                title.fixedSize()
+                Spacer(minLength: 8)
+                controls
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                title
+                controls
+            }
+        }
+    }
+
+    private var title: some View {
+        Text("Today")
+            .font(.largeTitle.bold())
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var controls: some View {
+        HStack(spacing: 4) {
+            if !isToday {
+                Button("Today") { daysBack = 0 }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(minHeight: 44)
+                    .accessibilityLabel("Return to Today")
+            }
             chevron("chevron.left", label: "Earlier day") {
                 daysBack += 1
             }
-            Spacer()
-            Text(dayTitle)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-            Spacer()
             chevron("chevron.right", label: "Later day") {
                 daysBack -= 1
             }
@@ -65,14 +85,6 @@ private struct DayDialNavigation: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
-    }
-
-    private var dayTitle: String {
-        switch daysBack {
-        case 0: "Today"
-        case 1: "Yesterday"
-        default: "\(daysBack.formatted()) Days Ago"
-        }
     }
 }
 
@@ -153,7 +165,7 @@ private extension DayDialHero {
         if summary.hasGoals {
             Text(summary.isComplete ? "Every goal held." : "\(summary.met) of \(summary.total) held")
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
     }
 }
@@ -174,12 +186,12 @@ private extension DayDialHero {
                     .foregroundStyle(Color.accentColor)
                 Text(streakText(streak))
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
         } else {
             Text("A fresh day to begin.")
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
     }
 

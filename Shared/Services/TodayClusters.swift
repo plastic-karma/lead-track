@@ -250,24 +250,23 @@ extension TodayGrouping {
         return total < goal ? goal - total : nil
     }
 
-    /// The folded needsYou stub's status: the lone unmet metric's measurable
-    /// remainder ("1m 18s left"), or how many members still wait ("2 still
-    /// open"); a single member without a remainder drops the count.
+    /// Folded summaries distinguish a metric count ("To do: 2") from an
+    /// amount still needed ("1m 18s remaining"). Unitless counts name their
+    /// metric so they cannot be mistaken for the number of unfinished goals.
     static func openSummary(
         for metrics: [Metric],
         now: Date = .now,
         calendar: Calendar = .current
     ) -> String {
         let open = metrics.filter { metricState($0, now: now, calendar: calendar) == .needsYou }
-        if open.count == 1, let metric = open.first {
-            guard let remaining = remainingToday(for: metric, now: now, calendar: calendar)
-            else { return "still open" }
-            let amount = ValueFormatter.format(
-                remaining, type: metric.measurementType, unit: metric.unit
-            )
-            return "\(amount) left"
+        guard open.count == 1, let metric = open.first,
+              let remaining = remainingToday(for: metric, now: now, calendar: calendar)
+        else { return "To do: \(open.count.formatted())" }
+        let amount = ValueFormatter.format(remaining, type: metric.measurementType, unit: metric.unit)
+        if metric.measurementType == .count, metric.unit?.isEmpty != false {
+            return "\(metric.name): \(amount) remaining"
         }
-        return "\(open.count) still open"
+        return "\(amount) remaining"
     }
 
     /// The done stub's testimony, from the day's sessions: "all done ·
